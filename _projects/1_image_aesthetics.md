@@ -32,7 +32,7 @@ Key optimization: Precomputed positive/negative aesthetic centroids, reducing pe
 
 <div class="row">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.liquid loading="eager" path="assets/img/aesthetics_demo.jpg" title="aesthetic scoring" class="img-fluid rounded z-depth-1" %}
+        {% include figure.liquid loading="eager" path="assets/img/Aesthetic-comparison.png" title="aesthetic scoring (Higher is better)" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
 
