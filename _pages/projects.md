@@ -2,7 +2,7 @@
 layout: page
 title: projects
 permalink: /projects/
-description: Selected technical projects in AI and ML.
+description: 
 nav: true
 nav_order: 3
 display_categories: [computer vision, document processing]
