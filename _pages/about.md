@@ -29,7 +29,7 @@ I build AI systems at VFS Global that process thousands of documents daily acros
 
 The problems I run into building these systems don't have solid solutions yet. When processing critical documents at scale, vision-language models need to not only extract information accurately but also know when they're uncertain. Existing approaches fall short, so I've been exploring ways to make AI systems in the vision domain more grounded.
 
-I'm particularly interested in how reasoning models differ from instruct models when it comes to uncertainty, and whether we can build better frameworks for detecting hallucination versus uncertainty. Currently wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on papers about VLM calibration.
+I'm particularly interested in how reasoning differ from the typical instruct models in the vision domain when it comes to uncertainty, and whether we can build better frameworks for detecting hallucination versus uncertainty. Currently wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on papers about VLM calibration.
 
 Always happy to chat about uncertainty quantification, VLMs, or anything at the intersection of production ML and research.
 
