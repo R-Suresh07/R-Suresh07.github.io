@@ -9,7 +9,7 @@ profile:
   image: profile.jpeg
   image_circular: false # crops the image to make it circular
   more_info: >
-    <p>New Delhi, India</p>
+    <p>   New Delhi, India</p>
 
 selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
@@ -25,12 +25,14 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-I'm a Lead AI Research Engineer at VFS Global, where I build production AI systems that process 180,000+ documents daily while pushing the boundaries of uncertainty quantification in vision-language models.
+I build AI systems at VFS Global that process thousands of documents daily across visa applications for 110+ countries. The work sits at this interesting intersection of production engineering and research, where you need systems that are both highly reliable and honest about their limitations.
 
-My work bridges the gap between production ML engineering and research—I design systems that need to be both highly reliable and technically innovative. At VFS Global, I've built intelligent document processing pipelines with 99.1% accuracy, automated passport validation across 110+ nationalities, and developed novel confidence estimation frameworks that combine logit-based filtering with semantic entropy analysis.
+The problems I've been running into while building these systems don't really have solid solutions yet. When you're processing critical documents at scale, you need vision-language models that can not only extract information accurately but also know when they're uncertain. Existing approaches fall short, so I've been exploring ways to make AI systems in the vision domain more grounded and certain about their outputs.
 
-My research focuses on making AI systems more trustworthy through better uncertainty quantification and hallucination detection. I'm particularly interested in how reasoning models differ from instruct models in their calibration properties, and I'm developing frameworks to detect reasoning failures in vision-language models.
+This gap between what production systems need and what current research offers is what drives my work. I'm particularly interested in how reasoning models differ from instruct models when it comes to uncertainty, and whether we can build better frameworks for detecting when models are actually hallucinating versus just being uncertain.
 
-Currently applying to research programs including OpenAI Residency and MATS Summer 2026, while completing my B.Sc. in Programming & Data Science from IIT Madras.
+On the side, I'm wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on a couple of papers about VLM calibration that I'm planning to publish soon.
 
-**Research Interests:** Uncertainty Quantification, Vision-Language Models, Hallucination Detection, Epistemic Uncertainty in Agentic Systems
+Always happy to chat about uncertainty quantification, VLMs, or anything at the intersection of production ML and research. Feel free to reach out.
+
+**Research interests:** Uncertainty quantification, vision-language models, hallucination detection, epistemic uncertainty in agentic systems
