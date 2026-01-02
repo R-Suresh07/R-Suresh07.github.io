@@ -37,9 +37,8 @@
         "Built production-scale IDP system achieving 99.1% accuracy, reducing visa review time from 60+ minutes to sub-5 minutes",
         "Developed epistemic uncertainty quantification system with dual-model validation reducing hallucination rates",
         "Integrated semantic entropy pipeline for distinguishing linguistic variance from epistemic model failure",
-        "Architected multi-stage verification system separating signal quality assessment from semantic validation",
         "Optimized ML model inference by 40% through quantization and vLLM deployment achieving 20 tokens/second",
-        "Led technical team of 8+ engineers implementing code reviews and delivering fraud detection capabilities"
+        "Led technical team of 8+ engineers"
       ]
     },
     {
