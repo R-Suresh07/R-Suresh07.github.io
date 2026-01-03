@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Preprint for the paper "Repair of Thought" compelted - investigating dual-model reasoning frameworks for automated program repair.
+Preprint for the paper "Repair of Thought" completed - investigating dual-model reasoning frameworks for automated program repair.
