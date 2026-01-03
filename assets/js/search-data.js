@@ -60,8 +60,8 @@ ninja.data = [{
             },},{id: "news-joined-ai-vfs-as-lead-ai-engineer",
           title: 'Joined AI @ VFS as lead AI engineer',
           description: "",
-          section: "News",},{id: "news-preprint-for-the-paper-repair-of-thought-compelted-investigating-dual-model-reasoning-frameworks-for-automated-program-repair",
-          title: 'Preprint for the paper “Repair of Thought” compelted - investigating dual-model reasoning frameworks...',
+          section: "News",},{id: "news-preprint-for-the-paper-repair-of-thought-completed-investigating-dual-model-reasoning-frameworks-for-automated-program-repair",
+          title: 'Preprint for the paper “Repair of Thought” completed - investigating dual-model reasoning frameworks...',
           description: "",
           section: "News",},{id: "projects-image-aesthetics-quantification",
           title: 'Image Aesthetics Quantification',
@@ -83,7 +83,7 @@ ninja.data = [{
         title: 'CV',
         section: 'Socials',
         handler: () => {
-          window.open("/assets/pdf/example_pdf.pdf", "_blank");
+          window.open("/assets/pdf/R_Suresh_Resume.pdf", "_blank");
         },
       },{
         id: 'social-email',
