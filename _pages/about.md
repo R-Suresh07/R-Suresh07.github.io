@@ -30,5 +30,3 @@ I build production AI systems at VFS Global processing documents across 110+ cou
 Currently wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on papers about VLM calibration.
 
 Happy to chat about uncertainty quantification, VLMs, or production ML. Feel free to reach out.
-
-**Research interests:** Uncertainty quantification, vision-language models, hallucination detection, epistemic uncertainty in agentic systems
