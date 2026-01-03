@@ -25,12 +25,10 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-I build AI systems at VFS Global that process thousands of documents daily across visa applications for 110+ countries. The work sits at the intersection of production engineering and research, where systems need to be both highly reliable and honest about their limitations.
+I build production AI systems at VFS Global processing documents across 110+ countries. My research interests focus on uncertainty quantification in vision-language models, particularly detecting when models are uncertain versus hallucinating.
 
-The problems I run into building these systems don't have solid solutions yet. When processing critical documents at scale, vision-language models need to not only extract information accurately but also know when they're uncertain. Existing approaches fall short, so I've been exploring ways to make AI systems in the vision domain more grounded.
+Currently wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on papers about VLM calibration.
 
-I'm particularly interested in how reasoning differ from the typical instruct models in the vision domain when it comes to uncertainty, and whether we can build better frameworks for detecting hallucination versus uncertainty. Currently wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on papers about VLM calibration.
-
-Always happy to chat about uncertainty quantification, VLMs, or anything at the intersection of production ML and research.
+Happy to chat about uncertainty quantification, VLMs, or production ML. Feel free to reach out.
 
 **Research interests:** Uncertainty quantification, vision-language models, hallucination detection, epistemic uncertainty in agentic systems
