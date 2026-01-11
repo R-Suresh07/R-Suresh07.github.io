@@ -37,7 +37,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/cv/";
           },
-        },{id: "post-no-nonsense-guide-to-langchain",
+        },{id: "post-why-your-vlm-prompts-are-backwards-and-how-to-fix-it",
+        
+          title: 'Why Your VLM Prompts Are Backwards (And How to Fix It) <svg width="1.2rem" height="1.2rem" top=".5rem" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M17 13.5v6H5v-12h6m3-3h6v6m0-6-9 9" class="icon_svg-stroke" stroke="#999" stroke-width="1.5" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+        
+        description: "",
+        section: "Posts",
+        handler: () => {
+          
+            window.open("https://medium.com/@sureshraghu0706/why-your-vlm-prompts-are-backwards-and-how-to-fix-it-4ad0c8fad429?source=rss-27fe01d20429------2", "_blank");
+          
+        },
+      },{id: "post-no-nonsense-guide-to-langchain",
         
           title: 'No-Nonsense Guide to LangChain <svg width="1.2rem" height="1.2rem" top=".5rem" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M17 13.5v6H5v-12h6m3-3h6v6m0-6-9 9" class="icon_svg-stroke" stroke="#999" stroke-width="1.5" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
         
@@ -103,6 +114,9 @@ ninja.data = [{
           section: "News",},{id: "news-preprint-for-the-paper-repair-of-thought-completed-investigating-dual-model-reasoning-frameworks-for-automated-program-repair",
           title: 'Preprint for the paper “Repair of Thought” completed - investigating dual-model reasoning frameworks...',
           description: "",
+          section: "News",},{id: "news-published-research-on-prompt-ordering-in-vision-language-models-why-your-vlm-prompts-are-backwards-and-how-to-fix-it",
+          title: 'Published research on prompt ordering in vision-language models: Why Your VLM Prompts Are...',
+          description: "",
           section: "News",},{id: "projects-image-aesthetics-quantification",
           title: 'Image Aesthetics Quantification',
           description: "CLIP-based aesthetics scoring system for hotel media ranking with domain adaptation",
@@ -118,6 +132,11 @@ ninja.data = [{
           description: "Hybrid OCR and LLM system for intelligent information extraction",
           section: "Projects",handler: () => {
               window.location.href = "/projects/2_data_extraction/";
+            },},{id: "projects-prompt-order-analysis-in-vlms",
+          title: 'Prompt Order Analysis in VLMs',
+          description: "Investigating how prompt ordering affects vision-language model performance across tasks and providers",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/4_prompt_order/";
             },},{
         id: 'social-cv',
         title: 'CV',
