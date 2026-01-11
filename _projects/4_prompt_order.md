@@ -4,7 +4,7 @@ title: Prompt Order Analysis in VLMs
 description: Investigating how prompt ordering affects vision-language model performance across tasks and providers
 img: assets/img/prompt_order.png
 importance: 4
-category: computer vision
+category: document processing
 related_publications: false
 date: 2026-01-11
 ---
