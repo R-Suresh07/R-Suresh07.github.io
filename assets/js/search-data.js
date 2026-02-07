@@ -45,7 +45,7 @@ ninja.data = [{
         section: "Posts",
         handler: () => {
           
-            window.open("https://medium.com/@sureshraghu0706/why-your-vlm-prompts-are-backwards-and-how-to-fix-it-4ad0c8fad429?source=rss-27fe01d20429------2", "_blank");
+            window.open("https://blog.gopenai.com/why-your-vlm-prompts-are-backwards-and-how-to-fix-it-4ad0c8fad429?source=rss-27fe01d20429------2", "_blank");
           
         },
       },{id: "post-no-nonsense-guide-to-langchain",
@@ -110,9 +110,6 @@ ninja.data = [{
               window.location.href = "/books/the_godfather/";
             },},{id: "news-joined-ai-vfs-as-lead-ai-engineer",
           title: 'Joined AI @ VFS as lead AI engineer',
-          description: "",
-          section: "News",},{id: "news-preprint-for-the-paper-repair-of-thought-completed-investigating-dual-model-reasoning-frameworks-for-automated-program-repair",
-          title: 'Preprint for the paper “Repair of Thought” completed - investigating dual-model reasoning frameworks...',
           description: "",
           section: "News",},{id: "news-published-research-on-prompt-ordering-in-vision-language-models-why-your-vlm-prompts-are-backwards-and-how-to-fix-it",
           title: 'Published research on prompt ordering in vision-language models: Why Your VLM Prompts Are...',
