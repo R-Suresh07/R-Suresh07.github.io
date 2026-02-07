@@ -83,7 +83,7 @@
       "name": "Repair of Thought: Advancing Automated Program Repair through a Dual-Model Reasoning Framework",
       "publisher": "Submitted for Review",
       "releaseDate": "2026",
-      "url": "https://R-Suresh07.github.io/assets/pdf/rot-preprint.pdf",
+      "url": "",
       "summary": "Proposed function-level APR framework achieving 83.1% plausible repair rate on Defects4J. Decoupled reasoning from synthesis, validating repairs via control-flow symbolic analysis and semantic verification."
     }
   ],
