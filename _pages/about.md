@@ -25,6 +25,6 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-I build production AI systems at VFS Global processing 180K+ documents daily across 110+ countries. My research focuses on uncertainty quantification and reasoning reliability, specifically when and why language and vision-language models fail to know what they don't know.
+I build production AI systems at VFS Global processing over 1 million documents daily across 110+ countries. My research focuses on uncertainty quantification and reasoning reliability, specifically when and why language and vision-language models fail to know what they don't know.
 
 B.Sc. in Programming & Data Science, IIT Madras. Always happy to talk research or engineering, so feel free to reach out.

@@ -6,7 +6,7 @@
 #  organization: princeton # your organization as appears in the subdomain
 #  username:  AlbertEinstein # your username
 # acm_id: # your dl.acm.org/profile/id
-# arxiv_id: # your arXiv author ID
+arxiv_id: raghu_s_1 # your arXiv author ID
 # blogger_url: # your blogger URL
 # bluesky_url: # your bluesky URL
 cv_pdf: /assets/pdf/R_Suresh_Resume.pdf # path to your CV PDF file
@@ -29,14 +29,14 @@ github_username: R-Suresh07
 linkedin_username: suresh-raghu
 # mastodon_username: # your mastodon instance+username in the format instance.tld/@username
 medium_username: sureshraghu0706
-# orcid_id: # your ORCID ID
+orcid_id: 0009-0006-3307-4403 # your ORCID ID
 # osf_id: # your OSF ID
 # pinterest_id: # your pinterest id
 # publons_id: # your ID on Publons
 # quora_username: # your Quora username
 # research_gate_profile: # your profile on ResearchGate
 #rss_icon: true # comment this line to hide the RSS icon
-#scholar_userid: qc6CJjYAAAAJ # your Google Scholar ID
+scholar_userid: gPMRZWsAAAAJ # your Google Scholar ID
 # scopus_id: # your profile on Scopus
 # semanticscholar_id: # your Semantic Scholar ID
 # spotify_id: # your spotify id
