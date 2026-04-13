@@ -48,7 +48,21 @@
   <!-- Entry bib key -->
   <div id="{{ entry.key }}" class="{% if site.enable_publication_thumbnails %}col-sm-8{% else %}col-sm-10{% endif %}">
     <!-- Title -->
-    <div class="title">{{ entry.title }}</div>
+    {% assign title_url = nil %}
+    {% if entry.url %}
+      {% assign title_url = entry.url %}
+    {% elsif entry.arxiv %}
+      {% assign title_url = entry.arxiv | prepend: 'https://arxiv.org/abs/' %}
+    {% elsif entry.eprint and entry.archivePrefix == 'arXiv' %}
+      {% assign title_url = entry.eprint | prepend: 'https://arxiv.org/abs/' %}
+    {% endif %}
+    <div class="title">
+      {% if title_url %}
+        <a href="{{ title_url }}">{{ entry.title }}</a>
+      {% else %}
+        {{ entry.title }}
+      {% endif %}
+    </div>
     <!-- Author -->
     <div class="author">
       {% assign author_array_size = entry.author_array | size %}
