@@ -135,6 +135,13 @@ ninja.data = [{
           section: "Projects",handler: () => {
               window.location.href = "/projects/4_prompt_order/";
             },},{
+        id: 'social-arxiv',
+        title: 'arXiv',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://arxiv.org/a/raghu_s_1.html", "_blank");
+        },
+      },{
         id: 'social-cv',
         title: 'CV',
         section: 'Socials',
@@ -168,6 +175,20 @@ ninja.data = [{
         section: 'Socials',
         handler: () => {
           window.open("https://medium.com/@sureshraghu0706", "_blank");
+        },
+      },{
+        id: 'social-orcid',
+        title: 'ORCID',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://orcid.org/0009-0006-3307-4403", "_blank");
+        },
+      },{
+        id: 'social-scholar',
+        title: 'Google Scholar',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://scholar.google.com/citations?user=gPMRZWsAAAAJ", "_blank");
         },
       },{
       id: 'light-theme',
