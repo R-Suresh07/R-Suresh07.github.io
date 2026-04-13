@@ -2,7 +2,7 @@
 layout: about
 title: about
 permalink: /
-subtitle: Lead AI Research Engineer | VFS Global
+subtitle: AI Research Engineer | VFS Global
 
 profile:
   align: right
@@ -25,8 +25,6 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-I build production AI systems at VFS Global processing documents across 110+ countries. My research interests focus on uncertainty quantification in vision-language models, particularly detecting when models are uncertain versus hallucinating.
+I build production AI systems at VFS Global processing 180K+ documents daily across 110+ countries. My research focuses on uncertainty quantification and reasoning reliability, specifically when and why language and vision-language models fail to know what they don't know.
 
-Currently wrapping up my B.Sc. in Programming & Data Science from IIT Madras and working on papers about VLM calibration.
-
-Always happy to chat about research or engineering problems so feel free to reach out.
+B.Sc. in Programming & Data Science, IIT Madras. Always happy to talk research or engineering, so feel free to reach out.
