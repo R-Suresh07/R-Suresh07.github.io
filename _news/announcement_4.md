@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Posted SELFDOUBT to arXiv, uncertainty quantification for reasoning LLMs via the Hedge-to-Verify Ratio that outperforms Semantic Entropy at about 10x lower cost. [Link](https://arxiv.org/html/2604.06389v1)
+New preprint: [SELFDOUBT: Uncertainty Quantification for Reasoning LLMs via the Hedge-to-Verify Ratio](https://arxiv.org/abs/2604.06389). We introduce the Hedge-to-Verify Ratio (HVR), a single-pass uncertainty signal for reasoning LLMs that outperforms Semantic Entropy at about 10x lower inference cost.

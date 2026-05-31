@@ -103,7 +103,6 @@
         "Adaptive Query Routing: Architected the document-extraction pipeline around an adaptive router that sends deterministic documents to lightweight parsers and ambiguous ones to reasoning VLMs, reaching 99.1% field-level extraction accuracy and reducing visa review time from 60+ minutes to sub-5 minutes.",
         "Uncertainty-Gated Extraction Cascade: Used a cheap token-logit trigger to run Semantic Entropy and Monte Carlo self-consistency only on suspect outputs, distinguishing linguistic variance from epistemic model failure and escalating flagged cases to a larger LLM for dual-model validation, cutting critical extraction errors by 87%.",
         "Biometric Compliance Pipeline: Proposed and built a two-stage visa photo-verification system consisting of a cheap image-quality gate (Laplacian blur detection) followed by a VLM stage for pose/occlusion checks, reducing cases requiring manual intervention by 78%.",
-        "Inference Optimization: Improved ML inference throughput by 40% through quantization and vLLM deployment, reaching 20 tokens/second.",
         "Technical Leadership: Led a technical team of 8+ engineers."
       ]
     },

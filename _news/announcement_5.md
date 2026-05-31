@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Posted Don't Blink to arXiv, evidence collapse during multimodal reasoning. [Link](https://arxiv.org/html/2604.04207v1)
+New preprint: [Don't Blink: Evidence Collapse during Multimodal Reasoning](https://arxiv.org/abs/2604.04207). We identify evidence collapse, a decay of visual grounding during multimodal reasoning that text-only uncertainty signals cannot detect.
