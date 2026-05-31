@@ -27,6 +27,6 @@ latest_posts:
 
 I'm an independent researcher working on uncertainty quantification and reasoning reliability, when and why large language and vision-language models fail to know what they don't know. My work spans reasoning LLMs, multimodal models, and agents, with publications accepted at the ICML 2026 workshops on Failure Modes in Agentic AI (FAGEN) and Combining Theory and Benchmarks (CTB).
 
-Separately, by day I'm the founding AI research engineering lead at VFS Global, where I build production AI systems that process over a million documents daily across 110+ countries.
+Separately, by day I'm the lead AI engineer at VFS Global, where I build production AI systems that process over a million documents daily across 110+ countries.
 
 I hold a B.Sc. in Programming & Data Science from IIT Madras along with a B.Tech in Computer Science and Engineering from VIT Bhopal. Always happy to talk research or engineering, feel free to reach out.
