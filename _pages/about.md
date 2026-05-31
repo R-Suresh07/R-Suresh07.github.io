@@ -2,7 +2,7 @@
 layout: about
 title: about
 permalink: /
-subtitle: AI Research Engineer | VFS Global
+subtitle: Independent ML Researcher · AI Lead at VFS Global
 
 profile:
   align: right
@@ -25,6 +25,8 @@ latest_posts:
   limit: 3 # leave blank to include all the blog posts
 ---
 
-I build production AI systems at VFS Global processing over 1 million documents daily across 110+ countries. My research focuses on uncertainty quantification and reasoning reliability, specifically when and why language and vision-language models fail to know what they don't know.
+I'm an independent researcher working on uncertainty quantification and reasoning reliability, when and why large language and vision-language models fail to know what they don't know. My work spans reasoning LLMs, multimodal models, and agents, with publications accepted at the ICML 2026 workshops on Failure Modes in Agentic AI (FAGEN) and Combining Theory and Benchmarks (CTB).
 
-B.Sc. in Programming & Data Science, IIT Madras. Always happy to talk research or engineering, so feel free to reach out.
+Separately, by day I'm the founding AI research engineering lead at VFS Global, where I build production AI systems that process over a million documents daily across 110+ countries.
+
+I hold a B.Sc. in Programming & Data Science from IIT Madras along with a B.Tech in Computer Science and Engineering from VIT Bhopal. Always happy to talk research or engineering, feel free to reach out.

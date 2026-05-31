@@ -25,4 +25,14 @@
       </td>
     </tr>
   {% endfor %}
+  {% for profile in data[1].profiles %}
+    <tr>
+      <td class="p-1 pr-2 font-weight-bold">
+        <b>{{ profile.network }}</b>
+      </td>
+      <td class="p-1 pl-2 font-weight-light text">
+        <a href="{{ profile.url }}" target="_blank" rel="noopener noreferrer">{{ profile.url }}</a>
+      </td>
+    </tr>
+  {% endfor %}
 </table>
