@@ -152,7 +152,7 @@ ninja.data = [{
         title: 'CV',
         section: 'Socials',
         handler: () => {
-          window.open("/assets/pdf/R_Suresh_Resume.pdf", "_blank");
+          window.open("/assets/pdf/Suresh_Raghu_Resume.pdf", "_blank");
         },
       },{
         id: 'social-email',
