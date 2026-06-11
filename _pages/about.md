@@ -4,6 +4,8 @@ title: about
 permalink: /
 subtitle: Independent ML Researcher · AI Lead at VFS Global
 
+availability: "Open to PhD &middot; Fall 2027"
+
 profile:
   align: right
   image: profile.jpeg

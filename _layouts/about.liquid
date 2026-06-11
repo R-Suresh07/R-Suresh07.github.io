@@ -12,6 +12,9 @@ layout: default
       {% endif %}
     </h1>
     <p class="desc">{{ page.subtitle }}</p>
+    {% if page.availability %}
+      <p class="availability-note">{{ page.availability }}</p>
+    {% endif %}
   </header>
 
   <article>

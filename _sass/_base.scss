@@ -244,6 +244,20 @@ ul.task-list input[type="checkbox"] {
   }
 }
 
+.availability-note {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0.15rem 0 1.5rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--global-theme-color);
+  border-radius: 6px;
+  color: var(--global-theme-color);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 // Navbar customization
 
 .navbar {
