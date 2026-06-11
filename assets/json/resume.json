@@ -33,7 +33,7 @@
       "studyType": "B.Sc.",
       "startDate": "2020-10-01",
       "endDate": "2026-06-01",
-      "score": "CGPA: 3.01/4.0, Project CGPA: 4.0/4.0",
+      "score": "CGPA: 3.3/4.0, Project CGPA: 4.0/4.0",
       "courses": []
     },
     {
@@ -43,7 +43,7 @@
       "studyType": "B.Tech",
       "startDate": "2020-10-01",
       "endDate": "2024-06-01",
-      "score": "CGPA: 3.36/4.0",
+      "score": "CGPA: 3.6/4.0",
       "courses": []
     }
   ],
@@ -73,7 +73,7 @@
       "publisher": "Suresh Raghu*, Satwik Pandey*, Shashwat Pandey | Under Review | Accepted (poster) at CTB & FAGEN Workshops @ ICML 2026",
       "releaseDate": "2026",
       "url": "https://arxiv.org/abs/2605.24756",
-      "summary": "Introduced the Trajectory Proper Score (TPS), a predictor-agnostic family of strictly proper trajectory-level scoring rules for agentic UQ, with propriety proofs under complete and administratively-censored trajectories. Showed probability recalibration shifts TPS by ~43 bootstrap SE while moving AUROC by only ~0.3 SE across StrategyQA, Tau2-Bench, HotpotQA, and WebShop."
+      "summary": "Introduced a family of <strong>strictly proper trajectory-level scoring rules</strong> for evaluating uncertainty in LM agents, with a <strong>censored-trace extension</strong> and negative results showing that standard trajectory-level calibration metrics, including <strong>ECE</strong> and <strong>Brier</strong>, are not strictly proper in the agentic setting."
     },
     {
       "name": "SELFDOUBT: Uncertainty Quantification for Reasoning LLMs via the Hedge-to-Verify Ratio",
