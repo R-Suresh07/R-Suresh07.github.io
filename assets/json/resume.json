@@ -6,7 +6,7 @@
     "email": "sureshraghu0706@gmail.com",
     "phone": "+91-7904210795",
     "url": "https://R-Suresh07.github.io",
-    "summary": "Researching uncertainty quantification, reliability and safety of reasoning models, and vision-language models.",
+    "summary": "Researching LLM agents and scientific agents, reinforcement learning and tool use, uncertainty quantification, and multimodal reasoning.",
     "location": {
       "city": "New Delhi",
       "countryCode": "IN",
@@ -49,21 +49,13 @@
   ],
   "interests": [
     {
-      "name": "Primary Areas",
+      "name": "Research Interests",
       "icon": "fa-solid fa-microscope",
       "keywords": [
-        "Uncertainty Quantification (UQ)",
-        "Reliability & Safety of Reasoning Models",
-        "Vision-Language Models (VLMs)"
-      ]
-    },
-    {
-      "name": "Focus",
-      "icon": "fa-solid fa-bullseye",
-      "keywords": [
-        "Calibration & Proper Scoring for Agentic UQ",
-        "Selective Prediction & Low-Cost Uncertainty Estimation",
-        "Hallucination Detection & Visual Grounding in Reasoning VLMs"
+        "LLM Agents & Scientific Agents",
+        "Reinforcement Learning & Tool Use",
+        "Uncertainty Quantification",
+        "Multimodal Reasoning"
       ]
     }
   ],
@@ -84,7 +76,7 @@
     },
     {
       "name": "Don't Blink: Evidence Collapse during Multimodal Reasoning",
-      "publisher": "Suresh Raghu*, Satwik Pandey* | Under Review | * Equal contribution",
+      "publisher": "Suresh Raghu*, Satwik Pandey* | Under Review | Accepted (poster) at Sci-FM & Actionable Interpretability Workshops @ COLM 2026 | * Equal contribution",
       "releaseDate": "2026",
       "url": "https://arxiv.org/abs/2604.04207",
       "summary": "Identified \"evidence collapse\", a universal (9/9 model x dataset cells) decay of visual grounding during VLM reasoning that text-only entropy cannot detect, and designed a task-conditional vision veto that cuts selective risk by up to 1.9 pp at 90% coverage on MathVista, HallusionBench, and MMMU_Pro."
@@ -92,11 +84,23 @@
   ],
   "work": [
     {
+      "name": "Carnegie Mellon University -- Language Technologies Institute",
+      "position": "Independent Research Collaborator -- LLM Agents for Scientific Discovery",
+      "url": "https://www.lti.cs.cmu.edu/",
+      "location": "Remote",
+      "startDate": "2026-07-12",
+      "endDate": "",
+      "highlights": [
+        "Scientific Agent Harnesses: Audited and redesigned SMDD-Bench agents for long-horizon drug design, adding structured state, evaluator-aligned checks, and task-bound RDKit, ADMET-AI, and Boltz2 tools; improved Qwen3.5-9B lead-optimization success from 16.3% to 51.0%.",
+        "RL Environment for Scientific Agents: Building a Harbor + Prime Env environment for reproducible agent rollouts with budgeted scientific tools, evaluator-backed rewards, and trajectory logging for training open-source LLM agents."
+      ]
+    },
+    {
       "name": "VFS Global",
       "position": "Manager -- AI (Founding Lead, AI Research Engineering)",
       "url": "https://www.vfsglobal.com",
       "location": "New Delhi, India",
-      "startDate": "2024-05-01",
+      "startDate": "2024-05-02",
       "endDate": "",
       "summary": "Leading an AI team building production intelligent document processing systems that process 180K+ documents daily across 110+ countries.",
       "highlights": [
