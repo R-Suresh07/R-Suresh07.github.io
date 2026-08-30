@@ -38,7 +38,7 @@ export const cvExperience: CvExperience[] = [
     organization: 'VFS Global',
     organizationUrl: 'https://www.vfsglobal.com',
     location: 'New Delhi, India',
-    role: 'Senior Manager – AI (Founding Lead, AI Engineering)',
+    role: 'Senior Manager – AI (Founding Lead, AI Research Engineering)',
     dates: 'May 2024 – Present',
     highlights: [
       'Adaptive Query Routing: Architected the document-extraction pipeline around an adaptive router that sends deterministic documents to lightweight parsers and ambiguous ones to reasoning VLMs, reaching 99.1% field-level extraction accuracy.',

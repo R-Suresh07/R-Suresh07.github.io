@@ -2,5 +2,29 @@
   "devDependencies": {
     "@shopify/prettier-plugin-liquid": "1.4.0",
     "prettier": "3.1.1"
-  }
+  },
+  "name": "r-suresh07.github.io",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">",
+  "main": "purgecss.config.js",
+  "dependencies": {
+    "html-styles": "^1.0.0",
+    "isarray": "^1.0.0",
+    "isobject": "^2.1.0",
+    "line-column": "^1.0.2",
+    "ohm-js": "^16.6.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/R-Suresh07/R-Suresh07.github.io.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/R-Suresh07/R-Suresh07.github.io/issues"
+  },
+  "homepage": "https://github.com/R-Suresh07/R-Suresh07.github.io#readme"
 }
