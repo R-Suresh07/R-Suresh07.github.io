@@ -1,0 +1,106 @@
+---
+import { getCollection } from 'astro:content';
+import { externalWriting } from '../../data/external-writing';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('writing', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
+const externalPosts = [...externalWriting].sort((a, b) => b.date.localeCompare(a.date));
+
+const formatDate = (date: Date | string) => new Intl.DateTimeFormat('en', {
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+}).format(typeof date === 'string' ? new Date(`${date}T00:00:00Z`) : date);
+---
+
+<BaseLayout title="Writing" description="Essays, research notes, and experiments.">
+  <div class="site-shell page writing-page">
+    <div class="page-narrow">
+      <h1 class="page-title">Writing</h1>
+      <p class="page-intro">Essays, research notes, and experiments.</p>
+    </div>
+
+    {posts.length > 0 && (
+      <section class="writing-section" aria-labelledby="essays">
+        <h2 id="essays">Essays</h2>
+        <ol class="quiet-list">
+          {posts.map((post) => (
+            <li>
+              <p class="meta"><time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time></p>
+              <div>
+                <h3><a href={`/writing/${post.id}/`}>{post.data.title}</a></h3>
+                <p>{post.data.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    <section class="writing-section" aria-labelledby="elsewhere">
+      <h2 id="elsewhere">Elsewhere</h2>
+      <ol class="quiet-list">
+        {externalPosts.map((post) => (
+          <li>
+            <p class="meta"><time datetime={post.date}>{formatDate(post.date)}</time> · <span class="source">{post.source}</span></p>
+            <div>
+              <h3>
+                <a href={post.url}>
+                  {post.title}<span class="external-arrow" aria-hidden="true"> ↗</span>
+                </a>
+              </h3>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .writing-section {
+    margin-top: var(--space-7);
+  }
+
+  .writing-section:first-of-type {
+    margin-top: var(--space-5);
+  }
+
+  .writing-section > h2 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-xl);
+    font-weight: 520;
+    letter-spacing: -0.03em;
+  }
+
+  .quiet-list h3 {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 500;
+    letter-spacing: -0.018em;
+    line-height: 1.25;
+  }
+
+  h3 a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  h3 a:hover {
+    color: var(--color-accent);
+  }
+
+  .external-arrow {
+    display: inline-block;
+    color: var(--color-accent);
+    font-family: var(--font-sans);
+    font-size: 0.78em;
+    line-height: 1;
+  }
+
+  .source {
+    color: var(--color-ink-soft);
+    font-size: 0.9em;
+  }
+</style>

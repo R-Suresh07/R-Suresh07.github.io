@@ -1,0 +1,75 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  published: Date;
+  updated?: Date;
+  topics?: string[];
+}
+
+const { title, description, published, updated, topics = [] } = Astro.props;
+const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(date);
+---
+
+<BaseLayout title={title} description={description}>
+  <article class="essay">
+    <header class="essay-header site-shell">
+      <p class="eyebrow">Technical note</p>
+      <h1>{title}</h1>
+      <p class="dek">{description}</p>
+      <div class="essay-meta">
+        <span>Published {formatDate(published)}</span>
+        {updated && <span>Updated {formatDate(updated)}</span>}
+        {topics.length > 0 && <span>{topics.join(' · ')}</span>}
+      </div>
+    </header>
+    <div class="prose site-shell">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .essay {
+    padding-block: var(--space-7) var(--space-8);
+  }
+
+  .essay-header {
+    width: min(calc(100% - (2 * var(--page-gutter))), var(--measure));
+    margin-bottom: var(--space-7);
+  }
+
+  .essay-header h1 {
+    max-width: 20ch;
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-display);
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: var(--line-height-tight);
+    text-wrap: balance;
+  }
+
+  .dek {
+    max-width: 55ch;
+    margin: var(--space-4) 0 0;
+    color: var(--color-ink-soft);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+  }
+
+  .essay-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-4);
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+  }
+</style>

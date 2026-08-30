@@ -1,0 +1,88 @@
+---
+title: "A Small Field Guide to Reliable Measurements"
+description: "A content-neutral fixture for testing technical prose, equations, code, figures, and media."
+published: 2026-01-15
+draft: false
+featured: true
+topics:
+  - Methods
+  - Systems
+---
+
+import Figure from '../../components/Figure.astro';
+import ResponsiveVideo from '../../components/ResponsiveVideo.astro';
+import proseObservation from '../../assets/fixtures/prose-observation.svg';
+import wideComparison from '../../assets/fixtures/wide-comparison.svg';
+import fullSystem from '../../assets/fixtures/full-system.svg';
+import videoPoster from '../../assets/fixtures/video-poster.svg';
+
+## Begin with the quantity that matters
+
+A useful measurement starts with a precise question. The point is not to collect every available signal, but to identify the smallest observation that can distinguish two plausible explanations. This fixture essay tests the typography and media system without introducing migrated personal content.
+
+For an event with predicted probability $p$ and outcome $y \in \{0, 1\}$, a simple squared loss is
+
+$$
+L(p, y) = (p - y)^2.
+$$
+
+The equation should remain readable in the prose column and scroll safely on a narrow screen. For more background, follow a [descriptive link to the writing index](/writing/), which also demonstrates link treatment and focus behavior.
+
+<Figure
+  src={proseObservation}
+  alt="Five bars increasing from left to right across a baseline."
+  width="prose"
+  caption="A prose-width figure stays aligned with the reading measure."
+  credit="Synthetic fixture"
+/>
+
+## Make comparisons visible
+
+Figures often need more room than paragraphs. A comparison can use the wider editorial column while its caption remains quiet and close to the evidence.
+
+<Figure
+  src={wideComparison}
+  alt="Two experimental traces diverging as they move from left to right."
+  width="wide"
+  caption="The wide treatment extends beyond prose without reaching the viewport edge."
+  credit="Synthetic fixture"
+/>
+
+The implementation can stay compact. Build-time rendering gives the page highlighted code without sending a client-side syntax highlighter:
+
+```ts
+type Observation = { predicted: number; observed: 0 | 1 };
+
+export function squaredLoss(sample: Observation) {
+  return (sample.predicted - sample.observed) ** 2;
+}
+```
+
+> **Interpretation note.** A lower aggregate loss is useful only when the evaluation set represents the decisions the system will actually encounter. Treat a clean metric as evidence, not as a conclusion.
+
+## Show the whole system when structure matters
+
+The full-width option is intended for system diagrams, dense tables, and multi-panel research figures. It is bounded by the page gutter, so it cannot create horizontal page overflow.
+
+<Figure
+  src={fullSystem}
+  alt="A system diagram connecting observation, inference, and evaluation stages."
+  width="full"
+  caption="A full-width figure can use nearly the entire canvas while prose remains narrow."
+  credit="Synthetic fixture"
+/>
+
+## Motion as evidence
+
+Short scientific animations use `figure` mode: autoplaying, muted, looping, and inline. This fixture supplies a poster but intentionally no migrated video asset; adding WebM and MP4 sources later will activate playback without changing article markup. Longer explanatory media should instead use `player` mode, which enables controls and disables autoplay.
+
+<ResponsiveVideo
+  mode="figure"
+  poster={videoPoster}
+  label="Placeholder for a looping scientific field animation."
+  width="wide"
+  caption="Looping-video placeholder. Figure mode is silent and non-interactive by design."
+  credit="Synthetic fixture"
+/>
+
+The result is deliberately plain: one reading column, a consistent rhythm, and just enough hierarchy to make technical material easy to scan.

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Scientific animation placeholder</title>
+  <desc id="desc">A sequence of nested contours suggests a changing field.</desc>
+  <rect width="1440" height="810" fill="#f3f1eb"/>
+  <g fill="none" stroke="#176b58" transform="translate(720 405)">
+    <ellipse rx="500" ry="255" stroke-width="3" opacity=".35"/>
+    <ellipse rx="380" ry="194" stroke-width="5" opacity=".55"/>
+    <ellipse rx="255" ry="130" stroke-width="7" opacity=".75"/>
+    <ellipse rx="120" ry="62" stroke-width="9"/>
+  </g>
+  <text x="720" y="420" fill="#1d2320" font-family="system-ui, sans-serif" font-size="28" text-anchor="middle">looping video placeholder</text>
+</svg>

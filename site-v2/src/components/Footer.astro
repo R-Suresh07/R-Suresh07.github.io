@@ -1,0 +1,78 @@
+---
+import { site } from '../data/site';
+import { socials } from '../data/socials';
+---
+
+<footer class="site-footer">
+  <div class="site-shell footer-inner">
+    <p>{site.contactNote}</p>
+    <nav aria-label="Contact and social links">
+      <ul>
+        {socials.map((social) => (
+          <li><a href={social.href}>{social.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-line);
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+  }
+
+  .footer-inner {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.65fr) minmax(0, 1.35fr);
+    min-height: 8rem;
+    align-items: center;
+    gap: var(--space-4) var(--space-6);
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-1) 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+  }
+
+  li:not(:last-child)::after {
+    margin-inline: 0.55rem;
+    color: var(--color-line);
+    content: '·';
+  }
+
+  a {
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  @media (max-width: 48rem) {
+    .footer-inner {
+      grid-template-columns: 1fr;
+      min-height: auto;
+      padding-block: var(--space-5);
+      align-items: flex-start;
+      gap: var(--space-3);
+    }
+
+    ul {
+      justify-content: flex-start;
+    }
+  }
+</style>

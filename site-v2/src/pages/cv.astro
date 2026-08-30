@@ -1,0 +1,314 @@
+---
+import {
+  cvEducation,
+  cvExperience,
+  cvPublicationDetails,
+  cvResearchInterests,
+} from '../data/cv';
+import { publications } from '../data/publications';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const cvPublications = cvPublicationDetails.map((detail) => {
+  const publication = publications.find((item) => item.eprint === detail.eprint);
+
+  if (!publication) {
+    throw new Error(`Missing canonical publication metadata for arXiv:${detail.eprint}`);
+  }
+
+  return { detail, publication };
+});
+---
+
+<BaseLayout title="CV" description="Curriculum vitae for Suresh Raghu.">
+  <div class="site-shell page cv-page">
+    <header class="cv-header">
+      <p class="eyebrow">Curriculum vitae</p>
+      <h1 class="page-title">Suresh Raghu</h1>
+      <p class="cv-link">
+        <a class="text-link" href="/cv/Suresh_Raghu_Resume.pdf">Open PDF <span aria-hidden="true">↗</span></a>
+      </p>
+    </header>
+
+    <section class="cv-section" aria-labelledby="experience">
+      <h2 id="experience">Research &amp; Engineering Experience</h2>
+      <ol class="cv-list">
+        {cvExperience.map((entry) => (
+          <li class="cv-row">
+            <p class="date-meta">{entry.dates}</p>
+            <div class="cv-entry">
+              <div class="entry-heading">
+                <h3><a href={entry.organizationUrl}>{entry.organization}</a></h3>
+                <p>{entry.location}</p>
+              </div>
+              <p class="role">{entry.role}</p>
+              <ul class="highlights">
+                {entry.highlights.map((highlight) => {
+                  const [label, ...body] = highlight.split(': ');
+                  return <li><strong>{label}:</strong> {body.join(': ')}</li>;
+                })}
+              </ul>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="cv-section" aria-labelledby="publications">
+      <h2 id="publications">Publications &amp; Pre-Prints</h2>
+      <ol class="cv-list publication-list">
+        {cvPublications.map(({ detail, publication }) => (
+          <li class="cv-row">
+            <p class="date-meta">{publication.year}</p>
+            <div class="cv-entry">
+              <div class="publication-heading">
+                <h3><a href={publication.url}>{publication.title}</a></h3>
+                {detail.reviewStatus && <p class="review-status">({detail.reviewStatus})</p>}
+              </div>
+              <p class="authors">
+                {publication.authors.map((author, index) => (
+                  <span class:list={{ self: author === 'Suresh Raghu' }}>
+                    {author}{publication.equalContribution?.includes(author) && <sup>*</sup>}{index < publication.authors.length - 1 ? ', ' : ''}
+                  </span>
+                ))}
+              </p>
+              <p class="venue">
+                <a href={publication.url}>arXiv:{publication.eprint}</a>
+                <span aria-hidden="true"> | </span>{detail.venue}
+              </p>
+              <p class="publication-summary">{detail.summary}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p class="contribution-note">* Equal contribution</p>
+    </section>
+
+    <section class="cv-section" aria-labelledby="education">
+      <h2 id="education">Education</h2>
+      <ol class="cv-list">
+        {cvEducation.map((entry) => (
+          <li class="cv-row">
+            <p class="date-meta">{entry.dates}</p>
+            <div class="cv-entry">
+              <div class="entry-heading">
+                <h3><a href={entry.institutionUrl}>{entry.institution}</a></h3>
+                <p>{entry.location}</p>
+              </div>
+              <p class="role">{entry.degree}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="cv-section interests-section" aria-labelledby="research-interests">
+      <h2 id="research-interests">Research Interests</h2>
+      <ul class="interest-list">
+        {cvResearchInterests.map((interest) => <li>{interest}</li>)}
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .cv-page {
+    padding-top: var(--space-6);
+  }
+
+  .cv-header {
+    width: min(100%, var(--measure));
+  }
+
+  .cv-link {
+    margin: var(--space-4) 0 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 650;
+  }
+
+  .cv-section {
+    margin-top: var(--space-7);
+  }
+
+  .cv-header + .cv-section {
+    margin-top: var(--space-6);
+  }
+
+  .cv-section > h2 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xl);
+    font-weight: 520;
+    letter-spacing: -0.03em;
+  }
+
+  .cv-list {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--color-line);
+    list-style: none;
+  }
+
+  .cv-row {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.24fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    padding-block: var(--space-5);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .date-meta {
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  .entry-heading,
+  .publication-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .cv-entry h3 {
+    max-width: 42ch;
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: 520;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  .cv-entry h3 a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .cv-entry h3 a:hover,
+  .cv-entry h3 a:focus-visible {
+    color: var(--color-accent);
+  }
+
+  .entry-heading > p,
+  .review-status {
+    flex: 0 0 auto;
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+  }
+
+  .review-status,
+  .venue {
+    color: var(--purple);
+  }
+
+  .role,
+  .authors,
+  .venue,
+  .publication-summary {
+    max-width: 68ch;
+  }
+
+  .role {
+    margin: var(--space-2) 0 0;
+    color: var(--color-ink-soft);
+  }
+
+  .highlights {
+    max-width: 70ch;
+    margin: var(--space-3) 0 0;
+    padding-left: 1.15rem;
+  }
+
+  .highlights li {
+    margin-top: var(--space-2);
+    line-height: 1.55;
+  }
+
+  .highlights li:first-child {
+    margin-top: 0;
+  }
+
+  .highlights strong {
+    font-weight: 650;
+  }
+
+  .authors {
+    margin: var(--space-2) 0 0;
+    color: var(--color-ink-soft);
+  }
+
+  .authors .self {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  .authors sup {
+    font-family: var(--font-sans);
+    font-size: 0.68em;
+  }
+
+  .venue {
+    margin: var(--space-2) 0 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+  }
+
+  .venue a {
+    font-weight: 650;
+  }
+
+  .publication-summary {
+    margin: var(--space-3) 0 0;
+    line-height: 1.55;
+  }
+
+  .contribution-note {
+    margin: var(--space-2) 0 0;
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+  }
+
+  .interest-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    padding: var(--space-4) 0 0;
+    border-top: 1px solid var(--color-line);
+    list-style: none;
+  }
+
+  .interest-list li {
+    color: var(--color-ink-soft);
+  }
+
+  @media (max-width: 42rem) {
+    .cv-page {
+      padding-top: var(--space-5);
+    }
+
+    .cv-row {
+      grid-template-columns: 1fr;
+      gap: var(--space-2);
+      padding-block: var(--space-4);
+    }
+
+    .entry-heading,
+    .publication-heading {
+      display: block;
+    }
+
+    .entry-heading > p,
+    .review-status {
+      margin-top: var(--space-1);
+    }
+  }
+</style>

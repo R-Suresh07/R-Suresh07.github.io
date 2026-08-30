@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc">
+  <title id="title">Wide comparison of two experimental traces</title>
+  <desc id="desc">Two stepped lines diverge across a wide plotting area.</desc>
+  <rect width="1440" height="720" fill="#f3f1eb"/>
+  <g stroke="#d0d3ce" stroke-width="2">
+    <path d="M120 144H1320M120 288H1320M120 432H1320M120 576H1320"/>
+  </g>
+  <path d="M120 520L320 472L520 404L720 354L920 244L1120 205L1320 122" fill="none" stroke="#176b58" stroke-width="8"/>
+  <path d="M120 536L320 505L520 478L720 429L920 405L1120 362L1320 340" fill="none" stroke="#606964" stroke-width="5" stroke-dasharray="14 12"/>
+  <g fill="#606964" font-family="system-ui, sans-serif" font-size="24">
+    <text x="120" y="92">wide comparison / fixture</text>
+    <text x="1110" y="188">condition A</text>
+    <text x="1110" y="404">condition B</text>
+  </g>
+</svg>
