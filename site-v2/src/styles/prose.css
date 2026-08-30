@@ -1,0 +1,106 @@
+.prose {
+  width: min(100%, var(--measure));
+  margin-inline: auto;
+  font-size: var(--text-base);
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose :where(p, ul, ol, blockquote, pre, table, .katex-display) {
+  margin-block: 1.35em;
+}
+
+.prose :where(h2, h3, h4) {
+  margin-block: 2.2em 0.65em;
+  font-weight: 520;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+
+.prose h2 {
+  font-size: clamp(1.65rem, 1.42rem + 0.8vw, 2.15rem);
+}
+
+.prose h3 {
+  font-size: clamp(1.3rem, 1.18rem + 0.45vw, 1.62rem);
+}
+
+.prose :where(ul, ol) {
+  padding-inline-start: 1.25em;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose blockquote {
+  margin-inline: 0;
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 0.18rem solid var(--color-accent);
+  background: var(--color-paper-raised);
+  color: var(--color-ink);
+}
+
+.prose blockquote > :first-child {
+  margin-top: 0;
+}
+
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.prose :not(pre) > code {
+  padding: 0.12em 0.3em;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-paper-raised);
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+}
+
+.prose pre {
+  max-width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+}
+
+.prose pre code {
+  font: inherit;
+}
+
+.prose hr {
+  margin-block: var(--space-6);
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.prose .katex-display {
+  max-width: 100%;
+  padding-block: var(--space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.prose table {
+  display: block;
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  overflow-x: auto;
+}
+
+.prose :where(th, td) {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+  text-align: left;
+}

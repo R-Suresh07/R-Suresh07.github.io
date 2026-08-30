@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 840" role="img" aria-labelledby="title desc">
+  <title id="title">Full-width system diagram</title>
+  <desc id="desc">Signals pass through observation, inference, and evaluation stages.</desc>
+  <rect width="1920" height="840" fill="#f3f1eb"/>
+  <g fill="none" stroke="#176b58" stroke-width="4">
+    <rect x="120" y="278" width="380" height="284"/>
+    <rect x="770" y="198" width="380" height="444"/>
+    <rect x="1420" y="278" width="380" height="284"/>
+    <path d="M500 420H770M1150 420H1420"/>
+    <path d="m735 390 35 30-35 30M1385 390l35 30-35 30"/>
+  </g>
+  <g fill="#1d2320" font-family="Georgia, serif" font-size="44" text-anchor="middle">
+    <text x="310" y="430">observe</text>
+    <text x="960" y="430">infer</text>
+    <text x="1610" y="430">evaluate</text>
+  </g>
+  <g fill="#606964" font-family="system-ui, sans-serif" font-size="24">
+    <text x="120" y="105">system overview / fixture</text>
+  </g>
+</svg>

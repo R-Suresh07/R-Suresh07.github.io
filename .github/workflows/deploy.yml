@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - main
     paths:
       - "assets/**"
       - "_sass/**"
@@ -33,7 +32,6 @@ on:
   pull_request:
     branches:
       - master
-      - main
     paths:
       - "assets/**"
       - "_sass/**"

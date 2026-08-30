@@ -1,0 +1,88 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata | string;
+  alt: string;
+  width?: 'prose' | 'wide' | 'full';
+  caption?: string;
+  credit?: string;
+  source?: string;
+}
+
+const {
+  src,
+  alt,
+  width = 'prose',
+  caption,
+  credit,
+  source,
+} = Astro.props;
+---
+
+<figure class:list={['media-figure', `media-figure--${width}`]}>
+  {typeof src === 'string'
+    ? <img src={src} alt={alt} loading="lazy" decoding="async" />
+    : <Image src={src} alt={alt} loading="lazy" />}
+  {(caption || credit || source) && (
+    <figcaption>
+      {caption && <span>{caption}</span>}
+      {(credit || source) && (
+        <small>
+          {credit && <span>{credit}</span>}
+          {source && <a href={source}>Source</a>}
+        </small>
+      )}
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .media-figure {
+    --media-width: var(--measure);
+    width: min(var(--media-width), calc(100vw - (2 * var(--page-gutter))));
+    margin-block: var(--space-6);
+    margin-inline: 50%;
+    transform: translateX(-50%);
+  }
+
+  .media-figure--wide {
+    --media-width: var(--wide-width);
+  }
+
+  .media-figure--full {
+    --media-width: var(--full-width);
+  }
+
+  .media-figure :global(img) {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper-raised);
+  }
+
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-2);
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1.55;
+  }
+
+  small {
+    display: flex;
+    flex: none;
+    gap: var(--space-2);
+    font: inherit;
+  }
+
+  @media (max-width: 40rem) {
+    figcaption {
+      flex-direction: column;
+    }
+  }
+</style>

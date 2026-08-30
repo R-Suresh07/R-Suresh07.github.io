@@ -1,0 +1,108 @@
+---
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  mode: 'figure' | 'player';
+  webm?: string;
+  mp4?: string;
+  poster?: ImageMetadata | string;
+  label: string;
+  width?: 'prose' | 'wide' | 'full';
+  caption?: string;
+  credit?: string;
+  source?: string;
+}
+
+const {
+  mode,
+  webm,
+  mp4,
+  poster,
+  label,
+  width = 'wide',
+  caption,
+  credit,
+  source,
+} = Astro.props;
+
+const posterUrl = typeof poster === 'string' ? poster : poster?.src;
+const isFigure = mode === 'figure';
+---
+
+<figure class:list={['video-figure', `video-figure--${width}`]}>
+  <video
+    aria-label={label}
+    autoplay={isFigure}
+    muted={isFigure}
+    loop={isFigure}
+    playsinline={isFigure}
+    controls={!isFigure}
+    preload={isFigure ? 'metadata' : 'none'}
+    poster={posterUrl}
+  >
+    {webm && <source src={webm} type="video/webm" />}
+    {mp4 && <source src={mp4} type="video/mp4" />}
+    Your browser does not support embedded video.
+  </video>
+  {(caption || credit || source) && (
+    <figcaption>
+      {caption && <span>{caption}</span>}
+      {(credit || source) && (
+        <small>
+          {credit && <span>{credit}</span>}
+          {source && <a href={source}>Source</a>}
+        </small>
+      )}
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .video-figure {
+    --media-width: var(--wide-width);
+    width: min(var(--media-width), calc(100vw - (2 * var(--page-gutter))));
+    margin-block: var(--space-6);
+    margin-inline: 50%;
+    transform: translateX(-50%);
+  }
+
+  .video-figure--prose {
+    --media-width: var(--measure);
+  }
+
+  .video-figure--full {
+    --media-width: var(--full-width);
+  }
+
+  video {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper-raised);
+    object-fit: cover;
+  }
+
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-2);
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1.55;
+  }
+
+  small {
+    display: flex;
+    flex: none;
+    gap: var(--space-2);
+    font: inherit;
+  }
+
+  @media (max-width: 40rem) {
+    figcaption {
+      flex-direction: column;
+    }
+  }
+</style>

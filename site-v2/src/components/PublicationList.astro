@@ -1,0 +1,303 @@
+---
+import { Image } from 'astro:assets';
+import type { Publication } from '../data/publications';
+
+interface Props {
+  items: Publication[];
+  compact?: boolean;
+}
+
+const { items, compact = false } = Astro.props;
+---
+
+<ol class:list={['publication-list', { 'publication-list--compact': compact }]}>
+  {items.map((publication) => (
+    <li>
+      <button
+        class="preview"
+        type="button"
+        aria-label={`Open a larger preview of ${publication.title}`}
+        aria-haspopup="dialog"
+        data-lightbox-open={publication.key}
+      >
+        <Image
+          src={publication.preview}
+          alt=""
+          loading="lazy"
+          widths={[240, 480, 720, 960]}
+          sizes={compact ? '(max-width: 42rem) 30vw, 10rem' : '(max-width: 42rem) 100vw, 16rem'}
+        />
+        <span class="zoom-hint" aria-hidden="true">View larger</span>
+      </button>
+      <div class="publication-copy">
+        <p class="meta">{publication.year} · {publication.archivePrefix}:{publication.eprint}</p>
+        <h3><a href={publication.url}>{publication.title}</a></h3>
+        <p class="authors">
+          {publication.authors.map((author, index) => (
+            <span>
+              {author === 'Suresh Raghu' ? <strong>{author}</strong> : author}
+              {publication.equalContribution?.includes(author) && (
+                <sup title="Equal contribution" aria-label=" equal contribution">*</sup>
+              )}
+              {index < publication.authors.length - 1 && ', '}
+            </span>
+          ))}
+        </p>
+        {publication.note && <p class="note">{publication.note}</p>}
+        <p class="links"><a href={publication.url}>arXiv</a></p>
+      </div>
+      <dialog class="lightbox" data-lightbox={publication.key} aria-label={`${publication.title} preview`}>
+        <form method="dialog">
+          <button class="close" type="submit">Close</button>
+        </form>
+        <div class="lightbox-image">
+          <Image
+            src={publication.preview}
+            alt={`${publication.title} publication preview`}
+            loading="lazy"
+            widths={[720, 1200, 1600]}
+            sizes="min(92vw, 90rem)"
+          />
+        </div>
+        <p>{publication.title}</p>
+      </dialog>
+    </li>
+  ))}
+</ol>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-lightbox-open]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const key = button.dataset.lightboxOpen;
+      const dialog = document.querySelector<HTMLDialogElement>(`[data-lightbox="${key}"]`);
+      dialog?.showModal();
+    });
+  });
+
+  document.querySelectorAll<HTMLDialogElement>('[data-lightbox]').forEach((dialog) => {
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  });
+</script>
+
+<style>
+  .publication-list {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--color-line);
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(11rem, 16rem) minmax(0, 1fr);
+    gap: var(--space-5);
+    padding-block: var(--space-5);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .preview {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    align-self: start;
+    background: var(--color-paper-raised);
+    color: var(--color-ink);
+    cursor: zoom-in;
+    text-align: left;
+  }
+
+  .preview :global(img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--color-line);
+    object-fit: contain;
+  }
+
+  .preview:hover :global(img),
+  .preview:focus-visible :global(img) {
+    border-color: var(--green);
+  }
+
+  .zoom-hint {
+    position: absolute;
+    right: var(--space-1);
+    bottom: var(--space-1);
+    padding: 0.15rem 0.35rem;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    color: var(--green-dark);
+    font-family: var(--font-sans);
+    font-size: 0.66rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transform: translateY(0.2rem);
+    transition: opacity 140ms ease-out, transform 140ms ease-out;
+  }
+
+  .preview:hover .zoom-hint,
+  .preview:focus-visible .zoom-hint {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .lightbox {
+    width: min(92vw, 90rem);
+    max-width: none;
+    max-height: 92vh;
+    margin: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--color-line);
+    background: var(--bg);
+    color: var(--color-ink);
+    overflow: auto;
+  }
+
+  .lightbox::backdrop {
+    background: color-mix(in srgb, var(--ink) 72%, transparent);
+  }
+
+  .lightbox form {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-3);
+  }
+
+  .close {
+    padding: 0.35rem 0;
+    border: 0;
+    background: transparent;
+    color: var(--green);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .close:hover {
+    color: var(--green-dark);
+  }
+
+  .lightbox-image {
+    display: grid;
+    min-height: min(65vh, 44rem);
+    place-items: center;
+  }
+
+  .lightbox-image :global(img) {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 72vh;
+    object-fit: contain;
+  }
+
+  .lightbox > p {
+    margin: var(--space-3) 0 0;
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+  }
+
+  h3 {
+    max-width: 34ch;
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-lg);
+    font-weight: 520;
+    letter-spacing: -0.02em;
+    line-height: 1.24;
+  }
+
+  h3 a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  h3 a:hover {
+    color: var(--color-accent);
+  }
+
+  .authors,
+  .note,
+  .links {
+    margin: var(--space-2) 0 0;
+    line-height: 1.55;
+  }
+
+  .authors {
+    color: var(--color-ink-soft);
+  }
+
+  .authors strong {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  .authors sup {
+    margin-left: 0.08em;
+    color: var(--purple);
+    font-family: var(--font-sans);
+    font-size: 0.7em;
+    font-weight: 700;
+  }
+
+  .note {
+    max-width: 62ch;
+    color: var(--purple);
+  }
+
+  .links {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 650;
+  }
+
+  .publication-list--compact li {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+  }
+
+  .publication-list--compact h3 {
+    font-size: clamp(1.16rem, 1.08rem + 0.3vw, 1.35rem);
+  }
+
+  .publication-list--compact .note {
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 42rem) {
+    li,
+    .publication-list--compact li {
+      grid-template-columns: minmax(6rem, 30vw) minmax(0, 1fr);
+      gap: var(--space-3);
+    }
+
+    .publication-list:not(.publication-list--compact) li {
+      grid-template-columns: 1fr;
+    }
+
+    .publication-list:not(.publication-list--compact) .preview {
+      width: min(100%, 22rem);
+    }
+
+    .lightbox {
+      width: calc(100vw - (2 * var(--page-gutter)));
+      padding: var(--space-3);
+    }
+
+    .lightbox-image {
+      min-height: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zoom-hint {
+      transition: none;
+    }
+  }
+</style>
