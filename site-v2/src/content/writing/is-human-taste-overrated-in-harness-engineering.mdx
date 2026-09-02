@@ -12,6 +12,7 @@ topics:
 import Figure from '../../components/Figure.astro';
 import ResponsiveVideo from '../../components/ResponsiveVideo.astro';
 import Sidenote from '../../components/Sidenote.astro';
+import HarnessBoundaryFigure from '../../components/figures/HarnessBoundaryFigure.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -25,7 +26,9 @@ The two are optimized very differently. The model's procedure is learned through
 
 This raises the question: why even bother? How much of what the harness does is work the model could do itself? We think the useful framing is not how much harness engineering can be automated, but how little is needed before the returns run out and further gains must come from the model’s policy. Ultimately, how far does harness engineering take you, and can we reach that limit without doing it by hand?
 
-Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench, a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. It serves as an underexplored task in a domain with an expensive and semi-verifiable verifier.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
+{/* Temporarily disabled: <HarnessBoundaryFigure /> */}
+
+Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench, a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. Generative chemistry is comparatively underexplored, and evaluating an answer is both expensive and imperfect.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
 
 <InteractionPointExplorer initialTaskId="smdd_002_Q9Y6K1_0" width="full" />
 
