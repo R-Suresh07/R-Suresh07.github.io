@@ -1,0 +1,25 @@
+{
+  "id": "smdd_002_Q9Y6K1_0",
+  "name": "Pharmacophore_DNMT3A",
+  "receptor": "receptor.pdb",
+  "groundTruth": "ground_truth.json",
+  "pocket": {
+    "center": {
+      "x": 107.47408294677734,
+      "y": 45.39814758300781,
+      "z": -2.5475001335144043
+    },
+    "radius": 12
+  },
+  "output": {
+    "count": 3,
+    "allowedTypes": [
+      "Donor",
+      "Acceptor",
+      "Aromatic",
+      "Hydrophobic",
+      "Cation",
+      "Anion"
+    ]
+  }
+}

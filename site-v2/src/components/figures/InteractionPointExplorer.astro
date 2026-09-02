@@ -1,0 +1,1133 @@
+---
+interface Props {
+  initialTaskId?: string;
+  width?: 'wide' | 'full';
+  caption?: string;
+}
+
+const {
+  initialTaskId = 'smdd_002_Q9Y6K1_0',
+  width = 'full',
+  caption = 'Figure. Interactive walkthrough of an Interaction Point Discovery task.',
+} = Astro.props;
+
+const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
+---
+
+<figure
+  class:list={['ipd-explorer', `ipd-explorer--${width}`]}
+  data-interaction-point-explorer
+  data-root={dataRoot}
+  data-initial-task={initialTaskId}
+>
+  <div class="explorer-heading">
+    <div class="heading-copy">
+      <p class="kicker">Interactive figure</p>
+      <h3>Interaction Point Discovery</h3>
+      <p class="task-summary">Given a protein receptor and binding pocket, predict three conserved ligand-side interaction points.</p>
+    </div>
+    <label class="task-picker">
+      <span>Task</span>
+      <select data-task-select aria-label="Choose an Interaction Point Discovery task">
+        <option value={initialTaskId}>{initialTaskId}</option>
+      </select>
+    </label>
+  </div>
+
+  <nav class="steps" aria-label="Guided explanation">
+    <button type="button" data-step="1" aria-pressed="true"><span>1</span> Receptor</button>
+    <button type="button" data-step="2" aria-pressed="false"><span>2</span> Search region</button>
+    <button type="button" data-step="3" aria-pressed="false"><span>3</span> Hidden target</button>
+    <button type="button" data-step="4" aria-pressed="false"><span>4</span> Matching</button>
+  </nav>
+
+  <div class="explorer-stage">
+    <div
+      class="viewer-shell"
+      data-viewer-shell
+      role="img"
+      aria-label="Interactive three-dimensional view of the protein receptor and pharmacophore task"
+      tabindex="0"
+    >
+      <div class="viewer" data-viewer></div>
+      <div class="loading" data-loading role="status">
+        <span class="loading-mark" aria-hidden="true"></span>
+        <span data-loading-text>Viewer loads when this figure approaches the viewport.</span>
+      </div>
+    </div>
+
+    <aside class="guide" aria-live="polite">
+      <section data-step-panel="1">
+        <p class="panel-label">Task</p>
+        <dl class="contract">
+          <div><dt>Given</dt><dd>Protein receptor</dd></div>
+          <div><dt>Search within</dt><dd data-task-pocket-radius>12 Å binding pocket</dd></div>
+          <div><dt>Predict</dt><dd data-point-count>3 interaction points</dd></div>
+          <div><dt>Each point</dt><dd>(x, y, z) + type</dd></div>
+        </dl>
+        <p class="panel-copy">A ligand-side interaction point marks where a bound molecule could make a conserved interaction with the protein.</p>
+        <div class="type-chips" data-type-chips aria-label="Valid pharmacophore types"></div>
+      </section>
+
+      <section data-step-panel="2" hidden>
+        <p class="panel-label">Search region</p>
+        <dl class="coordinates">
+          <div><dt>Center</dt><dd data-pocket-center>107.47, 45.40, −2.55 Å</dd></div>
+          <div><dt>Radius</dt><dd data-pocket-radius>12 Å</dd></div>
+        </dl>
+        <p class="panel-copy">Place exactly 3 ligand-side pharmacophore points inside this region.</p>
+      </section>
+
+      <section data-step-panel="3" hidden>
+        <div class="targets-header">
+          <p class="panel-label">Hidden targets</p>
+          <span class="targets-count" data-target-count>0</span>
+        </div>
+        <p class="panel-copy-sm">Click a point to locate it in the pocket.</p>
+        <div class="target-grid" data-point-picker aria-label="Select a hidden point"></div>
+        <p class="hint">Point numbers are for navigation only.</p>
+        <div class="inspector" data-inspector>
+          <p>Select a hidden point in the viewer or from the list above.</p>
+        </div>
+      </section>
+
+      <section data-step-panel="4" hidden>
+        <p class="panel-label">Evaluator rule</p>
+        <p class="panel-copy">A submitted point must:</p>
+        <ul class="rule-list">
+          <li>be &lt; 2.5 Å from a compatible hidden point</li>
+          <li>use a compatible interaction type</li>
+          <li>match a distinct hidden point</li>
+        </ul>
+        <div class="inspector" data-matching-inspector>
+          <p>Select a hidden point to see its 2.5 Å matching radius.</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="controls" aria-label="Free exploration controls">
+    <fieldset>
+      <legend>View</legend>
+      <button type="button" data-toggle="protein" aria-pressed="true">Protein</button>
+      <button type="button" data-toggle="sticks" aria-pressed="false">Pocket sticks</button>
+      <button type="button" data-toggle="surface" aria-pressed="false">Pocket surface</button>
+      <button type="button" data-toggle="pocketSphere" aria-pressed="false">12 Å sphere</button>
+    </fieldset>
+    <fieldset>
+      <legend>Target</legend>
+      <button type="button" data-toggle="targets" aria-pressed="false">Hidden points</button>
+      <button type="button" data-toggle="matchRadius" aria-pressed="false">Match radius</button>
+    </fieldset>
+    <fieldset>
+      <legend>Camera</legend>
+      <button type="button" data-camera="whole">Whole protein</button>
+      <button type="button" data-camera="pocket">Pocket</button>
+      <button type="button" data-camera="reset">Reset</button>
+      <button type="button" data-toggle="spin" aria-pressed="true">Spin</button>
+    </fieldset>
+  </div>
+
+  <figcaption>{caption}</figcaption>
+</figure>
+
+<script>
+  type Point3D = { x: number; y: number; z: number };
+  type GroundTruthPoint = {
+    coords: [number, number, number];
+    types: string[];
+    conservation: number;
+  };
+  type Task = {
+    id: string;
+    name: string;
+    receptor: string;
+    groundTruth: string;
+    pocket: { center: Point3D; radius: number };
+    output: { count: number; allowedTypes: string[] };
+  };
+  type TaskSummary = { id: string; name: string; path: string };
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Rendering only the far hemisphere keeps these translucent bounding spheres from
+  // writing near-side depth over the interior point markers, which otherwise get
+  // depth-culled and disappear while the sphere is visible.
+  const BACK_SIDE = 1;
+
+  document.querySelectorAll<HTMLElement>('[data-interaction-point-explorer]').forEach((root) => {
+    const dataRoot = root.dataset.root ?? '/data/smdd/ipd/';
+    const initialTask = root.dataset.initialTask ?? '';
+    const viewerElement = root.querySelector<HTMLElement>('[data-viewer]')!;
+    const loading = root.querySelector<HTMLElement>('[data-loading]')!;
+    const loadingText = root.querySelector<HTMLElement>('[data-loading-text]')!;
+    const taskSelect = root.querySelector<HTMLSelectElement>('[data-task-select]')!;
+    const inspector = root.querySelector<HTMLElement>('[data-inspector]')!;
+    const matchingInspector = root.querySelector<HTMLElement>('[data-matching-inspector]')!;
+    const pointPicker = root.querySelector<HTMLElement>('[data-point-picker]')!;
+    const aborter = new AbortController();
+
+    let mol: typeof import('3dmol') | null = null;
+    let viewer: any = null;
+    let model: any = null;
+    let task: Task | null = null;
+    let points: GroundTruthPoint[] = [];
+    let selectedPoint: number | null = null;
+    let initialView: unknown = null;
+    let loadSequence = 0;
+    let surfaceSequence = 0;
+    let surfaceReady = false;
+    let surfacePending = false;
+    let initialized = false;
+
+    const state = {
+      step: 1,
+      protein: true,
+      sticks: false,
+      surface: false,
+      pocketSphere: false,
+      targets: false,
+      matchRadius: false,
+      spin: true,
+    };
+
+    const animationDuration = () => reduceMotion.matches ? 0 : 650;
+    const pointToXYZ = (point: GroundTruthPoint): Point3D => ({
+      x: point.coords[0],
+      y: point.coords[1],
+      z: point.coords[2],
+    });
+    const pocketSelection = () => {
+      if (!task) return {};
+      const { center, radius } = task.pocket;
+      const radiusSquared = radius * radius;
+      return {
+        predicate: (atom: Point3D) => {
+          const dx = atom.x - center.x;
+          const dy = atom.y - center.y;
+          const dz = atom.z - center.z;
+          return (dx * dx) + (dy * dy) + (dz * dz) <= radiusSquared;
+        },
+        byres: true,
+      };
+    };
+
+    const setLoading = (message: string, isError = false) => {
+      loading.hidden = false;
+      loading.dataset.error = String(isError);
+      loadingText.textContent = message;
+    };
+
+    const hideLoading = () => {
+      loading.hidden = true;
+    };
+
+    const syncButtons = () => {
+      root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(Number(button.dataset.step) === state.step));
+      });
+      root.querySelectorAll<HTMLElement>('[data-step-panel]').forEach((panel) => {
+        panel.hidden = Number(panel.dataset.stepPanel) !== state.step;
+      });
+      root.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((button) => {
+        const key = button.dataset.toggle as keyof typeof state;
+        button.setAttribute('aria-pressed', String(Boolean(state[key])));
+      });
+    };
+
+    const makeChip = (type: string) => {
+      const chip = document.createElement('span');
+      chip.className = 'type-chip';
+      chip.textContent = type;
+      return chip;
+    };
+
+    const renderTaskText = () => {
+      if (!task) return;
+      const currentTask = task;
+      const { center, radius } = currentTask.pocket;
+      const centerText = `${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)} Å`;
+      root.querySelectorAll<HTMLElement>('[data-pocket-center]').forEach((node) => node.textContent = centerText);
+      root.querySelectorAll<HTMLElement>('[data-task-pocket-radius]').forEach((node) => node.textContent = `${radius} Å binding pocket`);
+      root.querySelectorAll<HTMLElement>('[data-pocket-radius]').forEach((node) => node.textContent = `${radius} Å`);
+      root.querySelectorAll<HTMLElement>('[data-point-count]').forEach((node) => node.textContent = `${currentTask.output.count} interaction points`);
+      const chips = root.querySelector<HTMLElement>('[data-type-chips]')!;
+      chips.replaceChildren(...currentTask.output.allowedTypes.map(makeChip));
+    };
+
+    const updateInspector = () => {
+      const targetPanels = [inspector, matchingInspector];
+      if (selectedPoint === null || !points[selectedPoint]) {
+        inspector.innerHTML = '<p>Select a hidden point in the viewer or from the list above.</p>';
+        matchingInspector.innerHTML = '<p>Select a hidden point to see its 2.5 Å matching radius.</p>';
+        return;
+      }
+
+      const point = points[selectedPoint];
+      const wrapper = document.createElement('div');
+      const label = document.createElement('p');
+      label.className = 'panel-label';
+      label.textContent = `Hidden point ${selectedPoint + 1}`;
+      const values = document.createElement('dl');
+      values.className = 'point-values';
+      ['x', 'y', 'z'].forEach((axis, index) => {
+        const row = document.createElement('div');
+        const term = document.createElement('dt');
+        const value = document.createElement('dd');
+        term.textContent = axis;
+        value.textContent = point.coords[index].toFixed(3);
+        row.append(term, value);
+        values.append(row);
+      });
+      const acceptedLabel = document.createElement('p');
+      acceptedLabel.className = 'inspector-key';
+      acceptedLabel.textContent = 'Accepted types';
+      const accepted = document.createElement('div');
+      accepted.className = 'type-chips';
+      accepted.append(...point.types.map(makeChip));
+      const conservation = document.createElement('p');
+      conservation.className = 'conservation';
+      conservation.innerHTML = `<span>Conservation</span><strong>${(point.conservation * 100).toFixed(1)}%</strong>`;
+      wrapper.append(label, values, acceptedLabel, accepted, conservation);
+      targetPanels.forEach((panel) => panel.replaceChildren(wrapper.cloneNode(true)));
+
+      pointPicker.querySelectorAll<HTMLButtonElement>('button').forEach((button, index) => {
+        button.setAttribute('aria-pressed', String(index === selectedPoint));
+      });
+    };
+
+    const selectPoint = (index: number) => {
+      selectedPoint = index;
+      if (state.step < 3) setStep(3);
+      if (state.step === 4) state.matchRadius = true;
+      updateInspector();
+      syncButtons();
+      renderScene();
+    };
+
+    const renderPointPicker = () => {
+      pointPicker.replaceChildren();
+      points.forEach((point, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'target-card';
+        button.setAttribute('aria-label', `Select hidden point ${index + 1}`);
+        button.setAttribute('aria-pressed', 'false');
+        const id = document.createElement('span');
+        id.className = 'target-card-id';
+        id.textContent = String(index + 1).padStart(2, '0');
+        const types = document.createElement('span');
+        types.className = 'target-card-types';
+        types.textContent = point.types.join(' ');
+        button.append(id, types);
+        button.addEventListener('click', () => selectPoint(index), { signal: aborter.signal });
+        pointPicker.append(button);
+      });
+      const countLabel = root.querySelector<HTMLElement>('[data-target-count]');
+      if (countLabel) countLabel.textContent = String(points.length);
+    };
+
+    const addInteractivePoint = (point: GroundTruthPoint, index: number) => {
+      if (!viewer) return;
+      const isSelected = index === selectedPoint;
+      const hasSelection = selectedPoint !== null;
+      let shape: any;
+      const baseRadius = isSelected ? 1.18 : hasSelection ? 0.72 : 0.82;
+      const baseColor = isSelected ? '#0b6655' : '#76639a';
+      const baseOpacity = isSelected ? 1 : hasSelection ? 0.6 : 0.94;
+      shape = viewer.addSphere({
+        center: pointToXYZ(point),
+        radius: baseRadius,
+        color: baseColor,
+        opacity: baseOpacity,
+        clickable: true,
+        callback: () => selectPoint(index),
+        hoverable: true,
+        hover_callback: () => {
+          shape.updateStyle({ radius: baseRadius + 0.18, color: baseColor });
+          viewer.render();
+        },
+        unhover_callback: () => {
+          shape.updateStyle({ radius: baseRadius, color: baseColor });
+          viewer.render();
+        },
+      });
+      if (isSelected) {
+        viewer.addSphere({
+          center: pointToXYZ(point),
+          radius: baseRadius + 0.6,
+          color: '#0b6655',
+          opacity: 0.22,
+          side: BACK_SIDE,
+        });
+      }
+    };
+
+    const updateSurface = async () => {
+      if (!viewer || !mol || !task) return;
+      if (!state.surface) {
+        if (surfaceReady || surfacePending) {
+          ++surfaceSequence;
+          viewer.removeAllSurfaces();
+          surfaceReady = false;
+          surfacePending = false;
+          viewer.render();
+        }
+        return;
+      }
+      if (surfaceReady || surfacePending) return;
+      const request = ++surfaceSequence;
+      surfacePending = true;
+      const pending = viewer.addSurface(
+        mol.SurfaceType.SAS,
+        { color: '#9bb7ad', opacity: 0.27 },
+        pocketSelection(),
+        pocketSelection(),
+      );
+      const surfaceId = await Promise.resolve(pending);
+      if (request === surfaceSequence) surfacePending = false;
+      if (request !== surfaceSequence || !state.surface) {
+        if (typeof surfaceId === 'number') viewer.removeSurface(surfaceId);
+        if (request === surfaceSequence) surfaceReady = false;
+      } else {
+        surfaceReady = true;
+      }
+      viewer.render();
+    };
+
+    const renderScene = () => {
+      if (!viewer || !model || !task) return;
+      model.setStyle({}, {});
+      if (state.protein) {
+        model.setStyle({}, { cartoon: { color: '#a7b2ad', opacity: 0.78 } });
+      }
+      if (state.sticks) {
+        model.setStyle(pocketSelection(), { stick: { radius: 0.18, colorscheme: 'Jmol' } }, true);
+      }
+
+      viewer.removeAllShapes();
+      if (state.pocketSphere) {
+        viewer.addSphere({
+          center: task.pocket.center,
+          radius: task.pocket.radius,
+          color: 0x0b6655,
+          opacity: 0.24,
+          side: BACK_SIDE,
+        });
+      }
+      if (state.step >= 2 || state.pocketSphere) {
+        viewer.addSphere({ center: task.pocket.center, radius: 0.42, color: '#d28c3c', opacity: 1 });
+      }
+      if (state.targets) points.forEach(addInteractivePoint);
+      if (state.matchRadius && selectedPoint !== null && points[selectedPoint]) {
+        const matchCenter = pointToXYZ(points[selectedPoint]);
+        viewer.addSphere({
+          center: matchCenter,
+          radius: 2.5,
+          color: '#0b6655',
+          opacity: 0.4,
+          side: BACK_SIDE,
+        });
+        viewer.addSphere({
+          center: matchCenter,
+          radius: 2.5,
+          color: '#0b6655',
+          wireframe: true,
+          opacity: 0.9,
+        });
+      }
+      viewer.render();
+      void updateSurface();
+    };
+
+    const focusWhole = () => {
+      if (!viewer) return;
+      viewer.zoomTo({}, animationDuration());
+      viewer.render();
+    };
+
+    const focusPocket = () => {
+      if (!viewer || !task) return;
+      viewer.zoomTo(pocketSelection(), animationDuration());
+      viewer.render();
+    };
+
+    const setStep = (step: number, moveCamera = true) => {
+      state.step = step;
+      if (step === 1) Object.assign(state, {
+        protein: true, sticks: false, surface: false, pocketSphere: false, targets: false, matchRadius: false,
+      });
+      if (step === 2) Object.assign(state, {
+        protein: false, sticks: true, pocketSphere: true, targets: false, matchRadius: false,
+      });
+      if (step === 3) Object.assign(state, {
+        protein: false, sticks: true, pocketSphere: true, targets: true, matchRadius: false,
+      });
+      if (step === 4) {
+        if (selectedPoint === null && points.length > 0) selectedPoint = 0;
+        Object.assign(state, {
+          protein: false, sticks: true, pocketSphere: true, targets: true, matchRadius: selectedPoint !== null,
+        });
+        updateInspector();
+      }
+      syncButtons();
+      renderScene();
+      if (moveCamera) {
+        if (step === 1) focusWhole(); else focusPocket();
+      }
+    };
+
+    const loadTask = async (summary: TaskSummary) => {
+      const sequence = ++loadSequence;
+      setLoading(`Loading ${summary.id}…`);
+      state.surface = false;
+      viewer?.spin(false);
+      ++surfaceSequence;
+      viewer?.removeAllSurfaces();
+      surfaceReady = false;
+      surfacePending = false;
+      viewer?.removeAllShapes();
+      viewer?.removeAllModels();
+      model = null;
+      task = null;
+      points = [];
+      selectedPoint = null;
+      setStep(1);
+
+      try {
+        const taskUrl = `${dataRoot}${summary.path}/task.json`;
+        const taskResponse = await fetch(taskUrl, { signal: aborter.signal });
+        if (!taskResponse.ok) throw new Error(`Task metadata returned ${taskResponse.status}`);
+        const nextTask = await taskResponse.json() as Task;
+        const [pdbResponse, truthResponse] = await Promise.all([
+          fetch(`${dataRoot}${summary.path}/${nextTask.receptor}`, { signal: aborter.signal }),
+          fetch(`${dataRoot}${summary.path}/${nextTask.groundTruth}`, { signal: aborter.signal }),
+        ]);
+        if (!pdbResponse.ok) throw new Error(`Receptor returned ${pdbResponse.status}`);
+        if (!truthResponse.ok) throw new Error(`Ground truth returned ${truthResponse.status}`);
+        const [pdb, truth] = await Promise.all([pdbResponse.text(), truthResponse.json()]);
+        if (sequence !== loadSequence || !viewer) return;
+
+        task = nextTask;
+        points = (truth as { points: GroundTruthPoint[] }).points;
+        model = viewer.addModel(pdb, 'pdb');
+        renderTaskText();
+        renderPointPicker();
+        updateInspector();
+        setStep(1, false);
+        viewer.zoomTo();
+        viewer.render();
+        initialView = viewer.getView();
+        hideLoading();
+        if (state.spin && !reduceMotion.matches) viewer.spin('y', 0.35, true);
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+        setLoading(`Could not load the molecular task: ${(error as Error).message}`, true);
+      }
+    };
+
+    const initialize = async () => {
+      if (initialized) return;
+      initialized = true;
+      setLoading('Loading molecular viewer…');
+      try {
+        const [module, manifestResponse] = await Promise.all([
+          import('3dmol'),
+          fetch(`${dataRoot}tasks.json`, { signal: aborter.signal }),
+        ]);
+        if (!manifestResponse.ok) throw new Error(`Task manifest returned ${manifestResponse.status}`);
+        const manifest = await manifestResponse.json() as { tasks: TaskSummary[] };
+        mol = module;
+        viewer = mol.createViewer(viewerElement, {
+          backgroundColor: '#f1f0ea',
+          antialias: true,
+        });
+
+        taskSelect.replaceChildren(...manifest.tasks.map((entry) => {
+          const option = document.createElement('option');
+          option.value = entry.id;
+          option.textContent = `${entry.id} — ${entry.name}`;
+          option.selected = entry.id === initialTask;
+          return option;
+        }));
+        const selected = manifest.tasks.find((entry) => entry.id === initialTask) ?? manifest.tasks[0];
+        if (!selected) throw new Error('The task manifest is empty');
+        await loadTask(selected);
+
+        taskSelect.addEventListener('change', () => {
+          const entry = manifest.tasks.find((candidate) => candidate.id === taskSelect.value);
+          if (entry) void loadTask(entry);
+        }, { signal: aborter.signal });
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+        setLoading(`Could not initialize the molecular viewer: ${(error as Error).message}`, true);
+      }
+    };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((button) => {
+      button.addEventListener('click', () => setStep(Number(button.dataset.step)), { signal: aborter.signal });
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const key = button.dataset.toggle as keyof typeof state;
+        if (key === 'spin') {
+          if (reduceMotion.matches) return;
+          state.spin = !state.spin;
+          viewer?.spin(state.spin ? 'y' : false, 0.35, true);
+        } else {
+          if (key === 'matchRadius' && selectedPoint === null && points.length > 0) {
+            selectedPoint = 0;
+            updateInspector();
+          }
+          (state[key] as boolean) = !state[key];
+          renderScene();
+        }
+        syncButtons();
+      }, { signal: aborter.signal });
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-camera]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (button.dataset.camera === 'whole') focusWhole();
+        if (button.dataset.camera === 'pocket') focusPocket();
+        if (button.dataset.camera === 'reset' && viewer && initialView) {
+          viewer.setView(initialView);
+          viewer.render();
+        }
+      }, { signal: aborter.signal });
+    });
+
+    const spinButton = root.querySelector<HTMLButtonElement>('[data-toggle="spin"]')!;
+    const syncMotionPreference = () => {
+      spinButton.disabled = reduceMotion.matches;
+      spinButton.title = reduceMotion.matches ? 'Disabled because reduced motion is preferred' : '';
+      if (reduceMotion.matches && state.spin) {
+        state.spin = false;
+        viewer?.spin(false);
+        syncButtons();
+      }
+    };
+    syncMotionPreference();
+    reduceMotion.addEventListener('change', syncMotionPreference, { signal: aborter.signal });
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        void initialize();
+      }
+    }, { rootMargin: '500px 0px' });
+    observer.observe(root);
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (viewer) {
+        viewer.resize();
+        viewer.render();
+      }
+    });
+    resizeObserver.observe(viewerElement);
+
+    document.addEventListener('astro:before-swap', () => {
+      observer.disconnect();
+      resizeObserver.disconnect();
+      aborter.abort();
+      viewer?.spin(false);
+      viewer?.clear();
+      viewer = null;
+      mol = null;
+    }, { once: true });
+
+    syncButtons();
+  });
+</script>
+
+<style>
+  .ipd-explorer {
+    --explorer-width: var(--wide-width);
+    width: min(var(--explorer-width), calc(100vw - (2 * var(--page-gutter))));
+    margin-block: var(--space-6);
+    margin-inline: 50%;
+    transform: translateX(-50%);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+  }
+
+  .ipd-explorer--full {
+    --explorer-width: var(--full-width);
+  }
+
+  .explorer-heading,
+  .steps,
+  .explorer-stage,
+  .controls {
+    border-inline: 1px solid var(--color-line);
+  }
+
+  .explorer-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--color-line);
+    background: var(--color-paper-raised);
+  }
+
+  .explorer-heading :where(p, h3),
+  .guide :where(p, ul, dl),
+  figcaption {
+    margin: 0;
+  }
+
+  .kicker,
+  .panel-label,
+  .task-picker > span,
+  legend,
+  .inspector-key,
+  .conservation span {
+    color: var(--color-ink-soft);
+    font-size: 0.68rem;
+    font-weight: 680;
+    letter-spacing: 0.11em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .explorer-heading h3 {
+    margin-top: 0.22rem;
+    font-family: var(--font-serif);
+    font-size: clamp(1.25rem, 1.05rem + 0.55vw, 1.65rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .task-summary {
+    max-width: 54ch;
+    margin-top: var(--space-2) !important;
+    color: var(--color-ink-soft);
+    font-family: var(--font-serif);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .task-picker {
+    display: grid;
+    gap: 0.28rem;
+  }
+
+  select {
+    max-width: min(22rem, 52vw);
+    padding: 0.45rem 1.8rem 0.45rem 0.55rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font: inherit;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-block: 1px solid var(--color-line);
+    background: var(--color-paper);
+  }
+
+  button {
+    border: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--color-ink-soft);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button:focus-visible,
+  select:focus-visible,
+  .viewer-shell:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+
+  .steps button {
+    padding: 0.72rem var(--space-3);
+    border-radius: 0;
+    text-align: left;
+  }
+
+  .steps button + button {
+    border-inline-start: 1px solid var(--color-line);
+  }
+
+  .steps button span {
+    display: inline-grid;
+    width: 1.45rem;
+    height: 1.45rem;
+    margin-inline-end: 0.35rem;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-size: 0.72rem;
+  }
+
+  .steps button[aria-pressed='true'] {
+    background: var(--green-soft);
+    color: var(--color-accent-strong);
+    font-weight: 650;
+  }
+
+  .explorer-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(17rem, 0.8fr);
+    min-height: clamp(31rem, 53vw, 43rem);
+  }
+
+  .viewer-shell {
+    position: relative;
+    min-width: 0;
+    min-height: 31rem;
+    overflow: hidden;
+    background: var(--color-paper-raised);
+  }
+
+  .viewer,
+  .loading {
+    position: absolute;
+    inset: 0;
+  }
+
+  .loading {
+    z-index: 2;
+    display: grid;
+    gap: var(--space-2);
+    place-content: center;
+    padding: var(--space-4);
+    background: var(--color-paper-raised);
+    color: var(--color-ink-soft);
+    text-align: center;
+  }
+
+  .loading[hidden] {
+    display: none;
+  }
+
+  .loading[data-error='true'] {
+    color: #8c3e32;
+  }
+
+  .loading-mark {
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-inline: auto;
+    border: 2px solid var(--color-line);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: orbit 0.9s linear infinite;
+  }
+
+  .loading[data-error='true'] .loading-mark {
+    display: none;
+  }
+
+  .guide {
+    min-width: 0;
+    padding: clamp(var(--space-3), 2.3vw, var(--space-5));
+    border-inline-start: 1px solid var(--color-line);
+    background: var(--color-paper);
+  }
+
+  .guide section {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .guide section[hidden] {
+    display: none;
+  }
+
+  .contract,
+  .coordinates {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .contract div,
+  .coordinates div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  dt {
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-align: right;
+  }
+
+  .panel-copy,
+  .rule-list {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .panel-copy-sm {
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-family: var(--font-serif);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-size: 0.68rem;
+    font-style: italic;
+  }
+
+  .type-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  :global(.type-chip) {
+    display: inline-flex;
+    padding: 0.22rem 0.48rem;
+    border-radius: 999px;
+    background: var(--purple-soft);
+    color: #584672;
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 620;
+  }
+
+  .targets-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .targets-count {
+    color: var(--color-ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .target-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .target-grid :global(button.target-card) {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    background: var(--color-paper-raised);
+    text-align: left;
+  }
+
+  .target-grid :global(button.target-card:hover) {
+    border-color: var(--color-accent);
+  }
+
+  .target-grid :global(button.target-card[aria-pressed='true']) {
+    background: var(--green-soft);
+  }
+
+  .target-grid :global(.target-card-id) {
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+
+  .target-grid :global(button.target-card[aria-pressed='true'] .target-card-id) {
+    color: var(--color-accent-strong);
+  }
+
+  .target-grid :global(.target-card-types) {
+    color: var(--color-ink-soft);
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+  }
+
+  .inspector {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-line);
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+  }
+
+  .inspector :global(.panel-label) {
+    margin-bottom: var(--space-3);
+  }
+
+  .inspector :global(.point-values) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .inspector :global(.point-values div) {
+    display: grid;
+    gap: 0.12rem;
+  }
+
+  .inspector :global(.point-values dd) {
+    text-align: left;
+  }
+
+  .inspector :global(.inspector-key) {
+    margin-bottom: var(--space-2);
+  }
+
+  .inspector :global(.conservation) {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-3);
+  }
+
+  .inspector :global(.conservation strong) {
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+  }
+
+  .rule-list {
+    padding-inline-start: 1.15rem;
+  }
+
+  .rule-list li + li {
+    margin-top: 0.5rem;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    padding: var(--space-3) var(--space-4);
+    border-block: 1px solid var(--color-line);
+    background: var(--color-paper-raised);
+  }
+
+  fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 0.35rem;
+  }
+
+  .controls button {
+    padding: 0.38rem 0.58rem;
+    border: 1px solid transparent;
+    font-size: var(--text-xs);
+  }
+
+  .controls button:hover {
+    color: var(--color-ink);
+  }
+
+  .controls button[aria-pressed='true'] {
+    border-color: #b8d4ca;
+    background: var(--green-soft);
+    color: var(--color-accent-strong);
+  }
+
+  figcaption {
+    margin-top: var(--space-2);
+    color: var(--color-ink-soft);
+    font-size: var(--text-xs);
+    line-height: 1.55;
+  }
+
+  @keyframes orbit {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 55rem) {
+    .explorer-stage {
+      grid-template-columns: 1fr;
+    }
+
+    .viewer-shell {
+      min-height: clamp(23rem, 65vw, 32rem);
+    }
+
+    .guide {
+      min-height: 18rem;
+      border-top: 1px solid var(--color-line);
+      border-inline-start: 0;
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .explorer-heading {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    select {
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .steps {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .steps button:nth-child(3) {
+      border-top: 1px solid var(--color-line);
+      border-inline-start: 0;
+    }
+
+    .steps button:nth-child(4) {
+      border-top: 1px solid var(--color-line);
+    }
+
+    .viewer-shell {
+      min-height: 22rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .target-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loading-mark {
+      animation: none;
+    }
+  }
+</style>
