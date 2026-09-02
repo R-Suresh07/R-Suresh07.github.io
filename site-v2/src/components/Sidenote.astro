@@ -1,0 +1,88 @@
+---
+interface Props {
+  number: string;
+}
+
+const { number } = Astro.props;
+---
+
+<span class="sidenote">
+  <sup><a href={`#sidenote-${number}`} id={`sidenote-ref-${number}`} aria-label={`Read sidenote ${number}`}>{number}</a></sup>
+  <span class="sidenote-content" id={`sidenote-${number}`} role="note">
+    <span class="sidenote-label">{number}.</span> <slot />
+  </span>
+</span>
+
+<style>
+  .sidenote {
+    position: static;
+  }
+
+  sup a {
+    color: var(--color-accent);
+    font-family: var(--font-sans);
+    font-size: 0.7em;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .sidenote-content {
+    display: block;
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.45;
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--color-line);
+  }
+
+  .sidenote-content.is-margin {
+    position: absolute;
+    left: calc(100% + var(--space-4));
+    width: 14rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .sidenote-label {
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  @media (max-width: 75rem) {
+    .sidenote-content {
+      position: static;
+      width: auto;
+    }
+  }
+</style>
+
+<script>
+  const positionSidenotes = () => {
+    document.querySelectorAll<HTMLElement>('.sidenote-content').forEach((note) => {
+      const marker = note.parentElement?.querySelector('sup');
+      const prose = note.closest<HTMLElement>('.prose');
+      const useMargin = window.matchMedia('(min-width: 75rem)').matches;
+
+      note.classList.toggle('is-margin', Boolean(marker && prose && useMargin));
+      if (!marker || !prose || !useMargin) {
+        note.style.removeProperty('top');
+        return;
+      }
+
+      const markerTop = marker.getBoundingClientRect().top - prose.getBoundingClientRect().top;
+      const paragraph = note.closest('p');
+      const paragraphBottom = paragraph
+        ? paragraph.getBoundingClientRect().bottom - prose.getBoundingClientRect().top
+        : markerTop + note.offsetHeight;
+      note.style.top = `${Math.min(markerTop, paragraphBottom - note.offsetHeight)}px`;
+    });
+  };
+
+  requestAnimationFrame(positionSidenotes);
+  window.addEventListener('resize', positionSidenotes);
+</script>

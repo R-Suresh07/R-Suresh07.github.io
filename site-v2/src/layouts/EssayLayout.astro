@@ -87,6 +87,7 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
 
   .essay-grid {
     display: grid;
+    width: min(calc(100% - (2 * var(--page-gutter))), var(--full-width));
     grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr);
     gap: var(--space-6);
     align-items: start;
@@ -94,6 +95,11 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
 
   .essay-main {
     min-width: 0;
+  }
+
+  .essay-main .prose {
+    width: min(100%, 100ch);
+    position: relative;
   }
 
   .essay-header {
@@ -143,7 +149,7 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
   }
 
   .essay-header h1 {
-    max-width: 22ch;
+    max-width: 28ch;
     margin: 0 auto;
     font-size: var(--text-display);
     font-weight: 500;
@@ -180,13 +186,19 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
     scroll-margin-top: var(--space-5);
   }
 
-  @media (max-width: 70rem) {
+  @media (max-width: 80rem) {
     .essay-grid {
       display: block;
     }
 
     .table-of-contents {
       display: none;
+    }
+  }
+
+  @media (min-width: 75rem) and (max-width: 100rem) {
+    .essay-main .prose {
+      width: calc(100% - 15rem);
     }
   }
 

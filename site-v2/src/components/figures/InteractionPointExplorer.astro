@@ -178,6 +178,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
     let surfaceReady = false;
     let surfacePending = false;
     let initialized = false;
+    let viewerIsInFocus = false;
 
     const state = {
       step: 1,
@@ -191,6 +192,10 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
     };
 
     const animationDuration = () => reduceMotion.matches ? 0 : 650;
+    const syncSpin = () => {
+      if (!viewer) return;
+      viewer.spin(state.spin && viewerIsInFocus && !reduceMotion.matches ? 'y' : false, 0.35, true);
+    };
     const pointToXYZ = (point: GroundTruthPoint): Point3D => ({
       x: point.coords[0],
       y: point.coords[1],
@@ -518,7 +523,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
         viewer.render();
         initialView = viewer.getView();
         hideLoading();
-        if (state.spin && !reduceMotion.matches) viewer.spin('y', 0.35, true);
+        syncSpin();
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
         setLoading(`Could not load the molecular task: ${(error as Error).message}`, true);
@@ -573,7 +578,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
         if (key === 'spin') {
           if (reduceMotion.matches) return;
           state.spin = !state.spin;
-          viewer?.spin(state.spin ? 'y' : false, 0.35, true);
+          syncSpin();
         } else {
           if (key === 'matchRadius' && selectedPoint === null && points.length > 0) {
             selectedPoint = 0;
@@ -603,9 +608,9 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
       spinButton.title = reduceMotion.matches ? 'Disabled because reduced motion is preferred' : '';
       if (reduceMotion.matches && state.spin) {
         state.spin = false;
-        viewer?.spin(false);
         syncButtons();
       }
+      syncSpin();
     };
     syncMotionPreference();
     reduceMotion.addEventListener('change', syncMotionPreference, { signal: aborter.signal });
@@ -618,6 +623,12 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
     }, { rootMargin: '500px 0px' });
     observer.observe(root);
 
+    const spinObserver = new IntersectionObserver((entries) => {
+      viewerIsInFocus = entries.some((entry) => entry.isIntersecting);
+      syncSpin();
+    }, { rootMargin: '-20% 0px -20% 0px', threshold: 0 });
+    spinObserver.observe(viewerElement);
+
     const resizeObserver = new ResizeObserver(() => {
       if (viewer) {
         viewer.resize();
@@ -628,6 +639,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
 
     document.addEventListener('astro:before-swap', () => {
       observer.disconnect();
+      spinObserver.disconnect();
       resizeObserver.disconnect();
       aborter.abort();
       viewer?.spin(false);
