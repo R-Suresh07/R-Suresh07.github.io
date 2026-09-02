@@ -6,7 +6,9 @@ interface Props {
   src: ImageMetadata | string;
   alt: string;
   width?: 'prose' | 'wide' | 'full';
+  captionLabel?: string;
   caption?: string;
+  emphasizedCaption?: boolean;
   credit?: string;
   source?: string;
 }
@@ -15,19 +17,21 @@ const {
   src,
   alt,
   width = 'prose',
+  captionLabel,
   caption,
+  emphasizedCaption = false,
   credit,
   source,
 } = Astro.props;
 ---
 
-<figure class:list={['media-figure', `media-figure--${width}`]}>
+<figure class:list={['media-figure', `media-figure--${width}`, { 'media-figure--emphasized-caption': emphasizedCaption }]}>
   {typeof src === 'string'
     ? <img src={src} alt={alt} loading="lazy" decoding="async" />
     : <Image src={src} alt={alt} loading="lazy" />}
-  {(caption || credit || source) && (
+  {(captionLabel || caption || credit || source) && (
     <figcaption>
-      {caption && <span>{caption}</span>}
+      <span>{captionLabel && <strong>{captionLabel}</strong>}{caption && <span>{caption}</span>}</span>
       {(credit || source) && (
         <small>
           {credit && <span>{credit}</span>}
@@ -71,6 +75,22 @@ const {
     font-family: var(--font-sans);
     font-size: var(--text-xs);
     line-height: 1.55;
+  }
+
+  figcaption > span {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35em;
+  }
+
+  figcaption strong {
+    color: var(--color-accent);
+    font-weight: 750;
+    letter-spacing: .06em;
+  }
+
+  .media-figure--emphasized-caption figcaption {
+    font-size: var(--text-sm);
   }
 
   small {
