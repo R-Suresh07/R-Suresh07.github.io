@@ -45,7 +45,10 @@ const {
 <style>
   .media-figure {
     --media-width: var(--measure);
-    width: min(var(--media-width), calc(100vw - (2 * var(--page-gutter))));
+    width: min(
+      var(--media-width),
+      var(--breakout-max-width, calc(100vw - (2 * var(--page-gutter))))
+    );
     margin-block: var(--space-6);
     margin-inline: 50%;
     transform: translateX(-50%);

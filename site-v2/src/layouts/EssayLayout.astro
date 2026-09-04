@@ -95,10 +95,13 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
 
   .essay-main {
     min-width: 0;
+    container-type: inline-size;
   }
 
   .essay-main .prose {
+    --breakout-max-width: 100cqw;
     width: min(100%, 100ch);
+    margin-inline: auto;
     position: relative;
   }
 
