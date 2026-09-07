@@ -1,14 +1,15 @@
 ---
 interface Props {
   number: string;
+  align?: 'marker' | 'paragraph';
 }
 
-const { number } = Astro.props;
+const { number, align = 'marker' } = Astro.props;
 ---
 
 <span class="sidenote">
   <sup><a href={`#sidenote-${number}`} id={`sidenote-ref-${number}`} aria-label={`Read sidenote ${number}`}>{number}</a></sup>
-  <span class="sidenote-content" id={`sidenote-${number}`} role="note">
+  <span class="sidenote-content" id={`sidenote-${number}`} role="note" data-align={align}>
     <span class="sidenote-label">{number}.</span> <slot />
   </span>
 </span>
@@ -30,7 +31,7 @@ const { number } = Astro.props;
     display: block;
     color: var(--color-ink-soft);
     font-family: var(--font-sans);
-    font-size: var(--text-sm);
+    font-size: calc(var(--text-sm) * 0.94);
     font-style: normal;
     font-weight: 400;
     line-height: 1.45;
@@ -41,7 +42,7 @@ const { number } = Astro.props;
 
   .sidenote-content.is-margin {
     position: absolute;
-    left: calc(100% + var(--space-4));
+    left: calc(100% + var(--space-5));
     width: 14rem;
     margin: 0;
     padding: 0;
@@ -76,6 +77,10 @@ const { number } = Astro.props;
 
       const markerTop = marker.getBoundingClientRect().top - prose.getBoundingClientRect().top;
       const paragraph = note.closest('p');
+      if (note.dataset.align === 'paragraph' && paragraph) {
+        note.style.top = `${paragraph.getBoundingClientRect().top - prose.getBoundingClientRect().top}px`;
+        return;
+      }
       const paragraphBottom = paragraph
         ? paragraph.getBoundingClientRect().bottom - prose.getBoundingClientRect().top
         : markerTop + note.offsetHeight;

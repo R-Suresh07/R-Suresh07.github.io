@@ -14,6 +14,7 @@ import ResponsiveVideo from '../../components/ResponsiveVideo.astro';
 import Sidenote from '../../components/Sidenote.astro';
 import HarnessBoundaryFigure from '../../components/figures/HarnessBoundaryFigure.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
+import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -33,10 +34,11 @@ Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench, a benchmar
 
 ## Inside an SMDD task
 
-SMDD-Bench has five task types and 502 task instances in total. Each one tests chemical and biological reasoning, 3D intuition about the pocket, and fluency with specialized tools, usually all at once. We focus on three: Lead Optimization, Scaffold Hopping, and Interaction Point Discovery. Together, they span a wide range of constraints and leave a lot of room for improvement. Lead Optimization is the most manageable of the three, whereas current models still only solve a tiny fraction of Scaffold Hopping and Interaction Point Discovery tasks.
+SMDD-Bench has five task types and 502 task instances in total. Each one tests chemical and biological reasoning, 3D intuition about the pocket, and fluency with specialized tools, usually all at once. We focus on three: Lead Optimization, Scaffold Hopping, and Interaction Point Discovery. Together, they span a wide range of constraints and leave a lot of room for improvement. Lead Optimization is the most manageable of the three, whereas current models still only solve a tiny fraction of Scaffold Hopping and Interaction Point Discovery tasks.<Sidenote number="2" align="paragraph"><SmddPerformanceNote /></Sidenote>
 
 <Figure
   src={smddBenchOverview}
+  compactTop
   alt="Overview of the five SMDD-Bench task types."
   width="wide"
   captionLabel="FIG. 2"

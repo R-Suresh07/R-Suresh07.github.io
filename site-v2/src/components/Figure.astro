@@ -9,6 +9,7 @@ interface Props {
   captionLabel?: string;
   caption?: string;
   emphasizedCaption?: boolean;
+  compactTop?: boolean;
   credit?: string;
   source?: string;
 }
@@ -20,12 +21,13 @@ const {
   captionLabel,
   caption,
   emphasizedCaption = false,
+  compactTop = false,
   credit,
   source,
 } = Astro.props;
 ---
 
-<figure class:list={['media-figure', `media-figure--${width}`, { 'media-figure--emphasized-caption': emphasizedCaption }]}>
+<figure class:list={['media-figure', `media-figure--${width}`, { 'media-figure--emphasized-caption': emphasizedCaption, 'media-figure--compact-top': compactTop }]}>
   {typeof src === 'string'
     ? <img src={src} alt={alt} loading="lazy" decoding="async" />
     : <Image src={src} alt={alt} loading="lazy" />}
@@ -56,6 +58,10 @@ const {
 
   .media-figure--wide {
     --media-width: var(--wide-width);
+  }
+
+  .media-figure--compact-top {
+    margin-top: var(--space-4);
   }
 
   .media-figure--full {
