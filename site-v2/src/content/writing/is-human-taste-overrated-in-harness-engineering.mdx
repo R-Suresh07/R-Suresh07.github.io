@@ -63,6 +63,20 @@ The agent is given a PDB structure of the protein together with the location of 
 
 For each point, the agent outputs its 3D coordinates and one of six pharmacophore labels: donor, acceptor, aromatic, hydrophobic, cation, or anion.
 
+### Why is this task so hard for agents?
+
+Initially, you might think the easiest way to solve the task is to open `receptor.pdb`, inspect the pocket, and look for three plausible places where a molecule could interact with the protein based on the surrounding amino acids. But **plausibility is not the same as conservation**. A binding pocket can contain many chemically attractive places for a ligand to interact, but what we actually care about is which of those possibilities are repeatedly used by different molecules binding to the same protein. This might sound like a small distinction, but it changes the problem considerably. A site can look perfectly reasonable from the receptor structure and still rarely recur across real binders.
+
+{/* TODO: Insert figure of problem 1. */}
+
+Another subtle thing you could overlook is that the interaction points belong to the **ligand**, not the receptor itself. For example, if the protein exposes a hydrogen-bond donor, the target is not the donor atom itself, but the location where a ligand acceptor would sit. The agent therefore has to infer what complementary feature should occupy the empty pocket space based on the surrounding protein chemistry. This difference turned out to matter much more than we initially expected.
+
+{/* TODO: Insert figure of problem 2. */}
+
+Lastly, being approximately right is not enough. The agent gets only three guesses, and each one has to get both the interaction type and the 3D location right. During evaluation, a prediction has to fall within **2.5 Å** of a compatible hidden point, and each hidden point can match at most one prediction. So clustering three good guesses around the same hotspot still only gives you one correct answer.
+
+{/* TODO: Insert figure of problem 3. */}
+
 ## Make comparisons visible
 
 Figures often need more room than paragraphs. A comparison can use the wider editorial column while its caption remains quiet and close to the evidence.
