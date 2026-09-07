@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "smdd_002_P08684_0",
+      "name": "Pharmacophore_CYP3A4",
+      "path": "smdd_002_P08684_0"
+    },
+    {
+      "id": "smdd_002_P42574_0",
+      "name": "Pharmacophore_Caspase_3",
+      "path": "smdd_002_P42574_0"
+    },
+    {
       "id": "smdd_002_Q9Y6K1_0",
       "name": "Pharmacophore_DNMT3A",
       "path": "smdd_002_Q9Y6K1_0"
