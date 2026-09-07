@@ -3,12 +3,14 @@ interface Props {
   initialTaskId?: string;
   width?: 'wide' | 'full';
   caption?: string;
+  captionLabel?: string;
 }
 
 const {
   initialTaskId = 'smdd_002_Q9Y6K1_0',
   width = 'full',
   caption,
+  captionLabel,
 } = Astro.props;
 
 const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
@@ -134,7 +136,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
     </fieldset>
   </div>
 
-  {caption && <figcaption>{caption}</figcaption>}
+  {(captionLabel || caption) && <figcaption>{captionLabel && <strong>{captionLabel}</strong>}{captionLabel && caption && ' '}{caption}</figcaption>}
 </figure>
 
 <script>
@@ -1178,8 +1180,16 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
   figcaption {
     margin-top: var(--space-2);
     color: var(--color-ink-soft);
-    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
     line-height: 1.55;
+  }
+
+  figcaption strong {
+    margin-right: .1em;
+    color: var(--color-accent);
+    font-weight: 750;
+    letter-spacing: .06em;
   }
 
   @keyframes orbit {

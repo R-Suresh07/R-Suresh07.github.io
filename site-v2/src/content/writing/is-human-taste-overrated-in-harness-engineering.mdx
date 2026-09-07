@@ -48,7 +48,20 @@ SMDD-Bench has five task types and 502 task instances in total. Each one tests c
 
 ## Interaction Point Discovery
 
-<InteractionPointExplorer initialTaskId="smdd_002_Q9Y6K1_0" width="full" />
+The goal of Interaction Point Discovery is to test whether an agent can identify valuable interaction hotspots inside a protein binding pocket.
+
+These hotspots are useful because they indicate regions that small molecules repeatedly exploit when binding to the protein. They can guide fragment-based drug discovery, suggest where an existing molecule should be elaborated, or help prioritize molecules during computational screening.
+
+<InteractionPointExplorer
+  initialTaskId="smdd_002_Q9Y6K1_0"
+  width="full"
+  captionLabel="FIG. 3"
+  caption="Anatomy of an Interaction Point Discovery task. The agent receives only the receptor and binding-pocket location. Step through the visualization to reveal the search region, the hidden target built from recurring interactions across many bound ligands, and how predictions are matched during evaluation."
+/>
+
+The agent is given a PDB structure of the protein together with the location of its binding pocket. Its job is to predict the three ligand-side interaction points most likely to be conserved across a diverse set of small-molecule binders.
+
+For each point, the agent outputs its 3D coordinates and one of six pharmacophore labels: donor, acceptor, aromatic, hydrophobic, cation, or anion.
 
 ## Make comparisons visible
 
@@ -68,11 +81,11 @@ The implementation can stay compact. Build-time rendering gives the page highlig
 type Observation = { predicted: number; observed: 0 | 1 };
 
 export function squaredLoss(sample: Observation) {
-  return (sample.predicted - sample.observed) ** 2;
+  return (sample.predicted - sample.observed)  2;
 }
 ```
 
-> **Interpretation note.** A lower aggregate loss is useful only when the evaluation set represents the decisions the system will actually encounter. Treat a clean metric as evidence, not as a conclusion.
+> Interpretation note. A lower aggregate loss is useful only when the evaluation set represents the decisions the system will actually encounter. Treat a clean metric as evidence, not as a conclusion.
 
 ## Show the whole system when structure matters
 
