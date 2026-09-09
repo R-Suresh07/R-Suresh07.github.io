@@ -19,6 +19,7 @@ import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
 import videoPoster from '../../assets/fixtures/video-poster.svg';
+import figurePlaceholder from '../../assets/fixtures/figure-placeholder.svg';
 
 ## Introduction
 
@@ -52,6 +53,12 @@ The goal of Interaction Point Discovery is to test whether an agent can identify
 
 These hotspots are useful because they indicate regions that small molecules repeatedly exploit when binding to the protein. They can guide fragment-based drug discovery, suggest where an existing molecule should be elaborated, or help prioritize molecules during computational screening.
 
+<Figure
+  src={figurePlaceholder}
+  alt="Placeholder for a figure showing how an IPD task is generated."
+  caption="How an IPD task is generated"
+/>
+
 <InteractionPointExplorer
   initialTaskId="smdd_002_Q9Y6K1_0"
   width="full"
@@ -63,19 +70,44 @@ The agent is given a PDB structure of the protein together with the location of 
 
 For each point, the agent outputs its 3D coordinates and one of six pharmacophore labels: donor, acceptor, aromatic, hydrophobic, cation, or anion.
 
+The difficulty in this task mainly comes from the fact that the agent is asked to predict a property that is not directly visible in it's input. It receives a single protein structure and the location of the binding pocket but the hidden points are constructed from interactions that occur many times across different ligand structures of the same protein. To put it simply, the agent can inspect what interactions like chemically plausible in one pocket but it has to reason which of those interactions would remain useful across a diverse set of binding molecules.
+
+There is also a high degree of spatial reasoning involved in the task. The agent has only three predictions and each must identify both the correct interaction type and approximately where that feature would occur in 3D space. So the problem combines chemical reasoning, geometrical analysis and reasoning about information that is only indirectly observable from the provided protein receptor. 
+
 ### Why is this task so hard for agents?
 
 Initially, you might think the easiest way to solve the task is to open `receptor.pdb`, inspect the pocket, and look for three plausible places where a molecule could interact with the protein based on the surrounding amino acids. But **plausibility is not the same as conservation**. A binding pocket can contain many chemically attractive places for a ligand to interact, but what we actually care about is which of those possibilities are repeatedly used by different molecules binding to the same protein. This might sound like a small distinction, but it changes the problem considerably. A site can look perfectly reasonable from the receptor structure and still rarely recur across real binders.
 
 {/* TODO: Insert figure of problem 1. */}
 
+<Figure
+  src={figurePlaceholder}
+  alt="Placeholder for problem 1: plausible interactions versus conserved hotspots."
+  captionLabel="FIG. 4"
+  caption="Plausibility versus conservation. A chemically plausible interaction site may rarely recur across real binders; the task targets hotspots shared by diverse ligands."
+/>
+
 Another subtle thing you could overlook is that the interaction points belong to the **ligand**, not the receptor itself. For example, if the protein exposes a hydrogen-bond donor, the target is not the donor atom itself, but the location where a ligand acceptor would sit. The agent therefore has to infer what complementary feature should occupy the empty pocket space based on the surrounding protein chemistry. This difference turned out to matter much more than we initially expected.
 
 {/* TODO: Insert figure of problem 2. */}
 
+<Figure
+  src={figurePlaceholder}
+  alt="Placeholder for problem 2: ligand interaction points versus receptor atoms."
+  captionLabel="FIG. 5"
+  caption="Ligand points versus receptor atoms. The agent must predict where a complementary ligand feature would sit in the pocket, rather than report the protein atom it interacts with."
+/>
+
 Lastly, being approximately right is not enough. The agent gets only three guesses, and each one has to get both the interaction type and the 3D location right. During evaluation, a prediction has to fall within **2.5 Å** of a compatible hidden point, and each hidden point can match at most one prediction. So clustering three good guesses around the same hotspot still only gives you one correct answer.
 
 {/* TODO: Insert figure of problem 3. */}
+
+<Figure
+  src={figurePlaceholder}
+  alt="Placeholder for problem 3: interaction type, spatial accuracy, and unique matches."
+  captionLabel="FIG. 6"
+  caption="Precision with only three guesses. Each prediction needs a compatible interaction type and a location within 2.5 Å of a hidden point; repeated guesses around one hotspot count only once."
+/>
 
 ## Make comparisons visible
 
