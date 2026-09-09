@@ -15,6 +15,7 @@ import Sidenote from '../../components/Sidenote.astro';
 import HarnessBoundaryFigure from '../../components/figures/HarnessBoundaryFigure.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
 import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.astro';
+import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -43,6 +44,7 @@ SMDD-Bench has five task types and 502 task instances in total. Each one tests c
   alt="Overview of the five SMDD-Bench task types."
   width="wide"
   captionLabel="FIG. 2"
+  title="Inside an SMDD task"
   caption="Overview of the five SMDD-Bench task types."
   emphasizedCaption
 />
@@ -78,9 +80,9 @@ There is also a high degree of spatial reasoning involved in the task. The agent
 
 Not great. Across the original SMDD-Bench models, only Gemini 3.1 Pro managed to solve a single Interactive Point Discovery task, while the rest scored a flat 0/25 across the board.
 
-However, taking this terminal success rate at face value misses the full picture. A task is only marked as solved when an agent identifies all three required interaction points. GPT-5.4, for instance, registers a 0/25 task score yet recovers 17 out of 75 hidden points, the highest of any model. That actually edges out Gemini 3.1 Pro, which found 14/75 points but happened to be the only model to chain three correct predictions within a single task. Qwen 3.5 (9B) similarly recovers 10/75 points without ever completing a full task.
+<IpdBaselineFigure />
 
-A 0/25 score can therefore mask anything from consistently finding two out of three points to missing every hotspot entirely. While we treat the full-task success rate as the primary benchmark outcome, we also analyze point-level recovery to better understand how and where these agents fall short.
+These aggregate results show that current agents struggle on this task, but they do not reveal the source of those failures. To understand where the difficulty was coming from, we examined the failed trajectories in detail.
 
 ### Why is this task so hard for agents?
 
@@ -91,7 +93,8 @@ Initially, you might think the easiest way to solve the task is to open `recepto
 <Figure
   src={figurePlaceholder}
   alt="Placeholder for problem 1: plausible interactions versus conserved hotspots."
-  captionLabel="FIG. 4"
+  captionLabel="FIG. 5"
+  title="Plausibility versus conservation"
   caption="Plausibility versus conservation. A chemically plausible interaction site may rarely recur across real binders; the task targets hotspots shared by diverse ligands."
 />
 
@@ -102,7 +105,8 @@ Another subtle thing you could overlook is that the interaction points belong to
 <Figure
   src={figurePlaceholder}
   alt="Placeholder for problem 2: ligand interaction points versus receptor atoms."
-  captionLabel="FIG. 5"
+  captionLabel="FIG. 6"
+  title="Ligand points versus receptor atoms"
   caption="Ligand points versus receptor atoms. The agent must predict where a complementary ligand feature would sit in the pocket, rather than report the protein atom it interacts with."
 />
 
@@ -113,7 +117,8 @@ Lastly, being approximately right is not enough. The agent gets only three guess
 <Figure
   src={figurePlaceholder}
   alt="Placeholder for problem 3: interaction type, spatial accuracy, and unique matches."
-  captionLabel="FIG. 6"
+  captionLabel="FIG. 7"
+  title="Precision with only three guesses"
   caption="Precision with only three guesses. Each prediction needs a compatible interaction type and a location within 2.5 Å of a hidden point; repeated guesses around one hotspot count only once."
 />
 

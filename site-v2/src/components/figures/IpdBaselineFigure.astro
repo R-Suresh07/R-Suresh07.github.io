@@ -1,0 +1,192 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import FigureCaption from '../FigureCaption.astro';
+// Task-type-2 results supplied for this article; Qwen 9B is results/blog/ipd/v1.
+const models = [
+  { name: 'GPT-5.4', counts: [11, 11, 3, 0] },
+  { name: 'Gemini 3.1 Pro', counts: [14, 9, 1, 1] },
+  { name: 'Qwen 3.5 9B', counts: [16, 8, 1, 0] },
+  { name: 'Qwen 3.5 397B-A17B', counts: [20, 5, 0, 0] },
+  { name: 'Claude Sonnet 4.6', counts: [21, 4, 0, 0] },
+  { name: 'Kimi K2.5 Thinking', counts: [23, 2, 0, 0] },
+  { name: 'MiniMax M2.7', counts: [24, 1, 0, 0] },
+  { name: 'DeepSeek V3.2', counts: [25, 0, 0, 0] },
+].map(model => ({ ...model, points: model.counts.reduce((sum, count, index) => sum + count * index, 0) })).sort((a, b) => b.counts[3] - a.counts[3] || b.points - a.points);
+---
+
+<ipd-baseline-figure data-view="outcomes">
+  <figure aria-label="IPD baseline performance across 25 tasks per model">
+    <FigureHeading label="FIG. 4" title="Almost never all three" subtitle="distribution of points matched per task · 25 tasks per model" />
+    <div class="toolbar">
+      <div class="views" role="group" aria-label="Chart view">
+        <span class="eyebrow">View</span>
+        <button type="button" data-view="outcomes" aria-pressed="true">Task outcomes</button>
+        <button type="button" data-view="recovery" aria-pressed="false">Point recovery</button>
+      </div>
+      <span class="hint">hover, tap, or focus a row</span>
+    </div>
+    <div class="sort-cue" aria-live="polite">Task outcomes · sorted by tasks solved</div>
+    <div class="legend" aria-label="Points recovered per task">
+      {[0, 1, 2, 3].map(n => <span><i class={`shade-${n}`}></i>{n} {n === 1 ? 'point' : 'points'}</span>)}
+    </div>
+    <div class="evaluator-note">A task receives terminal credit only when all three points are matched.</div>
+    <div class="axis"><span></span><span class="ticks outcomes"><span>0</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25 tasks</span></span><span class="ticks recovery"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100%</span></span><span class="metric-heading"><span class="outcomes">total points matched</span><span class="recovery">point-match rate</span></span></div>
+    <div class="rows">
+      {models.map((model, index) => (
+        <div class="model-row" tabindex="0" data-index={index} aria-label={`${model.name}: ${model.points} of 75 points matched; ${model.counts[3]} of 25 tasks solved. Task counts for 0, 1, 2, 3 points: ${model.counts.join(', ')}.`}>
+          <span class="model-name">{model.name}</span>
+          <span class="track">
+            <span class="stack outcomes">{model.counts.map((count, n) => count > 0 && <span class={`segment shade-${n}`} data-level={n} style={`width:${count * 4}%`}><span>{count}</span></span>)}</span>
+            <span class="recovery-bar" style={`--recovery:${model.points / 75 * 100}%`}></span>
+          </span>
+          <span class="metric"><span class="outcomes">{model.points} / 75</span><span class="recovery">{(model.points / 75 * 100).toFixed(1)}%</span>{model.counts[3] > 0 && <small>✦ 1 task solved</small>}</span>
+        </div>
+      ))}
+    </div>
+    <div class="annotation">Highest point recovery ≠ highest task success</div>
+    <FigureCaption caption="GPT-5.4 recovers the most individual interaction points, matching 17/75 despite solving no complete tasks. Gemini 3.1 Pro matches fewer points overall, but is the only model to recover all three on the same task. Qwen 3.5 9B recovers 10/75 points, twice as many as its much larger 397B-A17B counterpart." />
+    <div class="tooltip" role="status" hidden></div>
+  </figure>
+  <script is:inline type="application/json" class="model-data" set:html={JSON.stringify(models)} />
+</ipd-baseline-figure>
+
+<script>
+  class IpdBaselineFigure extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const models = JSON.parse(this.querySelector('.model-data')!.textContent!);
+      const tooltip = this.querySelector<HTMLElement>('.tooltip')!;
+      const rows = [...this.querySelectorAll<HTMLElement>('.model-row')];
+      const hide = () => {
+        tooltip.hidden = true;
+        rows.forEach(row => row.classList.remove('dimmed'));
+      };
+      const show = (row: HTMLElement) => {
+        const model = models[Number(row.dataset.index)];
+        rows.forEach(other => other.classList.toggle('dimmed', other !== row));
+        tooltip.replaceChildren();
+        const line = (text: string, tag = 'div') => {
+          const element = document.createElement(tag);
+          element.textContent = text;
+          tooltip.append(element);
+        };
+        line(model.name, 'strong');
+        const metric = (value: string, description: string) => {
+          const element = document.createElement('div');
+          const strong = document.createElement('b');
+          strong.textContent = value;
+          element.append(strong, document.createTextNode(description));
+          tooltip.append(element);
+        };
+        metric(`${model.counts[3]} / 25`, ` tasks solved · ${model.counts[3] * 4}%`);
+        metric(`${model.points} / 75`, ` points matched · ${(model.points / 75 * 100).toFixed(1)}%`);
+        metric((model.points / 25).toFixed(2), ' mean points / task');
+        const best = model.counts.reduce((highest: number, count: number, n: number) => count > 0 ? n : highest, 0);
+        if (best === 3) line('Only baseline model with a 3 / 3 task', 'strong');
+        else metric(`Best task: ${best} / 3 points`, best === 2 ? ` on ${model.counts[best]} tasks` : '');
+        tooltip.hidden = false;
+        const bounds = row.getBoundingClientRect();
+        const origin = this.getBoundingClientRect();
+        tooltip.style.left = `${Math.max(8, Math.min(bounds.left + bounds.width * .4, window.innerWidth - tooltip.offsetWidth - 8)) - origin.left}px`;
+        const below = bounds.bottom + 8;
+        tooltip.style.top = `${Math.max(8, below + tooltip.offsetHeight < window.innerHeight ? below : bounds.top - tooltip.offsetHeight - 8) - origin.top}px`;
+      };
+      rows.forEach(row => {
+        row.addEventListener('pointerenter', () => show(row));
+        row.addEventListener('pointerleave', hide);
+        row.addEventListener('focus', () => show(row));
+        row.addEventListener('blur', hide);
+        row.addEventListener('click', () => show(row));
+        row.addEventListener('keydown', event => { if (event.key === 'Escape') hide(); });
+      });
+      this.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(button => {
+        button.addEventListener('click', () => {
+          if (this.dataset.view === button.dataset.view) return;
+          const positions = new Map(rows.map(row => [row, row.getBoundingClientRect().top]));
+          rows.forEach(row => row.getAnimations().forEach(animation => animation.cancel()));
+          const sorted = [...rows].sort((a, b) => {
+            const first = models[Number(a.dataset.index)];
+            const second = models[Number(b.dataset.index)];
+            return (button.dataset.view === 'outcomes' ? second.counts[3] - first.counts[3] : 0) || second.points - first.points;
+          });
+          const container = this.querySelector('.rows')!;
+          sorted.forEach(row => container.append(row));
+          if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            sorted.forEach(row => {
+              const offset = positions.get(row)! - row.getBoundingClientRect().top;
+              if (offset) row.animate([{ transform: `translateY(${offset}px)` }, { transform: 'translateY(0)' }], { duration: 400, easing: 'cubic-bezier(.22,1,.36,1)' });
+            });
+          }
+          this.querySelector('.sort-cue')!.textContent = button.dataset.view === 'outcomes'
+            ? 'Task outcomes · sorted by tasks solved'
+            : 'Point recovery · sorted by points matched';
+          this.dataset.view = button.dataset.view;
+          this.querySelectorAll('button[data-view]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
+          hide();
+        });
+      });
+      const controller = new AbortController();
+      this.cleanup = () => controller.abort();
+      window.addEventListener('scroll', hide, { passive: true, signal: controller.signal });
+      window.addEventListener('resize', hide, { signal: controller.signal });
+      document.addEventListener('pointerdown', event => { if (!this.contains(event.target as Node)) hide(); }, { signal: controller.signal });
+    }
+    cleanup?: () => void;
+    disconnectedCallback() { this.cleanup?.(); delete this.dataset.ready; }
+  }
+  if (!customElements.get('ipd-baseline-figure')) customElements.define('ipd-baseline-figure', IpdBaselineFigure);
+</script>
+
+<style>
+  ipd-baseline-figure { display:block; width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); font:13px/1.5 var(--font-sans); }
+  figure { margin:0; }
+  .toolbar { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:24px 0 16px; }
+  .views { display:flex; align-items:center; gap:12px; }
+  .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-soft); }
+  button { font:inherit; font-size:12px; background:none; border:0; border-bottom:1px solid transparent; padding:3px 0; color:var(--color-ink-soft); cursor:pointer; }
+  button[aria-pressed="true"] { color:#087c83; border-color:#087c83; }
+  button:focus-visible, .model-row:focus-visible { outline:2px solid #087c83; outline-offset:4px; }
+  .hint { color:var(--color-ink-soft); font-size:12px; }
+  .sort-cue { color:var(--color-ink-soft); font:10px/1.6 var(--font-mono); margin-bottom:14px; }
+  .evaluator-note { color:var(--color-ink-soft); font-size:11px; margin-bottom:20px; }
+  .legend { display:flex; gap:20px; margin:0 0 8px; font-size:11px; color:var(--color-ink-soft); }
+  .legend > span { display:flex; align-items:center; gap:6px; }
+  .legend i { width:10px; height:10px; }
+  .shade-0 { background:#e1e0db; color:#555e60; }
+  .shade-1 { background:#a2bfbd; color:#193d3c; }
+  .shade-2 { background:#528e8b; color:white; }
+  .shade-3 { background:#086b69; color:white; }
+  .axis, .model-row { display:grid; grid-template-columns:180px minmax(0, 1fr) 110px; gap:18px; align-items:center; }
+  .axis { color:var(--color-ink-soft); font-size:10px; margin-bottom:8px; }
+  .ticks { display:flex; justify-content:space-between; border-bottom:1px solid var(--color-line); padding-bottom:6px; }
+  .metric-heading { text-align:right; }
+  .model-row { min-height:51px; transition:opacity .15s; cursor:default; }
+  .model-row.dimmed { opacity:.3; }
+  .model-name { font-size:12px; font-weight:550; }
+  .track { display:block; position:relative; height:24px; background:color-mix(in srgb, var(--color-line) 22%, transparent); }
+  .stack { display:flex; height:100%; }
+  .segment { display:flex; align-items:center; justify-content:center; box-shadow:inset -1px 0 var(--color-paper); font-size:10px; }
+  .metric { text-align:right; font:12px/1.5 var(--font-mono); }
+  .metric small { display:block; color:#087c83; font:10px/1.4 var(--font-sans); }
+  .recovery { display:none; }
+  .recovery-bar { display:block; position:absolute; left:0; top:0; height:100%; width:0; background:#237e79; transition:width .35s ease; }
+  [data-view="recovery"] .outcomes { display:none; }
+  [data-view="recovery"] .recovery { display:block; }
+  [data-view="recovery"] .ticks.recovery { display:flex; }
+  [data-view="recovery"] .recovery-bar { width:var(--recovery); }
+  [data-view="recovery"] .legend { visibility:hidden; }
+  .annotation { border-top:1px solid var(--color-line); padding-top:14px; margin-top:18px; color:#087c83; font-size:12px; }
+  .annotation span { display:block; margin-top:3px; color:var(--color-ink-soft); font-size:11px; }
+  .tooltip { position:absolute; z-index:100; width:330px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:14px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); color:var(--color-ink); box-shadow:0 10px 25px #0002; font:12px/1.6 var(--font-sans); pointer-events:none; }
+  .tooltip :global(strong) { display:block; color:#087c83; }
+  .tooltip :global(p) { margin:8px 0 0; font:inherit; }
+  @media (max-width:600px) {
+    .axis { grid-template-columns:minmax(0,1fr) 85px; gap:10px; }
+    .axis > span:first-child { display:none; }
+    .model-row { grid-template-columns:minmax(0,1fr) 85px; gap:5px 10px; padding:10px 0; }
+    .model-name { grid-column:1 / -1; }
+    .legend { gap:15px; }
+  }
+  @media (prefers-reduced-motion:reduce) { .recovery-bar, .model-row { transition:none; } }
+</style>

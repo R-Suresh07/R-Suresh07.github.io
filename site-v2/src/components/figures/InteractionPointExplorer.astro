@@ -1,5 +1,9 @@
 ---
+import FigureHeading from '../FigureHeading.astro';
+import FigureCaption from '../FigureCaption.astro';
 interface Props {
+  title?: string;
+  subtitle?: string;
   initialTaskId?: string;
   width?: 'wide' | 'full';
   caption?: string;
@@ -7,6 +11,8 @@ interface Props {
 }
 
 const {
+  title,
+  subtitle,
   initialTaskId = 'smdd_002_Q9Y6K1_0',
   width = 'full',
   caption,
@@ -22,10 +28,9 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
   data-root={dataRoot}
   data-initial-task={initialTaskId}
 >
+  <FigureHeading label={captionLabel} title={title ?? "Anatomy of an Interaction Point Discovery task"} subtitle={subtitle} />
   <div class="explorer-heading">
     <div class="heading-copy">
-      <p class="kicker">Interactive figure</p>
-      <h3>Interaction Point Discovery</h3>
       <p class="task-summary">Given a protein receptor and binding pocket, predict three conserved ligand-side interaction points.</p>
     </div>
     <label class="task-picker">
@@ -136,7 +141,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
     </fieldset>
   </div>
 
-  {(captionLabel || caption) && <figcaption>{captionLabel && <strong>{captionLabel}</strong>}{captionLabel && caption && ' '}{caption}</figcaption>}
+  <FigureCaption caption={caption} />
 </figure>
 
 <script>
@@ -753,8 +758,7 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
   }
 
   .explorer-heading :where(p, h3),
-  .guide :where(p, ul, dl),
-  figcaption {
+  .guide :where(p, ul, dl) {
     margin: 0;
   }
 
@@ -1175,21 +1179,6 @@ const dataRoot = `${import.meta.env.BASE_URL}data/smdd/ipd/`;
     border-color: #b8d4ca;
     background: var(--green-soft);
     color: var(--color-accent-strong);
-  }
-
-  figcaption {
-    margin-top: var(--space-2);
-    color: var(--color-ink-soft);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    line-height: 1.55;
-  }
-
-  figcaption strong {
-    margin-right: .1em;
-    color: var(--color-accent);
-    font-weight: 750;
-    letter-spacing: .06em;
   }
 
   @keyframes orbit {
