@@ -74,6 +74,14 @@ The difficulty in this task mainly comes from the fact that the agent is asked t
 
 There is also a high degree of spatial reasoning involved in the task. The agent has only three predictions and each must identify both the correct interaction type and approximately where that feature would occur in 3D space. So the problem combines chemical reasoning, geometrical analysis and reasoning about information that is only indirectly observable from the provided protein receptor. 
 
+### How well do current agents do?
+
+Not great. Across the original SMDD-Bench models, only Gemini 3.1 Pro managed to solve a single Interactive Point Discovery task, while the rest scored a flat 0/25 across the board.
+
+However, taking this terminal success rate at face value misses the full picture. A task is only marked as solved when an agent identifies all three required interaction points. GPT-5.4, for instance, registers a 0/25 task score yet recovers 17 out of 75 hidden points, the highest of any model. That actually edges out Gemini 3.1 Pro, which found 14/75 points but happened to be the only model to chain three correct predictions within a single task. Qwen 3.5 (9B) similarly recovers 10/75 points without ever completing a full task.
+
+A 0/25 score can therefore mask anything from consistently finding two out of three points to missing every hotspot entirely. While we treat the full-task success rate as the primary benchmark outcome, we also analyze point-level recovery to better understand how and where these agents fall short.
+
 ### Why is this task so hard for agents?
 
 Initially, you might think the easiest way to solve the task is to open `receptor.pdb`, inspect the pocket, and look for three plausible places where a molecule could interact with the protein based on the surrounding amino acids. But **plausibility is not the same as conservation**. A binding pocket can contain many chemically attractive places for a ligand to interact, but what we actually care about is which of those possibilities are repeatedly used by different molecules binding to the same protein. This might sound like a small distinction, but it changes the problem considerably. A site can look perfectly reasonable from the receptor structure and still rarely recur across real binders.
@@ -109,53 +117,3 @@ Lastly, being approximately right is not enough. The agent gets only three guess
   caption="Precision with only three guesses. Each prediction needs a compatible interaction type and a location within 2.5 Å of a hidden point; repeated guesses around one hotspot count only once."
 />
 
-## Make comparisons visible
-
-Figures often need more room than paragraphs. A comparison can use the wider editorial column while its caption remains quiet and close to the evidence.
-
-<Figure
-  src={wideComparison}
-  alt="Two experimental traces diverging as they move from left to right."
-  width="wide"
-  caption="The wide treatment extends beyond prose without reaching the viewport edge."
-  credit="Synthetic fixture"
-/>
-
-The implementation can stay compact. Build-time rendering gives the page highlighted code without sending a client-side syntax highlighter:
-
-```ts
-type Observation = { predicted: number; observed: 0 | 1 };
-
-export function squaredLoss(sample: Observation) {
-  return (sample.predicted - sample.observed)  2;
-}
-```
-
-> Interpretation note. A lower aggregate loss is useful only when the evaluation set represents the decisions the system will actually encounter. Treat a clean metric as evidence, not as a conclusion.
-
-## Show the whole system when structure matters
-
-The full-width option is intended for system diagrams, dense tables, and multi-panel research figures. It is bounded by the page gutter, so it cannot create horizontal page overflow.
-
-<Figure
-  src={fullSystem}
-  alt="A system diagram connecting observation, inference, and evaluation stages."
-  width="full"
-  caption="A full-width figure can use nearly the entire canvas while prose remains narrow."
-  credit="Synthetic fixture"
-/>
-
-## Motion as evidence
-
-Short scientific animations use `figure` mode: autoplaying, muted, looping, and inline. This fixture supplies a poster but intentionally no migrated video asset; adding WebM and MP4 sources later will activate playback without changing article markup. Longer explanatory media should instead use `player` mode, which enables controls and disables autoplay.
-
-<ResponsiveVideo
-  mode="figure"
-  poster={videoPoster}
-  label="Placeholder for a looping scientific field animation."
-  width="wide"
-  caption="Looping-video placeholder. Figure mode is silent and non-interactive by design."
-  credit="Synthetic fixture"
-/>
-
-The result is deliberately plain: one reading column, a consistent rhythm, and just enough hierarchy to make technical material easy to scan.
