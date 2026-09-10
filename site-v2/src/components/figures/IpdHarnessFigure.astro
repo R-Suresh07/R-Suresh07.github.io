@@ -1,0 +1,467 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+interface Props { label?: string; }
+const { label = 'FIG. 8' } = Astro.props;
+
+// Paired Qwen 3.5 9B results supplied for this article. One source for both views,
+// every metric, the transition matrix, tooltips, and the accessible data table.
+const tasks = [
+  { id: 'O75874', v1: 1, v2: 1 },
+  { id: 'P00374', v1: 0, v2: 1 },
+  { id: 'P00742', v1: 1, v2: 0 },
+  { id: 'P00797', v1: 0, v2: 1 },
+  { id: 'P00918', v1: 0, v2: 2 },
+  { id: 'P03372', v1: 1, v2: 1 },
+  { id: 'P04150', v1: 0, v2: 2 },
+  { id: 'P07900', v1: 0, v2: 1 },
+  { id: 'P08684', v1: 0, v2: 0 },
+  { id: 'P10275', v1: 1, v2: 1 },
+  { id: 'P11473', v1: 0, v2: 1 },
+  { id: 'P12821', v1: 0, v2: 1 },
+  { id: 'P14061', v1: 2, v2: 0 },
+  { id: 'P18031', v1: 0, v2: 1 },
+  { id: 'P22303', v1: 0, v2: 2 },
+  { id: 'P24941', v1: 0, v2: 1 },
+  { id: 'P28482', v1: 1, v2: 0 },
+  { id: 'P42574', v1: 1, v2: 2 },
+  { id: 'P45452', v1: 0, v2: 3 },
+  { id: 'P55055', v1: 1, v2: 1 },
+  { id: 'P56817', v1: 0, v2: 1 },
+  { id: 'Q15910', v1: 0, v2: 2 },
+  { id: 'Q92769', v1: 1, v2: 3 },
+  { id: 'Q9BY41', v1: 0, v2: 2 },
+  { id: 'Q9Y6K1', v1: 0, v2: 0 },
+].map(task => ({
+  ...task,
+  delta: task.v2 - task.v1,
+  status: task.v2 > task.v1 ? 'improved' : task.v2 < task.v1 ? 'declined' : 'unchanged',
+}));
+
+const levels = [0, 1, 2, 3];
+const counts = (side: 'v1' | 'v2') => levels.map(level => tasks.filter(task => task[side] === level).length);
+const v1Counts = counts('v1');
+const v2Counts = counts('v2');
+const totalV1 = tasks.reduce((sum, task) => sum + task.v1, 0);
+const totalV2 = tasks.reduce((sum, task) => sum + task.v2, 0);
+const improved = tasks.filter(task => task.delta > 0).length;
+const unchanged = tasks.filter(task => task.delta === 0).length;
+const declined = tasks.filter(task => task.delta < 0).length;
+const movedOffZero = tasks.filter(task => task.v1 === 0 && task.v2 > 0).length;
+const maxPoints = tasks.length * 3;
+const recovery = totalV2 / totalV1;
+const transitions = levels.flatMap(from => levels.map(to => ({
+  from, to, count: tasks.filter(task => task.v1 === from && task.v2 === to).length,
+}))).filter(transition => transition.count > 0);
+
+// Fail in development AND at build time if the article's fixed results drift.
+const actual = [tasks.length, ...v1Counts, ...v2Counts, totalV1, totalV2, improved, unchanged, declined, totalV2 - totalV1, movedOffZero];
+const expected = [25, 16, 8, 1, 0, 5, 12, 6, 2, 10, 30, 16, 6, 3, 20, 14];
+if (actual.some((value, index) => value !== expected[index]) || new Set(tasks.map(task => task.id)).size !== tasks.length
+  || tasks.some(task => !levels.includes(task.v1) || !levels.includes(task.v2))
+  || transitions.reduce((sum, transition) => sum + transition.count, 0) !== tasks.length) {
+  throw new Error(`IPD harness figure: paired-result invariants failed. Expected ${expected}; received ${actual}.`);
+}
+
+type Point = { x: number; y: number };
+const scoreY = (score: number) => 416 - score * 100;
+// Keep the packs compact and balanced, with room for larger tiles on phones.
+const packColumns = (count: number, mobile: boolean) => Math.max(1, Math.ceil(count / Math.max(1, Math.ceil(count / (mobile ? 6 : 8)))));
+const packRows = (count: number, mobile: boolean) => Math.max(1, Math.ceil(count / packColumns(count, mobile)));
+const distributionY = (level: number, mobile: boolean) => mobile ? 89 + level * 90 : 116 + level * 100;
+const countY = (level: number, count: number, mobile: boolean) => distributionY(level, mobile) + (packRows(count, mobile) - 1) * (mobile ? 17.5 : 19) + 24;
+const flowPath = (level: number, mobile: boolean) => {
+  const y = distributionY(level, mobile) + (Math.max(packRows(v1Counts[level], mobile), packRows(v2Counts[level], mobile)) - 1) * (mobile ? 17.5 : 19) / 2;
+  const start = mobile ? 179 : 380;
+  const end = mobile ? 219 : 580;
+  return `M ${start},${y} H ${end} M ${end - 5},${y - 3} L ${end},${y} L ${end - 5},${y + 3}`;
+};
+function position(task: typeof tasks[number], side: 'v1' | 'v2', view: 'transitions' | 'distribution' | 'mobile'): Point {
+  const other = side === 'v1' ? 'v2' : 'v1';
+  const peers = tasks.filter(peer => peer[side] === task[side]).sort((a, b) => b[other] - a[other] || a.id.localeCompare(b.id));
+  const index = peers.findIndex(peer => peer.id === task.id);
+  if (view === 'transitions') {
+    const center = side === 'v1' ? 230 : 770;
+    if (peers.length <= 2) return { x: center, y: scoreY(task[side]) + (index - (peers.length - 1) / 2) * 20 };
+    const columns = Math.min(8, peers.length);
+    return { x: center + ((index % columns) - (columns - 1) / 2) * 18, y: scoreY(task[side]) + (Math.floor(index / columns) - (Math.ceil(peers.length / columns) - 1) / 2) * 18 };
+  }
+  const mobile = view === 'mobile';
+  const columns = packColumns(peers.length, mobile);
+  const pitch = mobile ? 17.5 : 19;
+  const center = mobile ? (side === 'v1' ? 109 : 289) : (side === 'v1' ? 250 : 710);
+  return {
+    x: center + ((index % columns) - (columns - 1) / 2) * pitch,
+    y: distributionY(task[side], mobile) + Math.floor(index / columns) * pitch,
+  };
+}
+const plottedTasks = tasks.map(task => {
+  const layouts = Object.fromEntries((['transitions', 'distribution', 'mobile'] as const).map(view => [view, {
+    v1: position(task, 'v1', view), v2: position(task, 'v2', view),
+  }]));
+  const { v1, v2 } = layouts.transitions;
+  const bend = (v2.x - v1.x) * .35;
+  return { ...task, layouts, path: `M ${v1.x},${v1.y} C ${v1.x + bend},${v1.y} ${v2.x - bend},${v2.y} ${v2.x},${v2.y}` };
+});
+const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, compared with ${totalV1} under the original harness. ${improved} of the same ${tasks.length} tasks improved, ${unchanged} were unchanged, and ${declined} declined. ${v2Counts[3]} tasks recovered all three hidden points under V2.`;
+---
+
+<ipd-harness-figure data-view="transitions" data-filter="all">
+  <figure aria-label="Interaction point recovery with the original and human-designed harnesses">
+    <FigureHeading label={label} title="A better representation changes the outcome" subtitle={`Qwen 3.5 9B · same ${tasks.length} tasks`} />
+    <div class="headlines" aria-label="Overall results for all 25 tasks">
+      <span><span class="old-value">{totalV1}</span><span class="arrow">→</span><strong>{totalV2} / {maxPoints}</strong> points recovered</span>
+      <span><span class="old-value">{v1Counts[3]}</span><span class="arrow">→</span><strong>{v2Counts[3]}</strong><span class="denominator"> / {tasks.length}</span> tasks solved</span>
+      <span><strong>{recovery}×</strong> point recovery</span>
+    </div>
+    <div class="toolbar">
+      <div class="text-tabs" role="group" aria-label="Chart view">
+        <span class="eyebrow">View</span>
+        <button type="button" data-view="transitions" aria-pressed="true">Task transitions</button>
+        <button type="button" data-view="distribution" aria-pressed="false">Distribution</button>
+      </div>
+      <span class="hint">hover, tap, or focus a task</span>
+    </div>
+    <div class="filter-row">
+      <div class="text-tabs filters" role="group" aria-label="Filter tasks by change">
+        <span class="eyebrow">Show</span>
+        {['all', 'improved', 'unchanged', 'declined'].map(status => <button type="button" data-filter={status} aria-pressed={status === 'all'}>{status !== 'all' && <i class={status} aria-hidden="true" />}{status[0].toUpperCase() + status.slice(1)}</button>)}
+      </div>
+      <span class="filter-cue" aria-live="polite">All {tasks.length} paired tasks</span>
+    </div>
+    <div class="plot-description">height = interaction points recovered · each curve = one task</div>
+    <div class="plot-scroll" tabindex="0" role="region" aria-label="Interactive paired task plot">
+      <svg class="plot" viewBox="0 0 1000 490" role="group" aria-label="Each task connects its original harness score to its human-designed harness score">
+        <g class="transition-guides" aria-hidden="true">
+          <text class="column-title" x="230" y="35" text-anchor="middle">Original harness<tspan class="version" x="230" dy="21">V1</tspan></text>
+          <text class="column-title v2-heading" x="770" y="35" text-anchor="middle">Human-designed harness<tspan class="version" x="770" dy="21">V2</tspan></text>
+          {levels.map(level => <g><line class="guide" x1="100" x2="952" y1={scoreY(level)} y2={scoreY(level)} /><text class="score-label" x="54" y={scoreY(level) + 4} text-anchor="middle">{level} / 3</text></g>)}
+          <text class="solved-cue" x="770" y="86" text-anchor="middle">{v2Counts[3]} tasks fully solved</text>
+        </g>
+        <g class="distribution-guides desktop-guides" aria-hidden="true">
+          <text class="column-title" x="250" y="35" text-anchor="middle">Original harness<tspan class="version" x="250" dy="21">V1</tspan></text>
+          <text class="column-title" x="710" y="35" text-anchor="middle">Human-designed harness<tspan class="version" x="710" dy="21">V2</tspan></text>
+          {levels.map(level => <g>
+            <text class="score-label" x="54" y={distributionY(level, false) + 4} text-anchor="middle">{level} / 3</text>
+            <text class="count" x="250" y={countY(level, v1Counts[level], false)} text-anchor="middle">{v1Counts[level]}</text>
+            <text class="count" x="710" y={countY(level, v2Counts[level], false)} text-anchor="middle">{v2Counts[level]}</text>
+            <path class="distribution-flow" d={flowPath(level, false)} />
+          </g>)}
+        </g>
+        <g class="distribution-guides mobile-guides" aria-hidden="true">
+          <text class="column-title" x="109" y="25" text-anchor="middle">V1<tspan class="version" x="109" dy="18">Original</tspan></text>
+          <text class="column-title" x="289" y="25" text-anchor="middle">V2<tspan class="version" x="289" dy="18">Human-designed</tspan></text>
+          {levels.map(level => <g>
+            <text class="score-label" x="25" y={distributionY(level, true) + 4} text-anchor="middle">{level} / 3</text>
+            <text class="count" x="109" y={countY(level, v1Counts[level], true)} text-anchor="middle">{v1Counts[level]}</text>
+            <text class="count" x="289" y={countY(level, v2Counts[level], true)} text-anchor="middle">{v2Counts[level]}</text>
+            <path class="distribution-flow" d={flowPath(level, true)} />
+          </g>)}
+        </g>
+        <g class="tasks">
+          {plottedTasks.map(task => <g class="task" data-id={task.id} data-status={task.status} data-zero={String(task.v1 === 0)} tabindex="0" role="button" aria-pressed="false" aria-label={`${task.id}: original harness ${task.v1} of 3; human V2 ${task.v2} of 3; ${task.status}${task.v2 === 3 ? '; fully solved under V2' : ''}.`}>
+            <path class="connector" d={task.path} pathLength="1" />
+            <path class="connector-hit" d={task.path} />
+            {(['v1', 'v2'] as const).map(side => <g class={`endpoint ${side}`} style={`transform:translate(${task.layouts.transitions[side].x}px,${task.layouts.transitions[side].y}px)`}>
+              <rect class="endpoint-hit" x="-8" y="-8" width="16" height="16" />
+              <rect class={`tile shade-${task[side]}`} x="-4.5" y="-4.5" width="9" height="9" rx="1" />
+              {side === 'v2' && task.v2 === 3 && <text class="solved-label" x="15" y="4">{task.id}</text>}
+            </g>)}
+          </g>)}
+        </g>
+        <g class="zero-note" tabindex="0" role="button" aria-pressed="false" aria-label={`${movedOffZero} of ${v1Counts[0]} tasks moved off zero. Highlight these original zero-point tasks.`}>
+          <rect class="zero-hit" x="150" y="433" width="210" height="47" />
+          <path class="bracket" d="M 156,435 V 442 H 304 V 435" />
+          <text class="zero-label" x="230" y="463" text-anchor="middle">{v1Counts[0]} tasks at zero</text>
+          <text class="zero-insight" x="230" y="463" text-anchor="middle">{movedOffZero} / {v1Counts[0]} moved off zero</text>
+        </g>
+      </svg>
+    </div>
+    <div class="below-plot">
+      <span class="outcome-summary"><span class="improved-text">{improved} improved</span><span>·</span><span>{unchanged} unchanged</span><span>·</span><span class="declined-text">{declined} declined</span></span>
+      <span class="threshold-note">All three points must match to solve a task.</span>
+    </div>
+    <div class="annotation">The gain was broader than the two solved tasks suggest.</div>
+    <figcaption class="figure-caption">{caption} <strong>{movedOffZero} of the {v1Counts[0]}</strong> tasks that recovered nothing under V1 recovered at least one point under V2.</figcaption>
+    <details class="data-table">
+      <summary>Inspect the paired task data</summary>
+      <table><caption>Interaction points recovered per task · Qwen 3.5 9B</caption><thead><tr><th scope="col">Task</th><th scope="col">V1 / 3</th><th scope="col">V2 / 3</th><th scope="col">Change</th></tr></thead><tbody>{tasks.map(task => <tr><th scope="row">{task.id}</th><td>{task.v1}</td><td>{task.v2}</td><td>{task.delta > 0 ? '+' : ''}{task.delta} · {task.status}</td></tr>)}</tbody></table>
+    </details>
+    <div class="tooltip" role="status" aria-live="polite" hidden>
+      <strong class="tooltip-id"></strong>
+      <div class="tooltip-scores"><span>Original · V1<b class="tooltip-v1"></b></span><span class="arrow">→</span><span>Human · V2<b class="tooltip-v2"></b></span></div>
+      <div class="tooltip-delta"></div><div class="tooltip-status"></div>
+    </div>
+  </figure>
+  <script is:inline type="application/json" class="task-data" set:html={JSON.stringify({ tasks: plottedTasks, transitions })} />
+</ipd-harness-figure>
+
+<script>
+  type View = 'transitions' | 'distribution';
+  type Point = { x: number; y: number };
+  type Task = { id: string; v1: number; v2: number; delta: number; status: string; layouts: Record<'transitions' | 'distribution' | 'mobile', { v1: Point; v2: Point }> };
+
+  class IpdHarnessFigure extends HTMLElement {
+    cleanup?: () => void;
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const controller = new AbortController();
+      const { signal } = controller;
+      const tasks: Task[] = JSON.parse(this.querySelector('.task-data')!.textContent!).tasks;
+      const nodes = [...this.querySelectorAll<SVGGElement>('.task')];
+      const svg = this.querySelector<SVGSVGElement>('.plot')!;
+      const tooltip = this.querySelector<HTMLElement>('.tooltip')!;
+      const zero = this.querySelector<SVGGElement>('.zero-note')!;
+      const narrow = window.matchMedia('(max-width: 600px)');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let view: View = narrow.matches ? 'distribution' : 'transitions';
+      let explicitView = false;
+      let filter = 'all';
+      let pinned: string | null = null;
+      let selected: string | null = null;
+      let zeroPinned = false;
+      const animations: Animation[] = [];
+
+      const clear = () => {
+        selected = null;
+        pinned = null;
+        tooltip.hidden = true;
+        delete this.dataset.selected;
+        nodes.forEach(node => { node.classList.remove('selected'); node.setAttribute('aria-pressed', 'false'); });
+      };
+      const clearZero = () => { zeroPinned = false; delete this.dataset.zero; zero.setAttribute('aria-pressed', 'false'); };
+      const placeTooltip = (target: Element, event?: PointerEvent) => {
+        const origin = this.getBoundingClientRect();
+        const bounds = target.getBoundingClientRect();
+        const x = event ? event.clientX : bounds.left + bounds.width / 2;
+        const y = event ? event.clientY : bounds.top;
+        tooltip.style.left = `${Math.max(0, Math.min(x - origin.left + 16, origin.width - tooltip.offsetWidth))}px`;
+        const above = y - tooltip.offsetHeight - 16;
+        tooltip.style.top = `${(above > 8 ? above : y + 22) - origin.top}px`;
+      };
+      const show = (node: SVGGElement, event?: PointerEvent) => {
+        const task = tasks.find(task => task.id === node.dataset.id)!;
+        if (view === 'transitions' && filter !== 'all' && task.status !== filter) return;
+        clearZero();
+        selected = task.id;
+        this.dataset.selected = task.id;
+        nodes.forEach(other => other.classList.toggle('selected', other === node));
+        this.querySelector('.tooltip-id')!.textContent = task.id;
+        this.querySelector('.tooltip-v1')!.textContent = `${task.v1} / 3`;
+        this.querySelector('.tooltip-v2')!.textContent = `${task.v2} / 3`;
+        this.querySelector('.tooltip-delta')!.textContent = `${task.delta > 0 ? '+' : task.delta < 0 ? '−' : ''}${Math.abs(task.delta)} interaction ${Math.abs(task.delta) === 1 ? 'point' : 'points'}`;
+        this.querySelector('.tooltip-status')!.textContent = task.v2 === 3 ? 'Fully solved under V2' : task.status[0].toUpperCase() + task.status.slice(1);
+        tooltip.dataset.status = task.status;
+        tooltip.hidden = false;
+        placeTooltip(node.querySelector('.v2')!, event);
+      };
+      const applyFilter = () => {
+        // Distribution always includes the whole cohort. Remember the selected
+        // trajectory filter for when the reader returns to Task transitions.
+        nodes.forEach(node => {
+          const excluded = view === 'transitions' && filter !== 'all' && node.dataset.status !== filter;
+          node.classList.toggle('filtered', excluded);
+          node.setAttribute('tabindex', excluded ? '-1' : '0');
+          node.setAttribute('aria-hidden', String(excluded));
+        });
+        this.dataset.filter = view === 'transitions' ? filter : 'all';
+        this.querySelectorAll<HTMLButtonElement>('button[data-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === filter)));
+        const count = tasks.filter(task => filter === 'all' || task.status === filter).length;
+        this.querySelector('.filter-cue')!.textContent = filter === 'all' ? `All ${count} paired tasks` : `Showing ${count} ${filter} tasks`;
+      };
+      const layout = () => {
+        clear(); clearZero();
+        const mobile = narrow.matches && view === 'distribution';
+        this.dataset.view = view;
+        this.dataset.mobile = String(mobile);
+        svg.setAttribute('viewBox', mobile ? '0 0 360 408' : '0 0 1000 490');
+        svg.setAttribute('aria-label', view === 'distribution' ? 'Task tiles grouped by points recovered, original harness on the left and human V2 on the right' : 'Each task connects its original harness score to its human V2 score');
+        const key = mobile ? 'mobile' : view;
+        nodes.forEach((node, index) => {
+          (['v1', 'v2'] as const).forEach(side => {
+            const point = tasks[index].layouts[key][side];
+            node.querySelector<SVGGElement>(`.${side}`)!.style.transform = `translate(${point.x}px,${point.y}px)`;
+          });
+        });
+        zero.setAttribute('tabindex', view === 'transitions' ? '0' : '-1');
+        this.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+        this.querySelector('.plot-description')!.textContent = view === 'distribution'
+          ? 'each tile = one task'
+          : `height = interaction points recovered · each curve = one task${narrow.matches ? ' · scroll to compare →' : ''}`;
+        applyFilter();
+      };
+      this.querySelectorAll<HTMLButtonElement>('button[data-view]').forEach(button => button.addEventListener('click', () => {
+        explicitView = true;
+        view = button.dataset.view as View;
+        layout();
+      }, { signal }));
+      this.querySelectorAll<HTMLButtonElement>('button[data-filter]').forEach(button => button.addEventListener('click', () => {
+        clear(); clearZero();
+        filter = button.dataset.filter!;
+        applyFilter();
+      }, { signal }));
+      nodes.forEach(node => {
+        node.addEventListener('pointerenter', event => { if (!pinned && event.pointerType !== 'touch') show(node, event); }, { signal });
+        node.addEventListener('pointermove', event => { if (!pinned && selected === node.dataset.id) placeTooltip(node, event); }, { signal });
+        node.addEventListener('pointerleave', () => { if (!pinned) clear(); }, { signal });
+        node.addEventListener('focus', () => { clear(); show(node); }, { signal });
+        node.addEventListener('blur', () => { if (!pinned) clear(); }, { signal });
+        const toggle = () => {
+          if (pinned === node.dataset.id) { clear(); return; }
+          clear(); show(node); pinned = node.dataset.id!; node.setAttribute('aria-pressed', 'true');
+        };
+        node.addEventListener('click', toggle, { signal });
+        node.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); }
+          if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(event.key)) {
+            event.preventDefault(); clear();
+            const visible = nodes.filter(other => !other.classList.contains('filtered'));
+            const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+            visible[(visible.indexOf(node) + direction + visible.length) % visible.length].focus();
+          }
+        }, { signal });
+      });
+      const showZero = () => { clear(); this.dataset.zero = 'true'; };
+      const toggleZero = () => { if (zeroPinned) clearZero(); else { showZero(); zeroPinned = true; zero.setAttribute('aria-pressed', 'true'); } };
+      zero.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') showZero(); }, { signal });
+      zero.addEventListener('pointerleave', () => { if (!zeroPinned) clearZero(); }, { signal });
+      zero.addEventListener('focus', showZero, { signal });
+      zero.addEventListener('blur', () => { if (!zeroPinned) clearZero(); }, { signal });
+      zero.addEventListener('click', toggleZero, { signal });
+      zero.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleZero(); } }, { signal });
+      this.addEventListener('keydown', event => { if (event.key === 'Escape') { clear(); clearZero(); } }, { signal });
+      document.addEventListener('pointerdown', event => { if (!this.contains(event.target as Node)) { clear(); clearZero(); } }, { signal });
+      this.querySelector('.plot-scroll')!.addEventListener('scroll', clear, { passive: true, signal });
+      window.addEventListener('scroll', clear, { passive: true, signal });
+      window.addEventListener('resize', () => { if (!explicitView) view = narrow.matches ? 'distribution' : 'transitions'; layout(); }, { signal });
+      layout();
+
+      // Reveal once when the plot enters view; no motion for reduced-motion users.
+      const reveal = () => {
+        if (reduceMotion.matches || view !== 'transitions') return;
+        const easing = 'cubic-bezier(.22,1,.36,1)';
+        this.querySelectorAll('.connector').forEach(path => animations.push(path.animate(
+          [{ strokeDasharray: '1', strokeDashoffset: '1' }, { strokeDasharray: '1', strokeDashoffset: '0' }],
+          { duration: 750, delay: 300, easing, fill: 'backwards' },
+        )));
+        this.querySelectorAll('.v2, .v2-heading, .solved-cue').forEach(node => animations.push(node.animate(
+          [{ opacity: 0 }, { opacity: 1 }], { duration: 650, delay: 350, easing, fill: 'backwards' },
+        )));
+        animations.push(this.querySelector('.outcome-summary')!.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, delay: 1050, fill: 'backwards' }));
+      };
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) { observer.disconnect(); reveal(); }
+      }, { threshold: .2 });
+      observer.observe(svg);
+      const stopAnimations = () => animations.forEach(animation => animation.cancel());
+      this.addEventListener('pointerdown', stopAnimations, { signal });
+      this.addEventListener('pointerover', stopAnimations, { signal });
+      this.addEventListener('focusin', stopAnimations, { signal });
+      this.addEventListener('keydown', stopAnimations, { signal });
+      reduceMotion.addEventListener('change', stopAnimations, { signal });
+      this.cleanup = () => { controller.abort(); observer.disconnect(); stopAnimations(); };
+    }
+    disconnectedCallback() { this.cleanup?.(); delete this.dataset.ready; }
+  }
+  if (!customElements.get('ipd-harness-figure')) customElements.define('ipd-harness-figure', IpdHarnessFigure);
+</script>
+
+<style>
+  ipd-harness-figure { display:block; position:relative; width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); font:13px/1.5 var(--font-sans); --teal:#087c83; --rust:#af7563; }
+  figure { margin:0; }
+  .headlines { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px 36px; margin:28px 0 26px; color:var(--color-ink-soft); font-size:12px; }
+  .headlines strong { color:var(--color-ink); font:600 20px/1.4 var(--font-mono); }
+  .old-value { font:18px/1.4 var(--font-mono); }
+  .arrow { margin:0 10px; color:var(--color-ink-soft); }
+  .denominator { font:14px var(--font-mono); }
+  .toolbar, .filter-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .toolbar { margin-bottom:14px; }
+  .filter-row { margin-bottom:18px; }
+  .text-tabs { display:flex; align-items:center; gap:14px; }
+  .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-soft); }
+  button { display:inline-flex; align-items:center; gap:6px; font:12px/1.5 var(--font-sans); color:var(--color-ink-soft); border:0; border-bottom:1px solid transparent; padding:3px 0; background:none; cursor:pointer; }
+  button[aria-pressed="true"] { color:var(--teal); border-bottom-color:var(--teal); }
+  button:focus-visible, summary:focus-visible, .plot-scroll:focus-visible { outline:2px solid var(--teal); outline-offset:4px; }
+  button i { width:12px; height:2px; display:inline-block; }
+  i.improved { background:#528e8b; } i.unchanged { background:#aaa89e; } i.declined { background:var(--rust); }
+  .hint, .threshold-note { color:var(--color-ink-soft); font-size:11px; }
+  .filter-cue, .plot-description { color:var(--color-ink-soft); font:10px/1.6 var(--font-mono); }
+  .plot-description { margin-bottom:10px; }
+  .plot-scroll { overflow-x:auto; overflow-y:hidden; }
+  .plot { display:block; width:100%; height:auto; overflow:visible; -webkit-tap-highlight-color:transparent; user-select:none; }
+  .guide { stroke:var(--color-line); stroke-width:.7; }
+  .column-title { fill:var(--color-ink); font-size:14px; }
+  .version { fill:var(--color-ink-soft); font:11px var(--font-mono); }
+  .score-label, .count { fill:var(--color-ink-soft); font:11px var(--font-mono); }
+  .distribution-guides .count { font-size:10px; }
+  .distribution-flow { fill:none; stroke:#b0c4bf; stroke-width:1.2; stroke-linecap:round; stroke-linejoin:round; }
+  .solved-cue { fill:var(--teal); font-size:11px; }
+  .task { cursor:pointer; transition:opacity .18s; outline:none; }
+  .task[data-status="improved"] { --direction:#438d89; --line-opacity:.55; }
+  .task[data-status="unchanged"] { --direction:#aaa89e; --line-opacity:.25; }
+  .task[data-status="declined"] { --direction:var(--rust); --line-opacity:.35; }
+  .connector { fill:none; stroke:var(--direction); stroke-width:1.2; opacity:var(--line-opacity); pointer-events:none; }
+  .connector-hit { fill:none; stroke:transparent; stroke-width:15; }
+  .endpoint { transition:transform .55s cubic-bezier(.22,1,.36,1); }
+  .endpoint-hit, .zero-hit { fill:transparent; }
+  .tile { stroke:var(--color-paper); stroke-width:1; transition:transform .55s cubic-bezier(.22,1,.36,1); }
+  .shade-0 { fill:#e1e0db; stroke:#c1c1b7; stroke-width:.7; }
+  .shade-1 { fill:#a2bfbd; } .shade-2 { fill:#528e8b; } .shade-3 { fill:#086b69; }
+  .task.selected .connector, .task:focus-visible .connector { opacity:1; stroke-width:2.4; }
+  .task.selected .tile, .task:focus-visible .tile { stroke:var(--direction); stroke-width:2.5; }
+  [data-selected] .task:not(.selected), [data-zero="true"] .task[data-zero="false"] { opacity:.08; }
+  .task.filtered { opacity:.07; pointer-events:none; }
+  .solved-label { fill:#086b69; font:11px var(--font-mono); }
+  .zero-note { cursor:pointer; outline:none; }
+  .bracket { fill:none; stroke:#969e95; stroke-width:1; }
+  .zero-label, .zero-insight { font:10px var(--font-mono); }
+  .zero-label { fill:var(--color-ink-soft); }
+  .zero-insight { fill:var(--teal); opacity:0; }
+  [data-zero="true"] .zero-label { opacity:0; }
+  [data-zero="true"] .zero-insight { opacity:1; }
+  .zero-note:focus-visible .bracket { stroke:var(--teal); stroke-width:2; }
+  .distribution-guides { display:none; }
+  [data-view="distribution"] .filter-row, [data-view="distribution"] .transition-guides, [data-view="distribution"] .zero-note, [data-view="distribution"] .solved-label { display:none; }
+  [data-view="distribution"] .tile { transform:scale(1.75); }
+  [data-view="distribution"] .endpoint-hit { transform:scale(1.08); }
+  [data-view="distribution"] .task.selected .tile, [data-view="distribution"] .task:focus-visible .tile { stroke-width:1.4; }
+  [data-view="distribution"] .connector, [data-view="distribution"] .connector-hit { visibility:hidden; }
+  [data-view="distribution"] .desktop-guides { display:block; }
+  [data-mobile="true"] .desktop-guides { display:none; }
+  [data-mobile="true"] .mobile-guides { display:block; }
+  .below-plot { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px; margin:4px 0 22px; }
+  .outcome-summary { display:flex; flex-wrap:wrap; gap:9px; color:var(--color-ink-soft); font-size:12px; }
+  .improved-text { color:var(--teal); } .declined-text { color:#95614e; }
+  .annotation { border-top:1px solid var(--color-line); padding-top:16px; color:var(--teal); font-size:12px; }
+  .figure-caption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
+  .figure-caption strong { color:var(--color-ink); font-weight:550; }
+  .data-table { margin-top:18px; color:var(--color-ink-soft); font-size:11px; }
+  summary { cursor:pointer; width:fit-content; }
+  table { font-size:12px; } caption { text-align:left; margin:12px 0; }
+  .tooltip { position:absolute; z-index:100; width:258px; max-width:100%; box-sizing:border-box; padding:14px 16px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); box-shadow:0 10px 25px #0002; font:12px/1.6 var(--font-sans); pointer-events:none; }
+  .tooltip[hidden] { display:none; }
+  .tooltip-id { color:var(--teal); font-weight:650; }
+  .tooltip-scores { display:flex; align-items:center; justify-content:space-between; margin:9px 0; color:var(--color-ink-soft); font-size:10px; }
+  .tooltip-scores b { display:block; color:var(--color-ink); font:18px/1.6 var(--font-mono); }
+  .tooltip-delta { color:var(--color-ink); }
+  .tooltip-status { color:var(--teal); }
+  .tooltip[data-status="declined"] .tooltip-id, .tooltip[data-status="declined"] .tooltip-status { color:#95614e; }
+  @media (min-width:601px) and (max-width:900px) { .solved-label { visibility:hidden; } .task.selected .solved-label { visibility:visible; } }
+  @media (max-width:600px) {
+    .headlines { gap:10px 24px; margin:20px 0; }
+    .headlines strong { font-size:18px; }
+    .headlines > span:last-child { flex-basis:100%; }
+    .headlines > span:last-child strong { font-size:15px; }
+    .toolbar { gap:8px; } .hint { flex-basis:100%; }
+    .text-tabs { gap:12px; } .filters { gap:11px; }
+    .filter-cue { display:none; }
+    [data-view="transitions"] .plot { min-width:760px; }
+    .below-plot { margin-top:12px; }
+    .threshold-note { flex-basis:100%; }
+    .mobile-guides .column-title { font-size:13px; }
+    .mobile-guides .version, .mobile-guides .count { font-size:10px; }
+    [data-mobile="true"] .endpoint { transition-duration:.35s; }
+  }
+  @media (prefers-reduced-motion:reduce) { .task, .endpoint, .tile { transition:none; } }
+</style>

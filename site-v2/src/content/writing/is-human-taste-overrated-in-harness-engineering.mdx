@@ -16,6 +16,7 @@ import HarnessBoundaryFigure from '../../components/figures/HarnessBoundaryFigur
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
 import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.astro';
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
+import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -125,3 +126,15 @@ Even when agents identified sensible regions of the pocket, spatial precision cr
 There was also a more general interface problem. The original harness exposed the same generic drug-design tools across tasks, even though IPD only required the agent to reason about three 3D points and submit them in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness requires the agent to manually construct `solution.csv`, save it correctly, and then submit its file path. Agents sometimes fumbled the file creation or formatting step. In `smdd_002_Q92769_0`, the model produced the intended three points but separated the values with spaces instead of commas, which left the evaluator unable to parse the CSV.</Sidenote> This added unnecessary execution burden around tool choice, formatting, and submission that was separate from the core scientific problem itself.
 
 These failures were not all failures of scientific reasoning. Some arose because the model was operating with an ambiguous representation of the task itself. That gave us an obvious first question for harness engineering: how much performance could we recover simply by making the intended problem easier to perceive and execute correctly?
+
+### Fixing the representations
+
+The first set of failures gave us an easy place to start. We made it explicit that the model had to predict ligand-side interaction points in the pocket, rather than receptor atoms themselves. We also removed irrelevant tools<Sidenote number="4" align="paragraph">The original harness exposed the same generic drug-design interface across tasks, including tools such as ADMET prediction and generic file-based submission. For IPD, most of this interface was unnecessary: Boltz was later reintroduced deliberately as a way for the agent to generate its own ligand-side evidence.</Sidenote> and replaced manual CSV formatting with a dedicated submission interface which directly accepts the 3 points from the model instead of needing a CSV file.
+
+These changes removed some of the execution difficulty, but they did not solve the central problem we saw in the trajectories. Even when the model identified chemically sensible regions of the pocket, it still had little evidence for deciding which of those interactions would actually be observed across different binding molecules.
+
+So we made one more change to the harness. Instead of having the model infer conservation entirely from a single receptor structure, we gave it a way to perform small computational experiments. The agent could design probe molecules, use Boltz to predict how they might bind, and inspect the ligand-side pharmacophore features in the resulting poses. By comparing several probes, it could construct a crude ligand ensemble of its own and look for interaction regions that appeared repeatedly.
+
+The goal of these changes was not to dictate how the agent should solve the task, but to remove avoidable execution and representation burdens so it could focus on decisions that actually required scientific reasoning.
+
+<IpdHarnessFigure />
