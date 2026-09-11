@@ -17,6 +17,7 @@ import InteractionPointExplorer from '../../components/figures/InteractionPointE
 import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.astro';
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
 import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
+import IpdProbeConfidence from '../../components/figures/IpdProbeConfidence.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -138,3 +139,21 @@ So we made one more change to the harness. Instead of having the model infer con
 The goal of these changes was not to dictate how the agent should solve the task, but to remove avoidable execution and representation burdens so it could focus on decisions that actually required scientific reasoning.
 
 <IpdHarnessFigure />
+
+There was a substantial improvement in Qwen's performance, but it also changed the kind of failure we were looking at. Once the agent could recover plausible ligand-side evidence more reliably, the remaining question was whether it knew how to generate useful probes and how much trust to place in the evidence they produced.
+
+### What is still going wrong?
+
+The improvement by itself does not mean that the probing strategy was particularly reliable. By allowing the model to generate synthetic probe molecules, the challenge shifted from understanding the pocket to choosing useful probes and making sense of the evidence they produced.
+
+The first problem is the probes themselves. They are generated entirely by the model after inspecting the pocket, but we do not yet know what actually drives these choices. A probe might reflect a targeted hypothesis about a particular interaction region, a generic molecule suggested by the model's chemical priors, or target-specific chemistry recalled from pre-training or post-training. In some trajectories, the probes were also highly similar to one another, meaning that several apparently independent observations could really be repeated measurements of almost the same hypothesis.
+
+The second problem is deciding how much to trust the resulting evidence. Boltz returns a binding probability alongside each predicted pose, but the current harness does not use that confidence when aggregating pharmacophore features. A feature extracted from a weakly supported pose therefore contributes just as much evidence as one from a much more credible predicted binder. As the figure below shows, most probes had fairly low binding probabilities, and seven trajectories appeared to over-trust noisy probe features.
+
+<IpdProbeConfidence />
+
+As a result, if several weak poses happen to place the same feature in a similar region, the agent can easily mistake repeated model error for conserved ligand evidence.
+
+We also observed basic search-control failures. Eighteen of the 25 Qwen trajectories submitted with unused Boltz budget, leaving 54 of 200 available calls unused. Additional probes using these spare calls could have helped resolve ambiguous hotspots. Even after gathering probe evidence, three trajectories submitted two predictions that could match only the same hidden interaction point. Because the evaluator uses one-to-one matching, only one prediction in each pair could receive credit.
+
+At this point, further harness engineering becomes harder to distinguish from writing the scientific policy for the agent by hand. We could add confidence weighting, enforce probe diversity, push the model to use more of its Boltz budget, or prevent competing predictions around the same hotspot. But each additional rule makes more of the experimental strategy ours rather than the model's. Ideally, the model should be discovering new ways to solve the scientific problem, rather than us progressively encoding those methods into the harness.
