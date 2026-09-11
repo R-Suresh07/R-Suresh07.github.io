@@ -166,6 +166,26 @@ Lead Optimization(LO) presented the opposite challenge. Here, the model frequent
 
 In an LO task, the agent starts with a protein-bound reference molecule and modifies it to optimize specific properties while keeping others within target thresholds. The candidate must preserve target binding, satisfy hard chemical constraints, and maintain sufficient Tanimoto similarity to the reference. To guide this search, the agent uses RDKit for validity and similarity checks, ADMET-AI for property predictions like toxicity and permeability, and Boltz to evaluate binding pose and affinity. Because expensive ADMET and Boltz evaluations operate under strict budgets, the agent must carefully prioritize which candidates to test.
 
-Consequently, a single trajectory accumulates substantial state very quickly. Lead Optimization runs can stretch across dozens of turns, with some trajectories continuing for 75 turns or more. Over that time, an agent might propose multiple analogues, evaluate disjoint property subsets, discover marginal constraint violations, identify promising binding poses, and circle back to earlier candidates much later in the trajectory. Across these steps, it must continuously track which measurement belongs to which molecule, which properties remain unmeasured, which constraints are satisfied, and how much oracle budget remains.
+{/* TODO: Insert animation of how an LO task is formed. */}
 
-In the original harness, this bookkeeping lived entirely within the raw context of the model. The environment provided no centralized registry for explored candidates or their associated evidence. While we initially expected molecular design to be the primary hurdle, analyzing failed trajectories showed that state tracking was the major reason for failures.
+<Figure
+  src={figurePlaceholder}
+  alt="Placeholder animation showing how a Lead Optimization task is formed."
+  captionLabel="FIG. 10"
+  title="How a Lead Optimization task is formed"
+  caption="How a Lead Optimization task is formed. The agent starts from a protein-bound reference molecule and must optimize target properties while preserving binding, satisfying hard constraints, and maintaining similarity to the reference."
+/>
+
+Consequently, a single trajectory accumulates substantial state very quickly. LO runs can stretch across dozens of turns, with some trajectories continuing for 75 turns or more. Over that time, an agent might propose multiple analogues, evaluate disjoint property subsets, discover marginal constraint violations, identify promising binding poses, and circle back to earlier candidates much later in the trajectory. Across these steps, it must continuously track which measurement belongs to which molecule, which properties remain unmeasured, which constraints are satisfied, and how much oracle budget remains.
+
+{/* TODO: Insert interactive Reference -> C01 -> C02 -> C03 candidate visualization. */}
+
+<Figure
+  src={figurePlaceholder}
+  alt="Placeholder for an interactive candidate visualization: Reference to C01 to C02 to C03."
+  captionLabel="FIG. 11"
+  title="Tracking candidates across a trajectory"
+  caption="Tracking candidates across a trajectory. As the agent proposes successive analogues (Reference -> C01 -> C02 -> C03), it must keep track of which measurements, constraints, and binding poses belong to which candidate."
+/>
+
+In the original harness, the model had to track all of this information entirely within its own context. The environment provided no centralized registry for explored candidates or their associated evidence. While we initially expected molecular design to be the primary hurdle, analyzing failed trajectories showed that state tracking was the major reason for failures.
