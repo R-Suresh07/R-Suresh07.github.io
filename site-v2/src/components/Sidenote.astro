@@ -64,6 +64,7 @@ const { number, align = 'marker' } = Astro.props;
 
 <script>
   const positionSidenotes = () => {
+    let previousMarginBottom = Number.NEGATIVE_INFINITY;
     document.querySelectorAll<HTMLElement>('.sidenote-content').forEach((note) => {
       const marker = note.parentElement?.querySelector('sup');
       const prose = note.closest<HTMLElement>('.prose');
@@ -75,19 +76,36 @@ const { number, align = 'marker' } = Astro.props;
         return;
       }
 
-      const markerTop = marker.getBoundingClientRect().top - prose.getBoundingClientRect().top;
+      const markerTop = marker.getBoundingClientRect().top;
+      const offsetParentTop = note.offsetParent?.getBoundingClientRect().top ?? 0;
+      let desiredTop: number;
       const paragraph = note.closest('p');
       if (note.dataset.align === 'paragraph' && paragraph) {
-        note.style.top = `${paragraph.getBoundingClientRect().top - prose.getBoundingClientRect().top}px`;
-        return;
+        desiredTop = paragraph.getBoundingClientRect().top;
+      } else {
+        const paragraphBottom = paragraph ? paragraph.getBoundingClientRect().bottom : markerTop + note.offsetHeight;
+        desiredTop = Math.min(markerTop, paragraphBottom - note.offsetHeight);
       }
-      const paragraphBottom = paragraph
-        ? paragraph.getBoundingClientRect().bottom - prose.getBoundingClientRect().top
-        : markerTop + note.offsetHeight;
-      note.style.top = `${Math.min(markerTop, paragraphBottom - note.offsetHeight)}px`;
+      desiredTop = Math.max(desiredTop, previousMarginBottom + 24);
+      note.style.top = `${desiredTop - offsetParentTop}px`;
+      previousMarginBottom = desiredTop + note.offsetHeight;
     });
   };
 
-  requestAnimationFrame(positionSidenotes);
-  window.addEventListener('resize', positionSidenotes);
+  let pendingFrame: number | null = null;
+  const scheduleSidenotePositioning = () => {
+    if (pendingFrame !== null) cancelAnimationFrame(pendingFrame);
+    pendingFrame = requestAnimationFrame(() => {
+      pendingFrame = null;
+      positionSidenotes();
+    });
+  };
+
+  scheduleSidenotePositioning();
+  document.fonts?.ready.then(scheduleSidenotePositioning);
+  window.addEventListener('load', scheduleSidenotePositioning, { once: true });
+  window.addEventListener('resize', scheduleSidenotePositioning);
+
+  const sidenoteResizeObserver = new ResizeObserver(scheduleSidenotePositioning);
+  document.querySelectorAll<HTMLElement>('.sidenote-content').forEach(note => sidenoteResizeObserver.observe(note));
 </script>
