@@ -196,7 +196,8 @@ const initialMeasurementStage = stages[1];
               </div>
               <div class="transformation" aria-label={`Changed group: nitrile to ${stage.groupName}`}>
                 <span><b>–CN</b><i>→</i><strong>{stage.group}</strong></span>
-                <small>nitrile → {stage.groupName}</small>
+                <small class="transformation-roles"><span>reference</span><span>selected candidate</span></small>
+                <p>nitrile → {stage.groupName}</p>
                 {stage.relative && <em>{stage.relative}</em>}
               </div>
               <div class="molecule-panel candidate-panel">
@@ -204,7 +205,9 @@ const initialMeasurementStage = stages[1];
                 <span class="panel-role">selected milestone</span>
                 <span class="large-group">{stage.group}</span>
                 <span class="molecule"><img src={stage.image.src} alt={`2D structure of candidate ${stage.id}`} loading="eager" decoding="sync" /></span>
-                <span class="candidate-summary">{stage.summary}</span>
+                <span class="candidate-summary">
+                  {stage.pass ? stage.summary : stage.id === 'C005' ? <>Ames is fixed, but <em>binding is lost.</em></> : stage.id === 'C009' ? <>Binding is restored, but <em>BBB becomes the next bottleneck.</em></> : stage.summary}
+                </span>
               </div>
             </div>
           )}
@@ -230,7 +233,7 @@ const initialMeasurementStage = stages[1];
               <strong class:list={['editorial-summary', { success: stage.pass }]}>
                 {stage.pass ? stage.summary : stage.id === 'C005' ? <>Ames is fixed, but <em>binding is lost.</em></> : stage.id === 'C009' ? <>Binding is restored, but <em>BBB becomes the next bottleneck.</em></> : stage.summary}
               </strong>
-              {stage.pass && <p class="remaining">+ Caco-2 · CYP3A4 · hERG · similarity · hard constraints</p>}
+              {stage.pass && <p class="remaining">Ames ✓ · Binding ✓ · BBB ✓ · Caco-2 ✓ · CYP3A4 ✓ · hERG ✓ · similarity ✓ · hard constraints ✓</p>}
             </article>}
 
             {stage.interpretation && (
@@ -419,9 +422,10 @@ const initialMeasurementStage = stages[1];
   .comparison { display:grid; grid-template-columns:minmax(260px,1fr) 150px minmax(260px,1fr); gap:18px; align-items:center; min-height:302px; }
   .reference-opening { display:grid; grid-template-columns:minmax(340px,1.1fr) minmax(300px,.9fr); gap:44px; align-items:center; max-width:920px; min-height:340px; margin:0 auto; }
   .molecule-panel { position:relative; min-width:0; padding:16px; }
-  .reference-panel { border-left:2px solid var(--reference-color); background:color-mix(in srgb, var(--reference-color) 5%, transparent); }
-  .candidate-panel { border-left:2px solid #087c83; animation:candidate-in .3s ease both; }
-  .panel-kicker { display:block; color:#087c83; font:700 10px/1.4 var(--font-mono); text-transform:uppercase; }
+  .reference-panel { background:color-mix(in srgb, var(--reference-color) 3%, transparent); }
+  .candidate-panel { animation:candidate-in .3s ease both; }
+  .panel-kicker { display:flex; align-items:center; gap:7px; color:#087c83; font:700 10px/1.4 var(--font-mono); text-transform:uppercase; }
+  .panel-kicker::before { width:5px; height:5px; flex:0 0 auto; background:currentColor; content:''; }
   .reference-panel .panel-kicker { color:var(--reference-color); }
   .panel-role { display:block; margin-top:2px; color:var(--color-ink-soft); font:8px/1.3 var(--font-mono); }
   .large-group { display:block; position:absolute; top:17px; right:16px; color:#087c83; font:650 21px/1 var(--font-mono); }
@@ -431,15 +435,19 @@ const initialMeasurementStage = stages[1];
   .anchor-result, .candidate-summary { display:block; border-top:1px solid var(--color-line); padding-top:8px; font-size:10px; }
   .anchor-result { color:var(--failure-color); }
   .anchor-result b { font:550 10px/1 var(--font-mono); }
-  .candidate-summary { color:#087c83; font-weight:650; }
+  .candidate-summary { color:var(--color-ink); font-weight:650; }
+  .candidate-summary em { color:var(--failure-color); font-style:normal; }
   .transformation { text-align:center; }
   .transformation > span { display:flex; align-items:center; justify-content:center; gap:10px; font:650 18px/1.2 var(--font-mono); }
   .transformation b { color:var(--reference-color); }
   .transformation strong { color:#087c83; font:inherit; }
   .transformation i { color:var(--color-ink-soft); font-style:normal; }
-  .transformation small { display:block; margin-top:7px; color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); }
+  .transformation-roles { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:6px; color:var(--color-ink-soft); font:7px/1.3 var(--font-mono); }
+  .transformation-roles span:first-child { text-align:right; }
+  .transformation-roles span:last-child { text-align:left; }
+  .transformation p { margin:8px 0 0; color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); }
   .transformation em { display:block; margin-top:12px; color:#087c83; font:9px/1.4 var(--font-mono); font-style:normal; }
-  .opening-task { border-left:2px solid var(--failure-color); padding:7px 0 7px 18px; }
+  .opening-task { padding:7px 0; }
   .task-label { display:block; margin-bottom:14px; color:var(--color-ink); font:700 9px/1.3 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
   .active-objective { padding-bottom:15px; border-bottom:1px solid var(--color-line); }
   .active-objective > span, .preserve-list > span { display:block; margin-bottom:6px; color:var(--failure-color); font:700 8px/1.3 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
@@ -462,9 +470,10 @@ const initialMeasurementStage = stages[1];
   .transition-story { display:grid; box-sizing:border-box; grid-template-columns:minmax(0,1fr) minmax(250px,.8fr) minmax(0,1fr); gap:20px; border-top:1px solid var(--color-line); padding:18px 10px 8px; animation:story-in .28s ease both; }
   .transition-story.opening { grid-template-columns:minmax(0,1fr); }
   .transition-story.opening .trace-card { max-width:720px; }
-  .trace-card { border-left:2px solid #087c83; padding:5px 13px 7px; background:color-mix(in srgb, #087c83 3%, transparent); }
+  .trace-card { border-top:1px solid var(--color-line); padding:9px 0 7px; }
   .trace-card header { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; }
   .trace-card header b, .section-label, .why span, .next-bottleneck span { color:#087c83; font:700 8px/1.3 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .trace-card header b::before { display:inline-block; width:7px; margin:0 6px 2px 0; border-top:1px solid #087c83; content:''; }
   .trace-card header small { color:var(--color-ink-soft); font:7px/1.3 var(--font-mono); }
   .trace-card q { display:block; font:12px/1.55 var(--font-serif); }
   .why, .next-bottleneck { border-top:1px solid var(--color-line); padding-top:7px; margin-top:10px; }
@@ -483,7 +492,7 @@ const initialMeasurementStage = stages[1];
   .result-card .near-miss p { grid-column:1 / -1; margin:0; color:var(--failure-color); font:9px/1.3 var(--font-mono); }
   .editorial-summary { display:block; border-top:1px solid var(--color-line); padding-top:9px; margin-top:8px; color:var(--color-ink); font:17px/1.25 var(--font-serif); }
   .editorial-summary em { color:var(--failure-color); font-style:normal; }
-  .editorial-summary.success { color:#087c83; text-transform:uppercase; letter-spacing:.03em; }
+  .editorial-summary.success { color:var(--color-ink); letter-spacing:0; }
   .remaining { margin:5px 0 0; color:#087c83; font:8px/1.4 var(--font-mono); }
   .story-controls { box-sizing:border-box; display:flex; justify-content:flex-end; align-items:center; gap:14px; padding:12px 10px 0; }
   .story-controls button { min-width:95px; border:1px solid var(--color-line); border-radius:4px; padding:7px 10px; background:var(--color-paper-raised); color:var(--color-ink); font:10px/1.2 var(--font-sans); cursor:pointer; }
@@ -494,8 +503,9 @@ const initialMeasurementStage = stages[1];
   .measurement-intro i { width:6px; height:6px; margin:0 2px; border:1px solid var(--reference-color); transform:rotate(45deg); }
   .measurement-intro span { width:7px; height:7px; margin-left:10px; border-radius:50%; background:#087c83; }
   .measurement-panel { animation:candidate-in .28s ease both; }
-  .measurement-candidate { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; border-left:2px solid #087c83; padding:7px 12px 9px; margin-bottom:13px; background:color-mix(in srgb, #087c83 3%, transparent); }
-  .measurement-candidate strong { display:block; color:#087c83; font:650 16px/1.2 var(--font-mono); }
+  .measurement-candidate { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; border-block:1px solid var(--color-line); padding:10px 0; margin-bottom:13px; }
+  .measurement-candidate strong { display:flex; align-items:center; gap:8px; color:#087c83; font:650 16px/1.2 var(--font-mono); }
+  .measurement-candidate strong::before { width:5px; height:5px; flex:0 0 auto; background:#087c83; content:''; }
   .measurement-candidate small { display:block; margin-top:3px; color:var(--color-ink-soft); font:8px/1.3 var(--font-mono); }
   .measurement-candidate p { margin:0; color:var(--color-ink); font:15px/1.3 var(--font-serif); text-align:right; }
   .constraint-head, .constraint-row { display:grid; grid-template-columns:110px 74px minmax(180px,1fr) 72px 112px 104px; gap:12px; align-items:center; }
