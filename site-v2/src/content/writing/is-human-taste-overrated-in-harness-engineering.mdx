@@ -18,6 +18,7 @@ import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.as
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
 import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
 import IpdProbeConfidence from '../../components/figures/IpdProbeConfidence.astro';
+import LoBaselineFigure from '../../components/figures/LoBaselineFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -176,14 +177,20 @@ In an LO task, the agent starts with a protein-bound reference molecule and modi
   caption="How a Lead Optimization task is formed. The agent starts from a protein-bound reference molecule and must optimize target properties while preserving binding, satisfying hard constraints, and maintaining similarity to the reference."
 />
 
-Consequently, a single trajectory accumulates substantial state very quickly. LO runs can stretch across dozens of turns, with some trajectories continuing for 75 turns or more. Over that time, an agent might propose multiple analogues, evaluate disjoint property subsets, discover marginal constraint violations, identify promising binding poses, and circle back to earlier candidates much later in the trajectory. Across these steps, it must continuously track which measurement belongs to which molecule, which properties remain unmeasured, which constraints are satisfied, and how much oracle budget remains.
+### How well do current agents do?
+
+Current models handle Lead Optimization much better than Interaction Point Discovery. Even with the original harness, several models solve a substantial fraction of the tasks, suggesting that they can already propose useful molecular changes and navigate the underlying chemistry. But the final success rate tells us very little about why the remaining runs fail.
+
+<LoBaselineFigure />
+
+The search itself can be long and state-heavy. LO runs can stretch across dozens of turns, with some trajectories continuing for 75 turns or more. Over that time, an agent might propose multiple analogues, evaluate disjoint property subsets, discover marginal constraint violations, identify promising binding poses, and circle back to earlier candidates much later in the trajectory. Across these steps, it must continuously track which measurement belongs to which molecule, which properties remain unmeasured, which constraints are satisfied, and how much oracle budget remains.
 
 {/* TODO: Insert interactive Reference -> C01 -> C02 -> C03 candidate visualization. */}
 
 <Figure
   src={figurePlaceholder}
   alt="Placeholder for an interactive candidate visualization: Reference to C01 to C02 to C03."
-  captionLabel="FIG. 11"
+  captionLabel="FIG. 12"
   title="Tracking candidates across a trajectory"
   caption="Tracking candidates across a trajectory. As the agent proposes successive analogues (Reference -> C01 -> C02 -> C03), it must keep track of which measurements, constraints, and binding poses belong to which candidate."
 />

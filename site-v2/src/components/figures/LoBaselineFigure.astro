@@ -1,0 +1,293 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import FigureCaption from '../FigureCaption.astro';
+
+const total = 68;
+const gates = [
+  { name: 'Validity', short: 'Validity', description: 'The proposed molecule must parse and pass basic chemical validity checks.' },
+  { name: 'Hard constraints', short: 'Hard constraints', description: 'The candidate must satisfy every non-negotiable chemical constraint in the task.' },
+  { name: 'Hold constant', short: 'Hold constant', description: 'Properties the candidate was not supposed to change must remain within tolerance.' },
+  { name: 'Optimization', short: 'Optimization', description: 'Properties targeted by the task must cross their required thresholds.' },
+  { name: 'Boltz binding', short: 'Boltz', description: 'The final candidate must preserve sufficient predicted binding and pose quality.' },
+];
+
+const models = [
+  { name: 'GPT-5.4', solved: 37, gateCounts: [68, 66, 55, 54, 61] },
+  { name: 'Gemini 3.1 Pro', solved: 37, gateCounts: [68, 60, 54, 53, 61] },
+  { name: 'Claude Sonnet 4.6', solved: 36, gateCounts: [68, 68, 56, 56, 52] },
+  { name: 'Kimi K2.5 Thinking', solved: 29, gateCounts: [68, 67, 55, 42, 56] },
+  { name: 'Qwen 3.5 397B-A17B', solved: 26, gateCounts: [68, 64, 54, 53, 45] },
+  { name: 'DeepSeek V3.2', solved: 23, gateCounts: [68, 65, 53, 41, 50] },
+  { name: 'MiniMax M2.7', solved: 17, gateCounts: [68, 62, 46, 48, 45] },
+  { name: 'Qwen 3.5 9B', solved: 13, gateCounts: [67, 58, 45, 43, 37] },
+].map((model, index) => ({
+  ...model,
+  index,
+  failed: total - model.solved,
+  rate: model.solved / total * 100,
+  gateRates: model.gateCounts.map(count => count / total * 100),
+}));
+---
+
+<lo-baseline-figure>
+  <figure aria-label="Lead Optimization performance across 68 tasks per model">
+    <FigureHeading
+      label="FIG. 11"
+      title="Current agents can make progress on Lead Optimization"
+      subtitle="68-task lite subset · original harness"
+    />
+
+    <p class="dek">Unlike IPD, several models solve a substantial fraction of Lead Optimization tasks.</p>
+
+    <div class="toolbar">
+      <div class="view-label"><span class="eyebrow">View</span><span>Terminal performance</span></div>
+      <span class="hint">hover, tap, or focus a model for evaluator details</span>
+    </div>
+
+    <section class="terminal-panel" aria-label="Terminal performance">
+      <div class="sort-cue">sorted by tasks solved</div>
+      <div class="legend" aria-label="Terminal result legend">
+        <span><i class="pass"></i>passed all five stages</span>
+        <span><i class="fail"></i>failed at least one stage</span>
+      </div>
+      <div class="terminal-axis" aria-hidden="true">
+        <span></span>
+        <span class="ticks"><span>0</span><span>17</span><span>34</span><span>51</span><span>68 tasks</span></span>
+        <span>tasks solved</span>
+      </div>
+      <div class="terminal-rows">
+        {models.map((model, rowIndex) => (
+          <div
+            class="model-row terminal-row"
+            tabindex="0"
+            role="button"
+            aria-pressed="false"
+            data-model-index={model.index}
+            style={`--row:${rowIndex}; --pass:${model.solved / total * 100}%; --fail:${model.failed / total * 100}%`}
+            aria-label={`${model.name}: ${model.solved} of ${total} tasks solved and ${model.failed} failed.`}
+          >
+            <span class="model-name">{model.name}</span>
+            <span class="terminal-track" aria-hidden="true">
+              <span class="pass-segment"></span><span class="fail-segment"></span>
+            </span>
+            <span class="terminal-metric"><strong>{model.solved} / {total}</strong><small>{model.rate.toFixed(1)}%</small></span>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <div class="annotation">A failed final molecule does not tell us what went wrong during the search.</div>
+    <FigureCaption caption="GPT-5.4 and Gemini 3.1 Pro lead the 68-task subset with 37 solved tasks each, while Qwen 3.5 9B, our additional baseline, solves 13." />
+    <div class="tooltip" role="status" hidden></div>
+  </figure>
+  <script is:inline type="application/json" class="model-data" set:html={JSON.stringify({ models, gates, total })} />
+</lo-baseline-figure>
+
+<script>
+  class LoBaselineFigure extends HTMLElement {
+    cleanup?: () => void;
+
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+
+      const data = JSON.parse(this.querySelector('.model-data')!.textContent!);
+      const models = data.models;
+      const gates = data.gates;
+      const total = data.total;
+      const tooltip = this.querySelector<HTMLElement>('.tooltip')!;
+      const modelRows = [...this.querySelectorAll<HTMLElement>('.model-row')];
+      let pinnedModel: number | null = null;
+
+      const positionTooltip = (anchor: HTMLElement) => {
+        const bounds = anchor.getBoundingClientRect();
+        const origin = this.getBoundingClientRect();
+        const preferredLeft = bounds.left + Math.min(bounds.width * .46, 390);
+        const left = Math.max(8, Math.min(preferredLeft, window.innerWidth - tooltip.offsetWidth - 8));
+        const below = bounds.bottom + 8;
+        const top = below + tooltip.offsetHeight <= window.innerHeight
+          ? below
+          : Math.max(8, bounds.top - tooltip.offsetHeight - 8);
+        tooltip.style.left = `${left - origin.left}px`;
+        tooltip.style.top = `${top - origin.top}px`;
+      };
+
+      const clearModel = () => {
+        pinnedModel = null;
+        delete this.dataset.activeModel;
+        tooltip.hidden = true;
+        modelRows.forEach(row => {
+          row.classList.remove('dimmed', 'selected');
+          row.setAttribute('aria-pressed', 'false');
+        });
+      };
+
+      const showModel = (index: number, anchor: HTMLElement, pin = false) => {
+        const model = models[index];
+        if (pin && pinnedModel === index) {
+          clearModel();
+          return;
+        }
+        if (pin) pinnedModel = index;
+        this.dataset.activeModel = String(index);
+        modelRows.forEach(row => {
+          const active = Number(row.dataset.modelIndex) === index;
+          row.classList.toggle('dimmed', !active);
+          row.classList.toggle('selected', active);
+          row.setAttribute('aria-pressed', String(active));
+        });
+
+        tooltip.replaceChildren();
+        const heading = document.createElement('strong');
+        heading.textContent = model.name;
+        tooltip.append(heading);
+
+        const terminal = document.createElement('div');
+        terminal.className = 'tooltip-terminal';
+        terminal.append(document.createTextNode('tasks solved '));
+        const terminalValue = document.createElement('b');
+        terminalValue.textContent = `${model.solved} / ${total}`;
+        terminal.append(terminalValue);
+        tooltip.append(terminal);
+
+        const context = document.createElement('small');
+        context.className = 'tooltip-context';
+        context.textContent = 'Final submissions passing each evaluator check:';
+        tooltip.append(context);
+
+        const list = document.createElement('dl');
+        gates.forEach((gate: { name: string }, gateIndex: number) => {
+          const label = document.createElement('dt');
+          label.textContent = gate.name;
+          const value = document.createElement('dd');
+          value.textContent = `${model.gateCounts[gateIndex]} / ${total}`;
+          list.append(label, value);
+        });
+        tooltip.append(list);
+
+        const clarification = document.createElement('small');
+        clarification.className = 'tooltip-clarification';
+        clarification.textContent = 'Gate counts overlap; a task passes only when all checks pass.';
+        tooltip.append(clarification);
+        tooltip.hidden = false;
+        positionTooltip(anchor);
+      };
+
+      modelRows.forEach(row => {
+        const index = Number(row.dataset.modelIndex);
+        row.addEventListener('pointerenter', () => { if (pinnedModel === null) showModel(index, row); });
+        row.addEventListener('pointerleave', () => { if (pinnedModel === null) clearModel(); });
+        row.addEventListener('focus', () => { if (pinnedModel === null) showModel(index, row); });
+        row.addEventListener('blur', () => { if (pinnedModel === null) clearModel(); });
+        row.addEventListener('click', () => showModel(index, row, true));
+        row.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            showModel(index, row, true);
+          }
+          if (event.key === 'Escape') clearModel();
+        });
+      });
+
+      const controller = new AbortController();
+      this.cleanup = () => controller.abort();
+      window.addEventListener('resize', clearModel, { signal: controller.signal });
+      window.addEventListener('scroll', clearModel, { passive: true, signal: controller.signal });
+      document.addEventListener('pointerdown', event => {
+        if (!this.contains(event.target as Node)) clearModel();
+      }, { signal: controller.signal });
+
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          this.dataset.visible = 'true';
+          observer.disconnect();
+        }
+      }, { threshold: .15 });
+      observer.observe(this);
+      controller.signal.addEventListener('abort', () => observer.disconnect());
+    }
+
+    disconnectedCallback() {
+      this.cleanup?.();
+      delete this.dataset.ready;
+    }
+  }
+
+  if (!customElements.get('lo-baseline-figure')) customElements.define('lo-baseline-figure', LoBaselineFigure);
+</script>
+
+<style>
+  lo-baseline-figure {
+    display:block;
+    position:relative;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:13px/1.5 var(--font-sans);
+  }
+  figure { margin:0; }
+  .dek { max-width:680px; margin:-8px 0 24px; color:var(--color-ink-soft); font-size:13px; }
+  .toolbar { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:0 0 18px; }
+  .view-label { display:flex; align-items:center; gap:14px; color:#087c83; font-size:12px; }
+  .eyebrow { color:var(--color-ink-soft); font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+  .model-row:focus-visible { outline:2px solid #087c83; outline-offset:4px; }
+  .hint { color:var(--color-ink-soft); font-size:12px; }
+  .sort-cue { margin-bottom:12px; color:var(--color-ink-soft); font:10px/1.6 var(--font-mono); }
+  .legend { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:19px; color:var(--color-ink-soft); font-size:11px; }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .legend i { width:12px; height:8px; }
+  .legend .pass { background:#087c83; }
+  .legend .fail { background:#dfddd7; }
+  .terminal-axis, .terminal-row { display:grid; grid-template-columns:190px minmax(0,1fr) 96px; gap:18px; align-items:center; }
+  .terminal-axis { margin-bottom:7px; color:var(--color-ink-soft); font-size:10px; }
+  .terminal-axis > span:last-child { text-align:right; }
+  .ticks { display:flex; justify-content:space-between; border-bottom:1px solid var(--color-line); padding-bottom:6px; }
+  .model-row { cursor:default; transition:opacity .18s; }
+  .model-row.dimmed { opacity:.36; }
+  .model-row.selected .model-name { color:#087c83; }
+  .terminal-row { min-height:56px; }
+  .model-name { min-width:0; font-size:12px; font-weight:560; }
+  .terminal-track { display:flex; height:25px; overflow:hidden; background:#dfddd7; transform-origin:left center; }
+  .terminal-track > span { display:block; height:100%; }
+  .pass-segment { width:var(--pass); background:#087c83; }
+  .fail-segment { width:var(--fail); background:#dfddd7; }
+  .terminal-metric { display:flex; align-items:baseline; justify-content:flex-end; gap:7px; font:12px/1.4 var(--font-mono); }
+  .terminal-metric strong { font-weight:500; }
+  .terminal-metric small { color:var(--color-ink-soft); font-size:9px; }
+  section:not([hidden]) { animation:panel-in .42s cubic-bezier(.22,1,.36,1); }
+  section[hidden] { display:none; }
+  .annotation { border-top:1px solid var(--color-line); padding-top:14px; margin-top:20px; color:#087c83; font-size:12px; }
+  .tooltip { position:absolute; z-index:100; width:320px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:14px 15px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); color:var(--color-ink); box-shadow:0 10px 25px #0002; font:11px/1.5 var(--font-sans); pointer-events:none; }
+  .tooltip :global(> strong) { display:block; margin-bottom:7px; color:#087c83; font-size:12px; }
+  .tooltip :global(.tooltip-terminal) { display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid var(--color-line); padding-bottom:7px; margin-bottom:7px; }
+  .tooltip :global(.tooltip-terminal b) { font-family:var(--font-mono); font-weight:600; }
+  .tooltip :global(.tooltip-context) { display:block; margin:1px 0 7px; color:var(--color-ink-soft); font-size:10px; }
+  .tooltip :global(dl) { display:grid; grid-template-columns:1fr auto; gap:3px 14px; margin:0; }
+  .tooltip :global(dt), .tooltip :global(dd) { margin:0; }
+  .tooltip :global(dd) { font-family:var(--font-mono); }
+  .tooltip :global(.tooltip-clarification) { display:block; border-top:1px solid var(--color-line); padding-top:7px; margin-top:8px; color:var(--color-ink-soft); font:10px/1.5 var(--font-mono); }
+  [data-visible="true"] .terminal-track { animation:bar-in .58s cubic-bezier(.22,1,.36,1) both; animation-delay:calc(var(--row) * 55ms); }
+  [data-visible="true"] .terminal-metric { animation:metric-in .35s ease both; animation-delay:calc(300ms + var(--row) * 55ms); }
+  @keyframes bar-in { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  @keyframes metric-in { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+  @keyframes panel-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+  @media (max-width:760px) {
+    .terminal-axis, .terminal-row { grid-template-columns:150px minmax(0,1fr) 82px; gap:10px; }
+  }
+  @media (max-width:560px) {
+    .terminal-axis { grid-template-columns:minmax(0,1fr) 76px; }
+    .terminal-axis > span:first-child { display:none; }
+    .terminal-row { grid-template-columns:minmax(0,1fr) 76px; gap:6px 10px; padding:8px 0; }
+    .terminal-row .model-name { grid-column:1 / -1; }
+    .terminal-track { height:21px; }
+    .terminal-metric { flex-direction:column; align-items:flex-end; gap:0; }
+    .terminal-metric strong { white-space:nowrap; }
+    .legend { gap:8px 14px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    section:not([hidden]), [data-visible="true"] .terminal-track, [data-visible="true"] .terminal-metric { animation:none; }
+    .model-row { transition:none; }
+  }
+</style>
