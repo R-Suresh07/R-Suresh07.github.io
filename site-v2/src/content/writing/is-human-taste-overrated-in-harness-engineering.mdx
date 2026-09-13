@@ -20,6 +20,7 @@ import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
 import IpdProbeConfidence from '../../components/figures/IpdProbeConfidence.astro';
 import LoBaselineFigure from '../../components/figures/LoBaselineFigure.astro';
 import LoCandidateStory from '../../components/figures/LoCandidateStory.astro';
+import LoFailureMap from '../../components/figures/LoFailureMap.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -193,3 +194,17 @@ The search itself can be long and state-heavy. LO runs can stretch across dozens
 <LoCandidateStory />
 
 In the original harness, the model had to track all of this information entirely within its own context. The environment provided no centralized registry for explored candidates or their associated evidence. The trajectory above highlights how messy this tracking becomes. One edit can fix a constraint while exposing another, and the model must carry those changing measurements forward across many later turns. While we initially expected molecular design to be the primary hurdle, analyzing failed trajectories showed that state tracking was a major source of failure.
+
+### What are the agents getting wrong?
+
+One of the most common failures was surprisingly simple. The model would propose a promising molecule, test it correctly, discover that it failed a key requirement, and then submit that same molecule anyway. Even though the negative result was recorded earlier in the run, the agent failed to use that evidence when making its final decision.
+
+Tracking individual candidates also degraded over longer trajectories. When testing multiple related analogues across disjoint property evaluations, the agent had no structured system to link measurements to specific structures. This led to cross-contamination of results between molecules, overlooked property gaps, and lost progress when circling back to previous designs.
+
+<LoFailureMap />
+
+Agents also struggled to parse and maintain the optimization constraints. Because different tasks use directional bounds or tight tolerances around the starting molecule, models often mixed up the required direction of change. In several cases, the agent misread a one-directional target as a two-sided band or re-calculated the target threshold mid-search, resulting in contradictory goals within the same trajectory.
+
+Even when the search found a strong candidate, the final verification step frequently failed. A model would spend turns optimizing a molecule, introduce a minor last-minute edit, and submit the new structure without re-evaluating every constraint. Non-deterministic Boltz calls compounded the issue, leading agents to mistake a single borderline prediction for robust evidence.
+
+What stood out across these failures was that chemistry was rarely the main bottleneck. The trajectories often contained useful candidates and sensible modifications. The true challenge was maintaining a coherent picture of the search over time, including what had been tried, which tests each molecule had passed, how reliable those measurements were, and what still required validation before submission.

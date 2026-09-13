@@ -1,0 +1,827 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import ModelTraceExcerpt from './ModelTraceExcerpt.astro';
+
+const breaks = [
+  {
+    id: 'constraint',
+    stage: 'Task specification',
+    label: 'Constraint drift',
+    description: 'one-sided bound → invented interval',
+    trace: 'Cathepsin_K_20 · Kimi',
+    kind: 'fork',
+  },
+  {
+    id: 'identity',
+    stage: 'Candidate',
+    label: 'Candidate mix-up',
+    description: 'one name → two molecules',
+    trace: 'CYP1B1_0 · Qwen',
+    kind: 'alias',
+  },
+  {
+    id: 'borderline',
+    stage: 'Evidence',
+    label: 'Borderline oracle',
+    description: 'one call → treated as certainty',
+    trace: 'DHODH_12 · Claude',
+    kind: 'threshold',
+  },
+  {
+    id: 'known-fail',
+    stage: 'Decision',
+    label: 'Evidence ignored',
+    description: 'known failure → submitted',
+    trace: 'DHODH_14 · Kimi',
+    kind: 'bypass',
+  },
+  {
+    id: 'finalist',
+    stage: 'Submission',
+    label: 'Finalist not verified',
+    description: 'exact finalist → unverified',
+    trace: 'CDK2_20 · Claude',
+    kind: 'missing',
+  },
+];
+---
+
+<lo-failure-map id="lo-failure-map">
+  <figure aria-label="Five observed points where state broke in Lead Optimization trajectories">
+    <FigureHeading label="FIG. 13" title="Where agent state breaks down" />
+
+    <div class="figure-meta">
+      <b>inspect a failure</b>
+    </div>
+    <p class="dek">Useful chemistry could survive while the state around it became inconsistent.</p>
+
+    <div class="map-scroll">
+      <nav class="break-map" aria-label="Select a trajectory break">
+        {breaks.map((item) => (
+          <button
+            type="button"
+            data-mode-button={item.id}
+            aria-expanded="false"
+            aria-controls="failure-detail"
+          >
+            <span class="stage">{item.stage}</span>
+            <span class:list={['disturbance', item.kind]} aria-hidden="true">
+              <i></i><b></b><em></em>
+            </span>
+            <strong>{item.label}</strong>
+            <span class="description">{item.description}</span>
+            <small>{item.trace}</small>
+          </button>
+        ))}
+      </nav>
+    </div>
+
+    <p class="resting-note"><span aria-hidden="true">↑</span> select a break to inspect the trajectory</p>
+
+    <div id="failure-detail" class="detail-region" aria-live="polite" hidden>
+      <section class="story constraint-story" data-story="constraint" hidden>
+        <header class="story-heading">
+          <div><span class="story-index">01</span><h3>The requirement changed while the search was running.</h3></div>
+          <p>Kimi K2.5 · Cathepsin_K_20 · turns 23–24</p>
+        </header>
+
+        <div class="requirement-mutation">
+          <article>
+            <span>Task prompt</span>
+            <strong>solubility ≥ −5.3183</strong>
+            <small>one-sided lower bound</small>
+          </article>
+          <div class="mutation-arrow" aria-hidden="true"><i>→</i><b>new boundary</b></div>
+          <article class="model-range">
+            <span>Model · turn 23</span>
+            <strong>[−5.3183, −4.3183]</strong>
+            <small>invented two-sided interval</small>
+          </article>
+        </div>
+
+        <div class="numberline-comparison">
+          <article class="numberline actual">
+            <header><span>Task gate</span><strong>pass</strong></header>
+            <div class="axis"><span class="allowed"></span><i class="lower"></i><b class="point"></b></div>
+            <div class="axis-labels"><span>−5.3183</span><strong>candidate −3.8493</strong></div>
+          </article>
+          <article class="numberline believed">
+            <header><span>Model’s gate</span><strong>“too high”</strong></header>
+            <div class="axis"><span class="allowed"></span><i class="lower"></i><i class="upper"></i><b class="point"></b></div>
+            <div class="axis-labels"><span>−5.3183</span><em>−4.3183</em><strong>candidate −3.8493</strong></div>
+          </article>
+        </div>
+
+        <ModelTraceExcerpt
+          model="Kimi K2.5"
+          excerpts={[
+            {
+              turn: 'turn 23',
+              text: 'This methylpiperazine_sulf candidate is very promising: clearance … ✓; ames … ✓; hERG … ✓; BBB … ✓; solubility: −3.849 … ✗.',
+            },
+            {
+              turn: 'turn 24',
+              text: 'Solubility: −3.849 … outside −5.318 to −4.318 — too high.',
+              warning: true,
+            },
+          ]}
+        />
+        <p class="scene-caption">The candidate satisfied the stated directional bound. It failed only after the task specification drifted inside the model’s working state.</p>
+
+        <button class="turns-toggle" type="button" aria-expanded="false">view surrounding turns <span>↓</span></button>
+        <ol class="surrounding-turns" hidden>
+          <li class="task-turn">
+            <b>T00</b><span>task</span>
+            <div><strong>Original requirement</strong><p>Keep solubility within 0.5 of the −4.8183 baseline, with a decrease tolerance. The operative lower bound was −5.3183.</p></div>
+          </li>
+          <li class="model-turn">
+            <b>T22</b><span>model</span>
+            <div><strong>Searching for a better trade-off</strong><p>“The thiomorpholine has very good Ames (0.503), good hERG (0.29), but clearance is 95.89—too high.” The model pivots to the methylpiperazine candidate.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T22</b><span>tool</span>
+            <div><strong>ADMET · methylpiperazine_sulf</strong><dl><div><dt>clearance</dt><dd>66.7542</dd></div><div><dt>Ames</dt><dd>0.5438</dd></div><div><dt>hERG</dt><dd>0.3210</dd></div><div><dt>BBB</dt><dd>0.5402</dd></div><div class="failed"><dt>solubility</dt><dd>−3.8493</dd></div></dl></div>
+          </li>
+          <li class="model-turn">
+            <b>T23</b><span>model</span>
+            <div><strong>Four passes, then a rejection</strong><p>“This methylpiperazine_sulf candidate is very promising.” It marks clearance, Ames, hERG, and BBB as passes, then computes solubility as 0.969 from baseline and marks it ✗—because it has silently converted the directional tolerance into a symmetric interval.</p></div>
+          </li>
+          <li class="model-turn critical-turn">
+            <b>T24</b><span>model</span>
+            <div><strong>The invented upper boundary becomes state</strong><p>It writes the target as “−5.318 to −4.318,” calls −3.849 “too high,” and decides to add F, Cl, or other hydrophobic groups to lower solubility. The subsequent search is now optimizing against the model’s rewritten requirement.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="story identity-story" data-story="identity" hidden>
+        <header class="story-heading">
+          <div><span class="story-index">02</span><h3>The alias stayed fixed. The molecule underneath it did not.</h3></div>
+          <p>Qwen 3.5 397B-A17B · CYP1B1_0 · turns 6–22</p>
+        </header>
+
+        <div class="alias-diagram">
+          <div class="alias-token"><span>alias</span><strong>“c4”</strong><i aria-hidden="true"></i></div>
+          <article class="molecule-card molecule-a">
+            <header><span>Turn 6 · molecule A</span><small>generated as “c4”</small></header>
+            <svg viewBox="0 0 300 130" role="img" aria-label="First molecular graph called c4">
+              <g class="bonds">
+                <polygon points="22,66 41,34 78,34 97,66 78,98 41,98" />
+                <line x1="31" y1="65" x2="47" y2="39" /><line x1="73" y1="41" x2="88" y2="66" /><line x1="72" y1="91" x2="46" y2="91" />
+                <line x1="97" y1="66" x2="126" y2="66" />
+                <polygon points="126,66 144,39 176,48 181,80 151,95" />
+                <line x1="181" y1="66" x2="204" y2="66" />
+                <polygon points="204,66 223,34 260,34 279,66 260,98 223,98" />
+                <line x1="213" y1="65" x2="229" y2="39" /><line x1="255" y1="41" x2="270" y2="66" /><line x1="254" y1="91" x2="228" y2="91" />
+              </g>
+              <g class="atoms"><text x="8" y="29">HO</text><text x="261" y="29">OMe</text><text x="259" y="116">MeO</text><text x="139" y="41">N</text><text x="153" y="99">S</text></g>
+            </svg>
+            <p><span>evidence attached</span><b>similarity 0.85</b></p>
+          </article>
+          <article class="molecule-card molecule-b">
+            <header><span>Turn 9 · molecule B</span><small>tested as “c4”</small></header>
+            <svg viewBox="0 0 300 130" role="img" aria-label="Second molecular graph called c4">
+              <g class="bonds">
+                <polygon points="22,66 41,34 78,34 97,66 78,98 41,98" />
+                <line x1="31" y1="65" x2="47" y2="39" /><line x1="73" y1="41" x2="88" y2="66" /><line x1="72" y1="91" x2="46" y2="91" />
+                <line x1="97" y1="66" x2="126" y2="66" />
+                <polygon points="126,66 144,39 176,48 181,80 151,95" />
+                <line x1="181" y1="66" x2="204" y2="66" />
+                <polygon points="204,66 223,34 260,34 279,66 260,98 223,98" />
+                <line x1="213" y1="65" x2="229" y2="39" /><line x1="255" y1="41" x2="270" y2="66" /><line x1="254" y1="91" x2="228" y2="91" />
+              </g>
+              <g class="atoms"><text x="8" y="29">HO</text><text x="39" y="119">MeO</text><text x="261" y="29">OH</text><text x="139" y="41">N</text><text x="153" y="99">S</text></g>
+            </svg>
+            <p><span>evidence attached</span><b>ADMET · Boltz 0.875</b></p>
+          </article>
+        </div>
+
+        <div class="mixed-evidence">
+          <span>“c4” evidence</span><i>similarity 0.85</i><i>ADMET passes</i><i>Boltz 0.875</i><b>but exact graph similarity = 0.683</b>
+        </div>
+        <ModelTraceExcerpt
+          model="Qwen 3.5 397B-A17B"
+          excerpts={[
+            {
+              turn: 'turn 8',
+              text: 'Candidates that have similarity ≥ 0.7: c1: Sim=0.74; c4: Sim=0.85. Let me test these candidates.',
+            },
+            {
+              turn: 'turn 22',
+              text: 'c4 had similarity 0.85 but the canonical form showed 0.68.',
+              warning: true,
+            },
+          ]}
+        />
+        <p class="scene-caption">Evidence from two molecular graphs was carried under one name. The contradiction appeared only when molecule B was rechecked exactly.</p>
+
+        <button class="turns-toggle" type="button" aria-expanded="false">view surrounding turns <span>↓</span></button>
+        <ol class="surrounding-turns" hidden>
+          <li class="model-turn">
+            <b>T06</b><span>model</span>
+            <div><strong>Candidate family is defined</strong><p>The model proposes converting aromatic methoxy groups to hydroxyls to lower LogP, increase solubility, and reduce BBB penetration. It assigns short aliases—including <code>c4</code>—to the generated graphs.</p></div>
+          </li>
+          <li class="model-turn">
+            <b>T08</b><span>model</span>
+            <div><strong>The first graph receives the label</strong><p>“Candidates that have similarity ≥ 0.7: c1: Sim=0.74; c4: Sim=0.85.” At this point, <code>c4</code> refers to the higher-similarity generated molecule.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T09</b><span>tool</span>
+            <div><strong>Different graph, same alias</strong><p><code>predict_admet</code> is called on a hydroxyl-bearing graph recorded as <code>c4</code>. It returns hERG 0.4296, BBB 0.1452, solubility −4.4246, and CYP3A4 0.8269. Those results remain attached to the alias.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T15</b><span>tool</span>
+            <div><strong>Binding evidence joins the mixed record</strong><p>The second graph is passed to Boltz under <code>c4</code>. It returns binding probability 0.874583 and affinity −1.137927, reinforcing confidence in the aliased candidate.</p></div>
+          </li>
+          <li class="model-turn critical-turn">
+            <b>T22</b><span>model</span>
+            <div><strong>Exact recomputation exposes the collision</strong><p>“The similarity is 0.683, which is below 0.7 … c4 had similarity 0.85 but the canonical form showed 0.68.” The same name now carries the similarity of molecule A and the ADMET/Boltz evidence of molecule B.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="story borderline-story" data-story="borderline" hidden>
+        <header class="story-heading">
+          <div><span class="story-index">03</span><h3>One sample was treated as a distribution.</h3></div>
+          <p>Claude Sonnet 4.6 · DHODH_12 · turn 8</p>
+        </header>
+
+        <div class="threshold-plot">
+          <div class="threshold-heading"><span>Boltz affinity · turn 8</span><strong>required ≤ −1.637547</strong></div>
+          <div class="threshold-axis"><span class="pass-region"></span><i class="cutoff"></i><b class="trajectory-point"></b><b class="evaluator-point"></b></div>
+          <div class="threshold-label trajectory"><span>observed</span><strong>−1.652409</strong><small>pass</small></div>
+          <div class="threshold-label evaluator"><span>official evaluation</span><strong>−1.6372</strong><small>fail</small></div>
+        </div>
+
+        <div class="sample-budget">
+          <div><span class="used">●</span>{Array.from({ length: 7 }).map(() => <span>○</span>)}</div>
+          <p><strong>Boltz budget after this call</strong><small>7 calls remained · nothing was sampled again</small></p>
+        </div>
+        <ModelTraceExcerpt
+          model="Claude Sonnet 4.6"
+          excerpts={[
+            {
+              turn: 'turn 6',
+              text: 'The results look promising. mod5 … passes all ADMET constraints. Let me extract the protein sequence and run Boltz prediction.',
+            },
+            {
+              turn: 'turn 10',
+              text: 'All constraints are satisfied … Binding probability: 0.933 > 0.7 … Affinity: −1.652 (diff 0.285 ≤ 0.3).',
+              warning: true,
+            },
+          ]}
+        />
+        <p class="scene-caption">The observed margin was smaller than the variation between trajectory and evaluator calls, yet the single passing prediction was treated as certainty.</p>
+
+        <button class="turns-toggle" type="button" aria-expanded="false">view surrounding turns <span>↓</span></button>
+        <ol class="surrounding-turns" hidden>
+          <li class="model-turn">
+            <b>T06</b><span>model</span>
+            <div><strong>A promising candidate is promoted</strong><p>“mod5 (pyrazole CH₂OH) passes all ADMET constraints,” with solubility improved by about 1.07 and the remaining properties within tolerance. The model moves directly to a binding check.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T08</b><span>Boltz</span>
+            <div><strong>One prediction lands just inside the gate</strong><dl><div><dt>affinity</dt><dd>−1.652409</dd></div><div><dt>required</dt><dd>≤ −1.637547</dd></div><div><dt>margin</dt><dd>0.014862</dd></div><div><dt>probability</dt><dd>0.932830</dd></div><div><dt>calls left</dt><dd>7</dd></div></dl></div>
+          </li>
+          <li class="tool-turn">
+            <b>T09</b><span>tool</span>
+            <div><strong>Deterministic checks all pass</strong><p>MW 456.5, LogP 3.58, TPSA 98.4, Tanimoto 0.922, SA 3.10, and the PAINS/Brenk filters are verified. The report repeats the single Boltz value but does not test its stability.</p></div>
+          </li>
+          <li class="model-turn critical-turn">
+            <b>T10</b><span>model</span>
+            <div><strong>A sample becomes a fact</strong><p>“All constraints are satisfied.” The checklist records affinity −1.652 with a difference of 0.285 ≤ 0.3 and binding probability 0.933, but contains no uncertainty estimate, repeat call, or acknowledgement that the margin is only 0.0149.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T10</b><span>write</span>
+            <div><strong>Search ends with budget unused</strong><p>The model writes <code>solution.smi</code>. Seven Boltz calls remain available; none are used to replicate the borderline result.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="story known-story" data-story="known-fail" hidden>
+        <header class="story-heading">
+          <div><span class="story-index">04</span><h3>The agent wrote “fail,” then submitted the same molecule.</h3></div>
+          <p>Kimi K2.5 · DHODH_14 · turns 46–48</p>
+        </header>
+
+        <div class="trace-timeline">
+          <article>
+            <header><span>Turn 46</span><b>tool</b></header>
+            <dl><div><dt>hERG</dt><dd>0.6648975</dd></div><div><dt>required</dt><dd>≤ 0.663</dd></div></dl>
+          </article>
+          <i class="time-arrow" aria-hidden="true">→</i>
+          <article class="model-fragment">
+            <header><span>Turn 46</span><b>model</b></header>
+            <q>FAIL (out by 0.002)</q>
+          </article>
+          <i class="time-arrow" aria-hidden="true">→</i>
+          <article class="submit-fragment">
+            <header><span>Turn 48</span><b>submit</b></header>
+            <strong>same molecule</strong>
+            <code>CCC[C@H](C)Oc1cc(…N(C)C…)ccc1C</code>
+          </article>
+        </div>
+
+        <div class="broken-evidence" aria-label="Known failure did not reach submission"><span>known fail</span><i></i><b></b><i></i><span>submitted</span></div>
+        <ModelTraceExcerpt
+          model="Kimi K2.5"
+          excerpts={[
+            {
+              turn: 'turn 37',
+              text: 'NMe2-meta: All hard constraints pass, 4/5 ADMET good, but hERG is 0.665 vs target 0.663 (out by 0.002).',
+              warning: true,
+            },
+            {
+              turn: 'turn 47',
+              text: 'Even though binding probability is below 0.7, this is the best candidate found … Let me write the solution file with the best candidate found.',
+              warning: true,
+            },
+          ]}
+        />
+        <p class="scene-caption">This is visible in adjacent trace events: the failure was explicit, but the evidence did not survive into the final decision.</p>
+
+        <button class="turns-toggle" type="button" aria-expanded="false">view surrounding turns <span>↓</span></button>
+        <ol class="surrounding-turns" hidden>
+          <li class="tool-turn">
+            <b>T29</b><span>ADMET</span>
+            <div><strong>The disqualifying result first appears</strong><dl><div class="failed"><dt>hERG</dt><dd>0.664898</dd></div><div><dt>allowed</dt><dd>0.463–0.663</dd></div><div><dt>BBB</dt><dd>0.477697</dd></div><div><dt>CYP3A4</dt><dd>0.598056</dd></div><div><dt>clearance</dt><dd>54.0797</dd></div></dl></div>
+          </li>
+          <li class="model-turn">
+            <b>T30</b><span>model</span>
+            <div><strong>The first comparison is internally inconsistent</strong><p>It calls the candidate “very promising” and writes: “hERG: 0.665 … target range: 0.463–0.663 ✓ — within 0.102, just barely at edge.” The arithmetic exceeds both the upper bound and the stated ±0.1 tolerance, despite the checkmark.</p></div>
+          </li>
+          <li class="model-turn">
+            <b>T31</b><span>model</span>
+            <div><strong>The model notices the miss</strong><p>“The hERG is slightly out of range (0.665 vs acceptable range 0.463–0.663). I need to reduce hERG slightly.” It proposes F, Cl, CF₃, and ester substitutions and continues searching.</p></div>
+          </li>
+          <li class="model-turn">
+            <b>T37</b><span>model</span>
+            <div><strong>Known failure becomes an accepted compromise</strong><p>The model compares NMe2-meta—hERG out by 0.002—with F-meta—BBB out by 0.029—and decides “the NMe2 candidate is closer to target.” Closeness has silently replaced the requirement to pass every gate.</p></div>
+          </li>
+          <li class="tool-turn critical-turn">
+            <b>T46</b><span>verify</span>
+            <div><strong>The final ledger still contains two explicit failures</strong><dl><div><dt>hard constraints</dt><dd>pass</dd></div><div class="failed"><dt>hERG</dt><dd>0.665 · fail</dd></div><div class="failed"><dt>Boltz probability</dt><dd>0.507 · fail</dd></div><div><dt>reference probability</dt><dd>0.389</dd></div></dl><p>The verification says the result is “below 0.7” and that hERG is “out by 0.002.”</p></div>
+          </li>
+          <li class="model-turn critical-turn">
+            <b>T47</b><span>model</span>
+            <div><strong>The same molecule is selected anyway</strong><p>“Even though binding probability is below 0.7, this is the best candidate found.” It also notes “NMe2-meta: binding 0.507, ADMET known, hERG slightly off,” then writes that exact candidate to <code>solution.smi</code>.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T48</b><span>submit</span>
+            <div><strong>File acceptance is not constraint success</strong><p>The submission call again states hERG is 0.002 out of tolerance and binding probability is 0.507 versus the required 0.7. The harness responds only: “Submission accepted: solution.smi.”</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="story finalist-story" data-story="finalist" hidden>
+        <header class="story-heading">
+          <div><span class="story-index">05</span><h3>The exact finalist had an incomplete evidence record.</h3></div>
+          <p>Claude Sonnet 4.6 · CDK2_20 · turns 32–35</p>
+        </header>
+
+        <div class="finalist-layout">
+          <article class="finalist-candidate">
+            <span>Exact finalist</span>
+            <strong>3,4-diol</strong>
+            <svg viewBox="0 0 170 105" role="img" aria-label="Simplified diagram of final 3,4-diol candidate">
+              <g><polygon points="20,53 39,21 76,21 95,53 76,85 39,85"/><line x1="95" y1="53" x2="125" y2="53"/><polygon points="125,53 142,29 161,53 142,77"/></g>
+              <text x="27" y="18">HO</text><text x="68" y="101">OH</text><text x="137" y="28">N</text>
+            </svg>
+            <code>CC(C)(C)c1cnc(…[C@H](O)[C@H](O)…)</code>
+          </article>
+
+          <article class="evidence-ledger">
+            <header><span>Evidence ledger</span><small>exact molecule only</small></header>
+            <dl>
+              <div class="measured"><dt>Boltz</dt><dd><b>✓ measured</b><small>turn 32 · affinity −2.091</small></dd></div>
+              <div class="measured"><dt>Structural checks</dt><dd><b>✓ measured</b><small>turn 33 · all pass</small></dd></div>
+              <div class="missing"><dt>ADMET</dt><dd><b>— missing</b><small>budget exhausted before this edit</small></dd></div>
+              <div class="missing"><dt>BBB</dt><dd><b>— missing</b><small>inferred from earlier analogues</small></dd></div>
+            </dl>
+          </article>
+
+          <div class="submit-result">
+            <span class="submit-arrow">submit →</span>
+            <article><span>Official evaluator</span><strong>BBB 0.66895</strong><small>required ≥ 0.6744</small><b>fail</b></article>
+          </div>
+        </div>
+
+        <ModelTraceExcerpt
+          model="Claude Sonnet 4.6"
+          excerpts={[
+            {
+              turn: 'turn 33',
+              text: 'Excellent! The 3,4-diOH cyclohexyl variant gives … affinity: −2.091 … binding probability: 0.975. Let me verify this compound satisfies all hard constraints and ADMET.',
+            },
+            {
+              turn: 'turn 34',
+              text: 'The key question is the ADMET constraints. Let me estimate based on what we know … BBB might decrease slightly with increased TPSA. Let me write the solution.',
+              warning: true,
+            },
+          ]}
+        />
+        <p class="scene-caption">A nearby molecule’s evidence was not evidence for the exact finalist. The last edit created a new candidate with empty ledger slots.</p>
+
+        <button class="turns-toggle" type="button" aria-expanded="false">view surrounding turns <span>↓</span></button>
+        <ol class="surrounding-turns" hidden>
+          <li class="model-turn">
+            <b>T31</b><span>model</span>
+            <div><strong>Two binding calls remain; ADMET is exhausted</strong><p>The current 2Me-cyclohexanol candidate has 0.963 binding probability but misses the required affinity improvement. The model reasons that an extra hydroxyl could add a protein hydrogen bond while retaining Tanimoto similarity, then spends a remaining Boltz call on the 3,4-diol.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T32</b><span>Boltz</span>
+            <div><strong>The new finalist wins on binding</strong><dl><div><dt>affinity</dt><dd>−2.090998</dd></div><div><dt>improvement</dt><dd>0.446397</dd></div><div><dt>probability</dt><dd>0.975109</dd></div><div><dt>calls left</dt><dd>1</dd></div></dl><p>The call rationale predicts that the added hydroxyl may interact with HIS82, HIS84, or ASP145.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T33</b><span>verify</span>
+            <div><strong>Only structural and binding evidence is complete</strong><p>MW 383.5, LogP 3.41, TPSA 91.4, SA 4.00, Tanimoto 0.786, PAINS/Brenk, and Boltz all pass. The verification labels the remaining section: “ADMET (estimated, no ADMET budget left).”</p></div>
+          </li>
+          <li class="model-turn critical-turn">
+            <b>T34</b><span>model</span>
+            <div><strong>Missing measurements are replaced by directional guesses</strong><p>“The key question is the ADMET constraints. Let me estimate based on what we know.” Lower LogP is used to infer improved solubility, lower CYP3A4, low hERG, and only a slight BBB decrease. No predictor is run on the exact finalist.</p></div>
+          </li>
+          <li class="tool-turn">
+            <b>T34</b><span>write</span>
+            <div><strong>The inferred ledger is treated as complete</strong><p>The exact 3,4-diol SMILES is validated syntactically and written to <code>solution.smi</code>. The remaining Boltz call cannot answer the missing ADMET or BBB questions.</p></div>
+          </li>
+          <li class="tool-turn critical-turn">
+            <b>T35</b><span>submit</span>
+            <div><strong>The submission rationale repeats the inference</strong><p>It claims the increased polarity “should also help maintain or improve ADMET properties like solubility and CYP3A4.” Official evaluation later measures BBB at 0.66895, below the required 0.6744.</p></div>
+          </li>
+        </ol>
+      </section>
+    </div>
+
+    <figcaption class="failure-map-caption"><strong>Selected examples from real failed Lead Optimization trajectories.</strong> Each breakpoint opens the corresponding trace fragment, showing where the agent's working state diverged from the task specification, candidate identity, evidence it had collected, or the molecule it eventually submitted.</figcaption>
+  </figure>
+</lo-failure-map>
+
+<script>
+  class LoFailureMap extends HTMLElement {
+    cleanup?: () => void;
+
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+
+      const buttons = [...this.querySelectorAll<HTMLButtonElement>('[data-mode-button]')];
+      const stories = [...this.querySelectorAll<HTMLElement>('[data-story]')];
+      const detail = this.querySelector<HTMLElement>('.detail-region')!;
+      const restingNote = this.querySelector<HTMLElement>('.resting-note')!;
+      const aborter = new AbortController();
+      let activeMode: string | null = null;
+
+      const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const collapse = () => {
+        activeMode = null;
+        delete this.dataset.activeMode;
+        buttons.forEach(button => {
+          button.classList.remove('active', 'dimmed');
+          button.setAttribute('aria-expanded', 'false');
+        });
+        restingNote.hidden = false;
+        const finish = () => {
+          if (activeMode !== null) return;
+          detail.hidden = true;
+          stories.forEach(story => { story.hidden = true; });
+        };
+        if (prefersReducedMotion()) finish();
+        else {
+          detail.getAnimations().forEach(animation => animation.cancel());
+          const animation = detail.animate(
+            [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-6px)' }],
+            { duration: 170, easing: 'ease', fill: 'forwards' },
+          );
+          animation.finished.then(() => {
+            animation.cancel();
+            finish();
+          }).catch(() => {});
+        }
+      };
+
+      const selectMode = (mode: string) => {
+        if (activeMode === mode) {
+          collapse();
+          return;
+        }
+        activeMode = mode;
+        this.dataset.activeMode = mode;
+        buttons.forEach(button => {
+          const active = button.dataset.modeButton === mode;
+          button.classList.toggle('active', active);
+          button.classList.toggle('dimmed', !active);
+          button.setAttribute('aria-expanded', String(active));
+        });
+        stories.forEach(story => { story.hidden = story.dataset.story !== mode; });
+        detail.getAnimations().forEach(animation => animation.cancel());
+        detail.hidden = false;
+        restingNote.hidden = true;
+        if (!prefersReducedMotion()) detail.animate(
+          [{ opacity: 0, transform: 'translateY(-7px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 280, easing: 'cubic-bezier(.22,1,.36,1)' },
+        );
+      };
+
+      buttons.forEach((button, index) => {
+        button.addEventListener('click', () => selectMode(button.dataset.modeButton!), { signal: aborter.signal });
+        button.addEventListener('keydown', event => {
+          if (event.key === 'Escape' && activeMode !== null) {
+            event.preventDefault();
+            collapse();
+            return;
+          }
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          event.preventDefault();
+          const direction = event.key === 'ArrowRight' ? 1 : -1;
+          buttons[(index + direction + buttons.length) % buttons.length].focus();
+        }, { signal: aborter.signal });
+      });
+
+      this.querySelectorAll<HTMLButtonElement>('.turns-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+          const turns = toggle.nextElementSibling as HTMLOListElement;
+          const open = toggle.getAttribute('aria-expanded') !== 'true';
+          toggle.setAttribute('aria-expanded', String(open));
+          toggle.firstChild!.textContent = open ? 'hide surrounding turns ' : 'view surrounding turns ';
+          toggle.querySelector('span')!.textContent = open ? '↑' : '↓';
+          turns.hidden = !open;
+        }, { signal: aborter.signal });
+      });
+
+      this.cleanup = () => aborter.abort();
+    }
+
+    disconnectedCallback() {
+      this.cleanup?.();
+      delete this.dataset.ready;
+    }
+  }
+
+  if (!customElements.get('lo-failure-map')) customElements.define('lo-failure-map', LoFailureMap);
+</script>
+
+<style>
+  lo-failure-map {
+    --accent:#087c83;
+    --failure:#a24e35;
+    --failure-soft:#f3e7e1;
+    display:block;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:13px/1.5 var(--font-sans);
+  }
+  figure { margin:0; }
+  button { color:inherit; font:inherit; }
+  .figure-meta { display:flex; justify-content:space-between; gap:18px; margin:-13px 0 19px; color:var(--color-ink-soft); font:9px/1.5 var(--font-mono); }
+  .figure-meta b { margin-left:auto; color:var(--accent); font-weight:500; white-space:nowrap; }
+  .dek { max-width:660px; margin:0 0 27px; color:var(--accent); font:15px/1.6 var(--font-serif); }
+
+  .map-scroll { overflow-x:auto; padding-bottom:3px; scrollbar-width:thin; scrollbar-color:var(--color-line) transparent; }
+  .break-map { position:relative; display:grid; grid-template-columns:repeat(5,1fr); min-width:780px; }
+  .break-map::before { position:absolute; top:50px; right:10%; left:10%; border-top:1px solid #aaa69c; content:''; }
+  .break-map button { position:relative; display:flex; align-items:center; flex-direction:column; min-width:0; padding:0 10px 7px; border:0; background:none; text-align:center; cursor:pointer; transition:opacity .2s; }
+  .break-map button.dimmed { opacity:.35; }
+  .break-map button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+  .stage { min-height:28px; color:var(--color-ink-soft); font:8px/1.25 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+  .disturbance { position:relative; z-index:1; display:block; width:58px; height:42px; margin:2px 0 7px; background:var(--color-paper); }
+  .disturbance > i, .disturbance > b, .disturbance > em { position:absolute; display:block; box-sizing:border-box; }
+  .disturbance > i { top:13px; left:22px; width:14px; height:14px; border:1px solid #77736b; border-radius:50%; background:var(--color-paper); }
+  .break-map button > strong { color:var(--color-ink); font:13px/1.25 var(--font-serif); font-weight:500; }
+  .description { min-height:29px; margin-top:3px; color:var(--color-ink-soft); font-size:9px; line-height:1.35; }
+  .break-map button > small { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .break-map button:hover > strong, .break-map button.active > strong { color:var(--accent); }
+  .break-map button.active .disturbance > i { border-color:var(--failure); background:var(--failure-soft); }
+
+  .fork > b, .fork > em { top:26px; width:16px; border-top:1px solid var(--failure); opacity:.75; }
+  .fork > b { left:14px; transform:rotate(-32deg); }
+  .fork > em { right:14px; transform:rotate(32deg); }
+  .alias > b, .alias > em { top:7px; width:7px; height:7px; border:1px solid var(--failure); border-radius:50%; background:var(--color-paper); }
+  .alias > b { left:11px; }
+  .alias > em { right:11px; }
+  .alias::before, .alias::after { position:absolute; top:13px; width:17px; border-top:1px solid var(--failure); content:''; }
+  .alias::before { left:16px; transform:rotate(26deg); }
+  .alias::after { right:16px; transform:rotate(-26deg); }
+  .threshold > b { top:9px; left:38px; height:22px; border-left:1px solid var(--failure); }
+  .threshold > em { top:15px; left:33px; width:7px; height:7px; border-radius:50%; background:var(--failure); }
+  .bypass > b { top:4px; left:7px; width:43px; height:19px; border-top:1px solid var(--failure); border-radius:50%; }
+  .bypass > em { top:12px; left:27px; width:8px; height:8px; background:var(--color-paper); transform:rotate(45deg); }
+  .missing > b { top:8px; left:15px; width:28px; height:25px; border:1px solid #99958d; }
+  .missing > em { top:16px; left:27px; width:8px; height:8px; background:var(--color-paper); box-shadow:0 0 0 2px var(--color-paper); }
+  .break-map button.active .disturbance::after { position:absolute; bottom:0; left:50%; width:11px; height:7px; border-right:2px solid var(--failure); border-bottom:2px solid var(--failure); content:''; transform:translateX(-50%) rotate(45deg); }
+  .resting-note { margin:13px 0 0; color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); text-align:center; }
+  .resting-note span { color:var(--failure); }
+  .failure-map-caption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
+  .failure-map-caption strong { color:var(--color-ink); font-weight:600; }
+
+  .detail-region { border-top:1px solid var(--color-line); padding-top:25px; margin-top:19px; }
+  .detail-region[hidden], .story[hidden], .surrounding-turns[hidden], .resting-note[hidden] { display:none; }
+  .story-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:25px; }
+  .story-heading > div { display:flex; align-items:baseline; gap:12px; }
+  .story-index { color:var(--failure); font:9px/1 var(--font-mono); }
+  .story-heading h3 { max-width:650px; margin:0; color:var(--color-ink); font:21px/1.25 var(--font-serif); font-weight:500; }
+  .story-heading > p { flex:0 0 auto; margin:3px 0 0; color:var(--color-ink-soft); font:8px/1.5 var(--font-mono); }
+  .scene-caption { border-top:1px solid var(--color-line); padding-top:11px; margin:21px 0 0; color:var(--color-ink-soft); font:11px/1.65 var(--font-sans); }
+  .turns-toggle { display:block; padding:0 0 3px; border:0; border-bottom:1px solid #aaa69c; margin:18px 0 0 auto; background:none; color:var(--color-ink-soft); cursor:pointer; font:8px/1.4 var(--font-mono); }
+  .turns-toggle:hover { color:var(--accent); }
+  .turns-toggle span { color:var(--accent); }
+  .surrounding-turns { padding:0; margin:12px 0 0; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); list-style:none; }
+  .surrounding-turns li { position:relative; display:grid; grid-template-columns:36px 58px minmax(0,1fr); gap:10px; padding:13px 9px; border-bottom:1px solid color-mix(in srgb, var(--color-line) 72%, transparent); }
+  .surrounding-turns li:last-child { border-bottom:0; }
+  .surrounding-turns li > b, .surrounding-turns li > span { padding-top:2px; font:7px/1.45 var(--font-mono); }
+  .surrounding-turns li > b { color:var(--color-ink-soft); font-weight:500; }
+  .surrounding-turns li > span { color:var(--accent); text-transform:uppercase; }
+  .surrounding-turns li > div { min-width:0; }
+  .surrounding-turns li > div > strong { display:block; margin:0 0 4px; color:var(--color-ink); font:12px/1.35 var(--font-serif); font-weight:500; }
+  .surrounding-turns p { max-width:920px; margin:0; color:var(--color-ink-soft); font:10px/1.6 var(--font-sans); }
+  .surrounding-turns code { padding:1px 3px; background:color-mix(in srgb, var(--color-line) 35%, transparent); color:var(--color-ink); font:8px/1.45 var(--font-mono); }
+  .surrounding-turns dl { display:flex; flex-wrap:wrap; gap:5px; margin:1px 0 0; }
+  .surrounding-turns dl > div { display:flex; align-items:baseline; gap:7px; min-width:118px; padding:5px 8px; border:1px solid var(--color-line); background:color-mix(in srgb, var(--color-paper-raised) 68%, transparent); }
+  .surrounding-turns dt, .surrounding-turns dd { margin:0; font:8px/1.4 var(--font-mono); }
+  .surrounding-turns dt { color:var(--color-ink-soft); }
+  .surrounding-turns dd { color:var(--accent); }
+  .surrounding-turns dl + p { margin-top:7px; }
+  .surrounding-turns .failed { border-color:color-mix(in srgb, var(--failure) 40%, var(--color-line)); background:var(--failure-soft); }
+  .surrounding-turns .failed dd { color:var(--failure); }
+  .surrounding-turns .critical-turn { background:linear-gradient(90deg, transparent 0 94px, color-mix(in srgb, var(--failure-soft) 68%, transparent) 94px 100%); }
+  .surrounding-turns .critical-turn > div { padding-left:10px; border-left:2px solid color-mix(in srgb, var(--failure) 62%, transparent); }
+
+  .requirement-mutation { display:grid; grid-template-columns:1fr 100px 1fr; align-items:center; gap:15px; max-width:760px; margin:0 auto 22px; }
+  .requirement-mutation article { padding:14px 16px; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .requirement-mutation article > span, .requirement-mutation article > small { display:block; color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); }
+  .requirement-mutation article > span { text-transform:uppercase; }
+  .requirement-mutation article > strong { display:block; margin:8px 0 4px; font:15px/1.35 var(--font-mono); font-weight:500; }
+  .model-range strong { color:var(--failure); }
+  .mutation-arrow { color:var(--failure); text-align:center; }
+  .mutation-arrow i { display:block; font-size:19px; font-style:normal; }
+  .mutation-arrow b { display:block; font:7px/1.3 var(--font-mono); font-weight:400; }
+  .numberline-comparison { display:grid; grid-template-columns:1fr 1fr; gap:25px; }
+  .numberline { padding:15px 17px 13px; border:1px solid var(--color-line); }
+  .numberline header { display:flex; justify-content:space-between; color:var(--color-ink-soft); font:8px/1.3 var(--font-mono); text-transform:uppercase; }
+  .numberline header strong { color:var(--accent); font-weight:600; }
+  .believed header strong { color:var(--failure); }
+  .axis { position:relative; height:39px; margin-top:12px; }
+  .axis::before { position:absolute; top:20px; right:0; left:0; border-top:1px solid #aaa69c; content:''; }
+  .axis::after { position:absolute; top:17px; right:0; width:6px; height:6px; border-top:1px solid #aaa69c; border-right:1px solid #aaa69c; content:''; transform:rotate(45deg); }
+  .axis .allowed { position:absolute; top:17px; left:34%; right:0; height:6px; background:#a6ceca; opacity:.75; }
+  .believed .allowed { right:38%; background:#cbc8c0; transform-origin:right; animation:range-shrink .55s .2s both; }
+  .axis .lower, .axis .upper { position:absolute; top:10px; left:34%; height:21px; border-left:1px solid var(--color-ink); }
+  .axis .upper { left:62%; opacity:0; animation:boundary-appear .35s .55s both; }
+  .axis .point { position:absolute; top:15px; left:80%; width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--color-paper); transform:translateX(-50%); }
+  .believed .point { background:var(--failure); }
+  .axis-labels { position:relative; height:20px; color:var(--color-ink-soft); font:8px/1.35 var(--font-mono); }
+  .axis-labels span { position:absolute; left:34%; transform:translateX(-50%); }
+  .axis-labels em { position:absolute; left:62%; font-style:normal; opacity:0; transform:translateX(-50%); animation:boundary-appear .35s .55s both; }
+  .axis-labels strong { position:absolute; left:80%; color:var(--accent); font-weight:500; transform:translateX(-50%); white-space:nowrap; }
+  .believed .axis-labels strong { color:var(--failure); }
+
+  .alias-diagram { position:relative; display:grid; grid-template-columns:1fr 1fr; gap:55px; padding-top:49px; }
+  .alias-token { position:absolute; top:0; left:50%; z-index:2; min-width:74px; padding:6px 10px; border:1px solid var(--failure); background:var(--color-paper); text-align:center; transform:translateX(-50%); }
+  .alias-token span { display:block; color:var(--color-ink-soft); font:7px/1.2 var(--font-mono); text-transform:uppercase; }
+  .alias-token strong { color:var(--failure); font:15px/1.3 var(--font-serif); font-weight:500; }
+  .alias-token i::before, .alias-token i::after { position:absolute; top:100%; width:calc(25vw - 12px); max-width:220px; height:31px; border-top:1px solid #aaa69c; content:''; }
+  .alias-token i::before { right:50%; border-top-left-radius:20px; border-left:1px solid #aaa69c; }
+  .alias-token i::after { left:50%; border-top-right-radius:20px; border-right:1px solid #aaa69c; }
+  .molecule-card { position:relative; z-index:1; padding:13px 16px 10px; border:1px solid var(--color-line); background:var(--color-paper); }
+  .molecule-card header { display:flex; justify-content:space-between; gap:12px; }
+  .molecule-card header span { font:14px/1.3 var(--font-serif); }
+  .molecule-card header small { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .molecule-card svg { display:block; width:100%; height:132px; margin:0 auto; }
+  .bonds { fill:none; stroke:var(--color-ink); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .atoms { fill:var(--color-ink); font:11px var(--font-mono); }
+  .atoms text:nth-last-child(-n+2) { fill:var(--accent); font-weight:700; }
+  .molecule-card > p { display:flex; justify-content:space-between; border-top:1px solid var(--color-line); padding-top:7px; margin:0; color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); }
+  .molecule-card > p b { color:var(--accent); font-weight:600; }
+  .mixed-evidence { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:7px; padding:10px 12px; margin-top:14px; background:var(--failure-soft); font:8px/1.4 var(--font-mono); }
+  .mixed-evidence span { color:var(--color-ink-soft); text-transform:uppercase; }
+  .mixed-evidence i { padding:2px 5px; background:var(--color-paper); color:var(--accent); font-style:normal; }
+  .mixed-evidence b { color:var(--failure); font-weight:500; }
+
+  .threshold-plot { position:relative; padding:17px 20px 64px; border:1px solid var(--color-line); }
+  .threshold-heading { display:flex; justify-content:space-between; gap:14px; }
+  .threshold-heading span { color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .threshold-heading strong { font:10px/1.4 var(--font-mono); font-weight:600; }
+  .threshold-axis { position:relative; height:48px; margin:10px 12px 0; }
+  .threshold-axis::before { position:absolute; top:25px; right:0; left:0; border-top:1px solid #aaa69c; content:''; }
+  .pass-region { position:absolute; top:22px; left:0; width:53%; height:7px; background:#a6ceca; opacity:.75; }
+  .cutoff { position:absolute; top:11px; left:53%; height:29px; border-left:1px solid var(--color-ink); }
+  .threshold-axis b { position:absolute; top:20px; width:11px; height:11px; border-radius:50%; box-shadow:0 0 0 2px var(--color-paper); transform:translateX(-50%); }
+  .trajectory-point { left:48%; background:var(--accent); }
+  .evaluator-point { left:56%; background:var(--failure); }
+  .threshold-label { position:absolute; top:90px; font:8px/1.35 var(--font-mono); }
+  .threshold-label span, .threshold-label strong, .threshold-label small { display:block; }
+  .threshold-label span { color:var(--color-ink-soft); text-transform:uppercase; }
+  .threshold-label strong { margin-top:2px; font-size:10px; font-weight:600; }
+  .threshold-label.trajectory { left:43%; color:var(--accent); text-align:right; transform:translateX(-100%); }
+  .threshold-label.evaluator { left:58%; color:var(--failure); }
+  .sample-budget { display:flex; align-items:center; justify-content:center; gap:17px; margin:19px 0 0; }
+  .sample-budget > div { display:flex; gap:6px; color:#aaa69c; font:15px/1 var(--font-mono); }
+  .sample-budget .used { color:var(--accent); }
+  .sample-budget p { margin:0; font:8px/1.4 var(--font-mono); }
+  .sample-budget strong, .sample-budget small { display:block; }
+  .sample-budget strong { font-weight:500; }
+  .sample-budget small { color:var(--color-ink-soft); }
+
+  .trace-timeline { display:grid; grid-template-columns:1fr 31px 1fr 31px 1fr; align-items:stretch; gap:7px; }
+  .trace-timeline article { min-height:118px; box-sizing:border-box; padding:14px 16px; border:1px solid var(--color-line); background:color-mix(in srgb, var(--color-paper-raised) 70%, transparent); }
+  .trace-timeline article header { display:flex; justify-content:space-between; margin-bottom:17px; color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-transform:uppercase; }
+  .trace-timeline article header b { color:var(--accent); font-weight:500; }
+  .trace-timeline dl { margin:0; }
+  .trace-timeline dl div { display:flex; justify-content:space-between; padding:3px 0; }
+  .trace-timeline dt, .trace-timeline dd { margin:0; }
+  .trace-timeline dd { font:10px/1.4 var(--font-mono); }
+  .trace-timeline q { display:block; color:var(--failure); font:17px/1.35 var(--font-serif); }
+  .trace-timeline .submit-fragment strong { display:block; font:16px/1.3 var(--font-serif); font-weight:500; }
+  .trace-timeline code { display:block; overflow:hidden; margin-top:7px; color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-overflow:ellipsis; white-space:nowrap; }
+  .time-arrow { align-self:center; color:#aaa69c; text-align:center; font:18px/1 var(--font-sans); font-style:normal; }
+  .broken-evidence { display:grid; grid-template-columns:auto 1fr 18px 1fr auto; align-items:center; gap:8px; width:min(600px,80%); margin:20px auto 0; color:var(--failure); font:8px/1.2 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .broken-evidence i { border-top:1px solid var(--failure); }
+  .broken-evidence b { position:relative; height:13px; }
+  .broken-evidence b::before, .broken-evidence b::after { position:absolute; width:10px; border-top:2px solid var(--failure); content:''; }
+  .broken-evidence b::before { top:3px; left:0; transform:rotate(58deg); }
+  .broken-evidence b::after { top:8px; right:0; transform:rotate(-58deg); }
+
+  .finalist-layout { display:grid; grid-template-columns:180px minmax(300px,1fr) 210px; align-items:center; gap:20px; }
+  .finalist-candidate { padding:14px; border:1px solid var(--color-line); text-align:center; }
+  .finalist-candidate > span { display:block; color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-transform:uppercase; }
+  .finalist-candidate > strong { display:block; font:17px/1.3 var(--font-serif); font-weight:500; }
+  .finalist-candidate svg { width:150px; height:90px; }
+  .finalist-candidate svg g { fill:none; stroke:var(--color-ink); stroke-width:1.5; }
+  .finalist-candidate svg text { fill:var(--accent); font:9px var(--font-mono); }
+  .finalist-candidate code { display:block; overflow:hidden; color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-overflow:ellipsis; white-space:nowrap; }
+  .evidence-ledger { border:1px solid var(--color-line); }
+  .evidence-ledger header { display:flex; justify-content:space-between; padding:11px 14px; border-bottom:1px solid var(--color-line); }
+  .evidence-ledger header span { font:14px/1.3 var(--font-serif); }
+  .evidence-ledger header small { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .evidence-ledger dl { margin:0; }
+  .evidence-ledger dl div { display:grid; grid-template-columns:105px 1fr; gap:8px; padding:7px 13px; border-bottom:1px solid color-mix(in srgb, var(--color-line) 70%, transparent); }
+  .evidence-ledger dl div:last-child { border:0; }
+  .evidence-ledger dt, .evidence-ledger dd { margin:0; }
+  .evidence-ledger dt { font-size:9px; }
+  .evidence-ledger dd b, .evidence-ledger dd small { display:block; font:7px/1.4 var(--font-mono); }
+  .evidence-ledger dd b { color:var(--accent); font-weight:500; }
+  .evidence-ledger dd small { color:var(--color-ink-soft); }
+  .evidence-ledger .missing { background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--failure-soft) 70%, transparent)); }
+  .evidence-ledger .missing dd b { color:var(--failure); }
+  .submit-result { display:flex; align-items:center; gap:10px; }
+  .submit-arrow { color:var(--color-ink-soft); font:7px/1.3 var(--font-mono); text-transform:uppercase; }
+  .submit-result article { flex:1; padding:14px 0 14px 14px; border-top:1px solid var(--failure); border-bottom:1px solid var(--failure); }
+  .submit-result article span, .submit-result article small, .submit-result article b { display:block; font:7px/1.4 var(--font-mono); }
+  .submit-result article span, .submit-result article small { color:var(--color-ink-soft); }
+  .submit-result article span { text-transform:uppercase; }
+  .submit-result article strong { display:block; margin:8px 0 2px; color:var(--failure); font:15px/1.3 var(--font-mono); font-weight:500; }
+  .submit-result article b { margin-top:7px; color:var(--failure); font-weight:500; text-transform:uppercase; }
+
+  @keyframes range-shrink { from { right:0; background:#a6ceca; } to { right:38%; background:#cbc8c0; } }
+  @keyframes boundary-appear { from { opacity:0; transform:scaleY(.3); } to { opacity:1; transform:scaleY(1); } }
+  @keyframes first-break { 0%,100% { transform:scale(1); } 50% { transform:scale(1.15); } }
+  lo-failure-map:not([data-active-mode]) .break-map button:first-child .disturbance > i { animation:first-break 1.2s 1.1s ease 1; }
+
+  @media (max-width:760px) {
+    .figure-meta { align-items:flex-start; flex-direction:column; gap:4px; }
+    .map-scroll { margin-right:calc(-1 * var(--page-gutter)); }
+    .break-map { min-width:720px; padding-right:var(--page-gutter); }
+    .story-heading { display:block; }
+    .story-heading > p { margin:8px 0 0 28px; }
+    .finalist-layout { grid-template-columns:155px minmax(280px,1fr); }
+    .submit-result { grid-column:1 / -1; justify-self:center; width:280px; }
+  }
+  @media (max-width:580px) {
+    .dek { font-size:14px; }
+    .detail-region { padding-top:21px; }
+    .story-heading h3 { font-size:19px; }
+    .requirement-mutation { grid-template-columns:1fr; gap:8px; }
+    .mutation-arrow { transform:rotate(90deg); }
+    .numberline-comparison { grid-template-columns:1fr; gap:12px; }
+    .alias-diagram { grid-template-columns:1fr; gap:13px; padding-top:45px; }
+    .alias-token i::before, .alias-token i::after { width:1px; height:21px; border-top:0; border-left:1px solid #aaa69c; }
+    .alias-token i::before, .alias-token i::after { right:auto; left:50%; border-radius:0; }
+    .molecule-card svg { height:120px; }
+    .trace-timeline { grid-template-columns:1fr; }
+    .trace-timeline article { min-height:0; }
+    .time-arrow { transform:rotate(90deg); }
+    .broken-evidence { width:100%; }
+    .finalist-layout { grid-template-columns:1fr; }
+    .finalist-candidate { display:grid; grid-template-columns:1fr 1fr; align-items:center; text-align:left; }
+    .finalist-candidate > span, .finalist-candidate > strong, .finalist-candidate code { grid-column:1; }
+    .finalist-candidate svg { grid-column:2; grid-row:1 / 4; }
+    .submit-result { grid-column:auto; width:100%; }
+    .sample-budget { align-items:flex-start; flex-direction:column; gap:8px; }
+    .surrounding-turns li { grid-template-columns:31px minmax(0,1fr); gap:3px 7px; padding:12px 6px; }
+    .surrounding-turns li > span { grid-column:2; grid-row:1; }
+    .surrounding-turns li > div { grid-column:2; }
+    .surrounding-turns li > div > strong { font-size:11px; }
+    .surrounding-turns p { font-size:9px; }
+    .surrounding-turns dl > div { min-width:105px; }
+    .surrounding-turns .critical-turn { background:linear-gradient(90deg, transparent 0 44px, color-mix(in srgb, var(--failure-soft) 68%, transparent) 44px 100%); }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .believed .allowed, .axis .upper, .axis-labels em,
+    lo-failure-map:not([data-active-mode]) .break-map button:first-child .disturbance > i { animation:none; opacity:1; }
+    .break-map button { transition:none; }
+  }
+</style>
