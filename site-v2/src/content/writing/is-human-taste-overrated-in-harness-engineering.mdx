@@ -239,8 +239,11 @@ What makes this result more interesting is that V2 did not get there by submitti
 
 The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 68.8%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
 
-The gain also did not come from simply letting the model reason for longer. Across the full 68-task run, V2 used 12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls. Boltz usage moved in the opposite direction, increasing by 51%. Once cheap constraints and candidate state were handled explicitly, the model spent less trajectory space reconstructing what it already knew and more of its oracle budget checking whether promising candidates actually bound.
+The gain also did not come from simply letting the model reason for longer. Across the full 68-task run, V2 used 12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls. Boltz usage moved in the opposite direction, increasing by 51%. With cheap constraints and candidate state handled explicitly, the model spent fewer turns and tokens overall while making substantially more use of Boltz, shifting more of its oracle budget towards checking whether promising candidates actually bound.
 
 <LoHarnessOutcomes />
 
-There was still a clear limit. Twenty V2 trajectories timed out at the turn limit without submitting, compared to only two under V1. While explicit state management eliminated avoidable bookkeeping errors, it could not guide the agent out of an unproductive search path or suggest better chemical modifications. These remaining roadblocks pointed directly to limitations in the search policy itself.
+There was still a clear limit. Twenty V2 trajectories reached the turn limit without submitting, compared to only two under V1. While explicit state management removed many avoidable bookkeeping errors, it could not guide the agent out of an unproductive search path or suggest better chemical modifications. These remaining roadblocks pointed directly to limitations in the search policy itself.
+
+Lead Optimization showed that a large fraction of failures could be recovered by making the agent’s state explicit and reliable. The next question was whether the same approach would help when the bottleneck was less about remembering the search and more about reasoning over the molecule itself.
+
