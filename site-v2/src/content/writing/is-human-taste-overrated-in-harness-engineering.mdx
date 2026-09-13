@@ -56,7 +56,7 @@ SMDD-Bench has five task types and 502 task instances in total. Each one tests c
 
 ## Interaction Point Discovery
 
-The goal of Interaction Point Discovery(IPD) is to test whether an agent can identify valuable interaction hotspots inside a protein binding pocket.
+The goal of Interaction Point Discovery (IPD) is to test whether an agent can identify valuable interaction hotspots inside a protein binding pocket.
 
 These hotspots are useful because they indicate regions that small molecules repeatedly exploit when binding to the protein. They can guide fragment-based drug discovery, suggest where an existing molecule should be elaborated, or help prioritize molecules during computational screening.
 
@@ -77,7 +77,7 @@ The agent is given a PDB structure of the protein together with the location of 
 
 For each point, the agent outputs its 3D coordinates and one of six pharmacophore labels: donor, acceptor, aromatic, hydrophobic, cation, or anion.
 
-The difficulty in this task mainly comes from the fact that the agent is asked to predict a property that is not directly visible in it's input. It receives a single protein structure and the location of the binding pocket but the hidden points are constructed from interactions that occur many times across different ligand structures of the same protein. To put it simply, the agent can inspect what interactions like chemically plausible in one pocket but it has to reason which of those interactions would remain useful across a diverse set of binding molecules.
+The difficulty in this task mainly comes from the fact that the agent is asked to predict a property that is not directly visible in its input. It receives a single protein structure and the location of the binding pocket but the hidden points are constructed from interactions that occur many times across different ligand structures of the same protein. To put it simply, the agent can inspect what interactions look chemically plausible in one pocket but it has to reason which of those interactions would remain useful across a diverse set of binding molecules.
 
 There is also a high degree of spatial reasoning involved in the task. The agent has only three predictions and each must identify both the correct interaction type and approximately where that feature would occur in 3D space. So the problem combines chemical reasoning, geometrical analysis and reasoning about information that is only indirectly observable from the provided protein receptor. 
 
@@ -165,7 +165,7 @@ At this point, further harness engineering becomes harder to distinguish from wr
 
 IPD showed how representation bottlenecks alone can limit harness performance. The model struggled largely because essential information was difficult to represent and reason over, and fixing that representation took us quite far. However, not every task failed for the same reason.
 
-Lead Optimization(LO) presented the opposite challenge. Here, the model frequently proposed reasonable chemistry on its own. The real difficulty was tracking state after proposing those molecules.
+Lead Optimization (LO) presented the opposite challenge. Here, the model frequently proposed reasonable chemistry on its own. The real difficulty was tracking state after proposing those molecules.
 
 In an LO task, the agent starts with a protein-bound reference molecule and modifies it to optimize specific properties while keeping others within target thresholds. The candidate must preserve target binding, satisfy hard chemical constraints, and maintain sufficient Tanimoto similarity to the reference. To guide this search, the agent uses RDKit for validity and similarity checks, ADMET-AI for property predictions like toxicity and permeability, and Boltz to evaluate binding pose and affinity. Because expensive ADMET and Boltz evaluations operate under strict budgets, the agent must carefully prioritize which candidates to test.
 
