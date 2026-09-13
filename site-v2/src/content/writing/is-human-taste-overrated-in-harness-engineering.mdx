@@ -22,6 +22,7 @@ import LoBaselineFigure from '../../components/figures/LoBaselineFigure.astro';
 import LoCandidateStory from '../../components/figures/LoCandidateStory.astro';
 import LoFailureMap from '../../components/figures/LoFailureMap.astro';
 import LoStateHarnessFigure from '../../components/figures/LoStateHarnessFigure.astro';
+import LoHarnessOutcomes from '../../components/figures/LoHarnessOutcomes.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -229,3 +230,17 @@ Importantly, the harness did not suggest which molecule to test next or otherwis
 This also changed how final submissions worked. Under the original setup, the molecule written to the `solution.smi` file could differ from the one actually tested, or carry a known failing score from an earlier turn. The new harness required submissions to reference a registered candidate directly and accepted a normal submission only when that exact structure had complete passing evidence. The agent could still force an incomplete submission as a fallback, but that became a deliberate choice rather than an accidental state-tracking error.
 
 The intervention did not change how the model searched. It simply made the evidence it had already gathered much harder to lose, misattribute, or misread.
+
+### Did better state management help?
+
+For Qwen 3.5 9B, the impact was substantial. Across the benchmark of 68 Lead Optimization tasks, fully passing solutions rose from 13 to 33, increasing the overall success rate from 19.1% to 48.5%.
+
+What makes this result more interesting is that V2 did not get there by submitting more often. The original harness produced an answer on 66 of the 68 tasks, but only 13 of those submissions passed every requirement. Under V2, the agent submitted on just 48 tasks. Of those, 33 were normal submissions with complete passing evidence, while 9 were forced submissions with known failures and another 6 were missing required evidence. The remaining runs reached the turn limit before submitting.
+
+The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 68.8%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
+
+The gain also did not come from simply letting the model reason for longer. Across the full 68-task run, V2 used 12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls. Boltz usage moved in the opposite direction, increasing by 51%. Once cheap constraints and candidate state were handled explicitly, the model spent less trajectory space reconstructing what it already knew and more of its oracle budget checking whether promising candidates actually bound.
+
+<LoHarnessOutcomes />
+
+There was still a clear limit. Twenty V2 trajectories timed out at the turn limit without submitting, compared to only two under V1. While explicit state management eliminated avoidable bookkeeping errors, it could not guide the agent out of an unproductive search path or suggest better chemical modifications. These remaining roadblocks pointed directly to limitations in the search policy itself.

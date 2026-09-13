@@ -231,17 +231,17 @@ const models = [
   .dek { max-width:680px; margin:-8px 0 24px; color:var(--color-ink-soft); font-size:13px; }
   .toolbar { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:0 0 18px; }
   .view-label { display:flex; align-items:center; gap:14px; color:#087c83; font-size:12px; }
-  .eyebrow { color:var(--color-ink-soft); font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+  .eyebrow { color:var(--color-ink-soft); font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
   .model-row:focus-visible { outline:2px solid #087c83; outline-offset:4px; }
   .hint { color:var(--color-ink-soft); font-size:12px; }
-  .sort-cue { margin-bottom:12px; color:var(--color-ink-soft); font:10px/1.6 var(--font-mono); }
-  .legend { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:19px; color:var(--color-ink-soft); font-size:11px; }
+  .sort-cue { margin-bottom:12px; color:var(--color-ink-soft); font:12px/1.6 var(--font-mono); }
+  .legend { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:19px; color:var(--color-ink-soft); font-size:13px; }
   .legend span { display:flex; align-items:center; gap:6px; }
   .legend i { width:12px; height:8px; }
   .legend .pass { background:#087c83; }
   .legend .fail { background:#dfddd7; }
   .terminal-axis, .terminal-row { display:grid; grid-template-columns:190px minmax(0,1fr) 96px; gap:18px; align-items:center; }
-  .terminal-axis { margin-bottom:7px; color:var(--color-ink-soft); font-size:10px; }
+  .terminal-axis { margin-bottom:7px; color:var(--color-ink-soft); font-size:12px; }
   .terminal-axis > span:last-child { text-align:right; }
   .ticks { display:flex; justify-content:space-between; border-bottom:1px solid var(--color-line); padding-bottom:6px; }
   .model-row { cursor:default; transition:opacity .18s; }
@@ -255,19 +255,19 @@ const models = [
   .fail-segment { width:var(--fail); background:#dfddd7; }
   .terminal-metric { display:flex; align-items:baseline; justify-content:flex-end; gap:7px; font:12px/1.4 var(--font-mono); }
   .terminal-metric strong { font-weight:500; }
-  .terminal-metric small { color:var(--color-ink-soft); font-size:9px; }
+  .terminal-metric small { color:var(--color-ink-soft); font-size:11px; }
   section:not([hidden]) { animation:panel-in .42s cubic-bezier(.22,1,.36,1); }
   section[hidden] { display:none; }
   .annotation { border-top:1px solid var(--color-line); padding-top:14px; margin-top:20px; color:#087c83; font-size:12px; }
-  .tooltip { position:absolute; z-index:100; width:320px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:14px 15px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); color:var(--color-ink); box-shadow:0 10px 25px #0002; font:11px/1.5 var(--font-sans); pointer-events:none; }
+  .tooltip { position:absolute; z-index:100; width:320px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:14px 15px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); color:var(--color-ink); box-shadow:0 10px 25px #0002; font:13px/1.5 var(--font-sans); pointer-events:none; }
   .tooltip :global(> strong) { display:block; margin-bottom:7px; color:#087c83; font-size:12px; }
   .tooltip :global(.tooltip-terminal) { display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid var(--color-line); padding-bottom:7px; margin-bottom:7px; }
   .tooltip :global(.tooltip-terminal b) { font-family:var(--font-mono); font-weight:600; }
-  .tooltip :global(.tooltip-context) { display:block; margin:1px 0 7px; color:var(--color-ink-soft); font-size:10px; }
+  .tooltip :global(.tooltip-context) { display:block; margin:1px 0 7px; color:var(--color-ink-soft); font-size:12px; }
   .tooltip :global(dl) { display:grid; grid-template-columns:1fr auto; gap:3px 14px; margin:0; }
   .tooltip :global(dt), .tooltip :global(dd) { margin:0; }
   .tooltip :global(dd) { font-family:var(--font-mono); }
-  .tooltip :global(.tooltip-clarification) { display:block; border-top:1px solid var(--color-line); padding-top:7px; margin-top:8px; color:var(--color-ink-soft); font:10px/1.5 var(--font-mono); }
+  .tooltip :global(.tooltip-clarification) { display:block; border-top:1px solid var(--color-line); padding-top:7px; margin-top:8px; color:var(--color-ink-soft); font:12px/1.5 var(--font-mono); }
   [data-visible="true"] .terminal-track { animation:bar-in .58s cubic-bezier(.22,1,.36,1) both; animation-delay:calc(var(--row) * 55ms); }
   [data-visible="true"] .terminal-metric { animation:metric-in .35s ease both; animation-delay:calc(300ms + var(--row) * 55ms); }
   @keyframes bar-in { from { transform:scaleX(0); } to { transform:scaleX(1); } }

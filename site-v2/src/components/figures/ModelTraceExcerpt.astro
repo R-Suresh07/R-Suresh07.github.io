@@ -64,13 +64,13 @@ const { model, excerpts } = Astro.props;
   .bot-mark svg circle:nth-last-child(-n + 2) { fill:currentColor; stroke:none; }
   .excerpt-body { min-width:0; }
   .excerpt-body > header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 6px; }
-  .excerpt-body > header strong { color:var(--accent); font:8px/1.4 var(--font-mono); font-weight:600; text-transform:uppercase; }
-  .excerpt-body > header span { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .excerpt-body > header strong { color:var(--accent); font:10px/1.4 var(--font-mono); font-weight:600; text-transform:uppercase; }
+  .excerpt-body > header span { color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
   .excerpt-stack { display:grid; gap:6px; }
   blockquote { position:relative; padding:10px 13px 10px 58px; border:1px solid var(--color-line); margin:0; background:color-mix(in srgb, var(--color-paper-raised) 72%, transparent); }
   blockquote::before { position:absolute; top:12px; left:-6px; width:10px; height:10px; border-bottom:1px solid var(--color-line); border-left:1px solid var(--color-line); background:var(--color-paper); content:''; transform:rotate(45deg); }
   blockquote + blockquote::before { display:none; }
-  blockquote > span { position:absolute; top:12px; left:13px; color:var(--color-ink-soft); font:7px/1.35 var(--font-mono); text-transform:uppercase; }
+  blockquote > span { position:absolute; top:12px; left:13px; color:var(--color-ink-soft); font:10px/1.35 var(--font-mono); text-transform:uppercase; }
   blockquote p { margin:0; color:var(--color-ink); font:12px/1.55 var(--font-serif); }
   blockquote.warning { border-color:color-mix(in srgb, var(--failure) 40%, var(--color-line)); background:var(--failure-soft); }
   blockquote.warning p { color:var(--failure); }
@@ -82,6 +82,6 @@ const { model, excerpts } = Astro.props;
     .excerpt-body > header { align-items:flex-start; flex-direction:column; gap:1px; }
     blockquote { padding:9px 10px; }
     blockquote > span { position:static; display:block; margin-bottom:3px; }
-    blockquote p { font-size:11px; }
+    blockquote p { font-size:13px; }
   }
 </style>

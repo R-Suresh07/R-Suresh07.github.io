@@ -342,24 +342,24 @@ const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, com
   .toolbar { margin-bottom:14px; }
   .filter-row { margin-bottom:18px; }
   .text-tabs { display:flex; align-items:center; gap:14px; }
-  .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-soft); }
+  .eyebrow { font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-soft); }
   button { display:inline-flex; align-items:center; gap:6px; font:12px/1.5 var(--font-sans); color:var(--color-ink-soft); border:0; border-bottom:1px solid transparent; padding:3px 0; background:none; cursor:pointer; }
   button[aria-pressed="true"] { color:var(--teal); border-bottom-color:var(--teal); }
   button:focus-visible, .plot-scroll:focus-visible { outline:2px solid var(--teal); outline-offset:4px; }
   button i { width:12px; height:2px; display:inline-block; }
   i.improved { background:#528e8b; } i.unchanged { background:#aaa89e; } i.declined { background:var(--rust); }
-  .hint, .threshold-note { color:var(--color-ink-soft); font-size:11px; }
-  .filter-cue, .plot-description { color:var(--color-ink-soft); font:10px/1.6 var(--font-mono); }
+  .hint, .threshold-note { color:var(--color-ink-soft); font-size:13px; }
+  .filter-cue, .plot-description { color:var(--color-ink-soft); font:12px/1.6 var(--font-mono); }
   .plot-description { margin-bottom:10px; }
   .plot-scroll { overflow-x:auto; overflow-y:hidden; }
   .plot { display:block; width:100%; height:auto; overflow:visible; -webkit-tap-highlight-color:transparent; user-select:none; }
   .guide { stroke:var(--color-line); stroke-width:.7; }
   .column-title { fill:var(--color-ink); font-size:14px; }
-  .version { fill:var(--color-ink-soft); font:11px var(--font-mono); }
-  .score-label, .count { fill:var(--color-ink-soft); font:11px var(--font-mono); }
-  .distribution-guides .count { font-size:10px; }
+  .version { fill:var(--color-ink-soft); font:13px var(--font-mono); }
+  .score-label, .count { fill:var(--color-ink-soft); font:13px var(--font-mono); }
+  .distribution-guides .count { font-size:12px; }
   .distribution-flow { fill:none; stroke:#b0c4bf; stroke-width:1.2; stroke-linecap:round; stroke-linejoin:round; }
-  .solved-cue { fill:var(--teal); font-size:11px; }
+  .solved-cue { fill:var(--teal); font-size:13px; }
   .task { cursor:pointer; transition:opacity .18s; outline:none; }
   .task[data-status="improved"] { --direction:#438d89; --line-opacity:.55; }
   .task[data-status="unchanged"] { --direction:#aaa89e; --line-opacity:.25; }
@@ -375,10 +375,10 @@ const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, com
   .task.selected .tile, .task:focus-visible .tile { stroke:var(--direction); stroke-width:2.5; }
   [data-selected] .task:not(.selected), [data-zero="true"] .task[data-zero="false"] { opacity:.08; }
   .task.filtered { opacity:.07; pointer-events:none; }
-  .solved-label { fill:#086b69; font:11px var(--font-mono); }
+  .solved-label { fill:#086b69; font:13px var(--font-mono); }
   .zero-note { cursor:pointer; outline:none; }
   .bracket { fill:none; stroke:#969e95; stroke-width:1; }
-  .zero-label, .zero-insight { font:10px var(--font-mono); }
+  .zero-label, .zero-insight { font:12px var(--font-mono); }
   .zero-label { fill:var(--color-ink-soft); }
   .zero-insight { fill:var(--teal); opacity:0; }
   [data-zero="true"] .zero-label { opacity:0; }
@@ -402,7 +402,7 @@ const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, com
   .tooltip { position:absolute; z-index:100; width:258px; max-width:100%; box-sizing:border-box; padding:14px 16px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); box-shadow:0 10px 25px #0002; font:12px/1.6 var(--font-sans); pointer-events:none; }
   .tooltip[hidden] { display:none; }
   .tooltip-id { color:var(--teal); font-weight:650; }
-  .tooltip-scores { display:flex; align-items:center; justify-content:space-between; margin:9px 0; color:var(--color-ink-soft); font-size:10px; }
+  .tooltip-scores { display:flex; align-items:center; justify-content:space-between; margin:9px 0; color:var(--color-ink-soft); font-size:12px; }
   .tooltip-scores b { display:block; color:var(--color-ink); font:18px/1.6 var(--font-mono); }
   .tooltip-delta { color:var(--color-ink); }
   .tooltip-status { color:var(--teal); }
@@ -420,7 +420,7 @@ const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, com
     .below-plot { margin-top:12px; }
     .threshold-note { flex-basis:100%; }
     .mobile-guides .column-title { font-size:13px; }
-    .mobile-guides .version, .mobile-guides .count { font-size:10px; }
+    .mobile-guides .version, .mobile-guides .count { font-size:12px; }
     [data-mobile="true"] .endpoint { transition-duration:.35s; }
   }
   @media (prefers-reduced-motion:reduce) { .task, .endpoint, .tile { transition:none; } }
