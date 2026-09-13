@@ -21,6 +21,7 @@ import IpdProbeConfidence from '../../components/figures/IpdProbeConfidence.astr
 import LoBaselineFigure from '../../components/figures/LoBaselineFigure.astro';
 import LoCandidateStory from '../../components/figures/LoCandidateStory.astro';
 import LoFailureMap from '../../components/figures/LoFailureMap.astro';
+import LoStateHarnessFigure from '../../components/figures/LoStateHarnessFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -208,3 +209,23 @@ Agents also struggled to parse and maintain the optimization constraints. Becaus
 Even when the search found a strong candidate, the final verification step frequently failed. A model would spend turns optimizing a molecule, introduce a minor last-minute edit, and submit the new structure without re-evaluating every constraint. Non-deterministic Boltz calls compounded the issue, leading agents to mistake a single borderline prediction for robust evidence.
 
 What stood out across these failures was that chemistry was rarely the main bottleneck. The trajectories often contained useful candidates and sensible modifications. The true challenge was maintaining a coherent picture of the search over time, including what had been tried, which tests each molecule had passed, how reliable those measurements were, and what still required validation before submission.
+
+### Fixing the state
+
+The failures pointed towards a fairly simple division of responsibility. We still wanted the model to decide which molecules to make, which experiments were worth running, and what to do with the results. But there was little reason for it to also remember every threshold, track which measurement belonged to which analogue, or reconstruct the evidence for its finalist from dozens of earlier turns.
+
+So we started by moving this state out of the trajectory and into the harness directly.
+
+First, the harness locked in the task requirements as an immutable specification with clear thresholds and optimization goals. It then assigned every unique, canonicalized molecule a persistent ID and stored its measurements in a central ledger. Routine validity checks were handled natively, constraint margins were calculated automatically, and external oracle calls were tied to the specific candidate they evaluated.
+
+<LoStateHarnessFigure />
+
+Long trajectories created a second problem. Even with the important state stored explicitly, the conversational history itself could grow large enough that earlier reasoning and failed approaches became difficult to recover. Inspired by Agent Rosetta, once the context exceeded roughly 60K tokens, we asked the same model to compress the trajectory into a summary of what had been tried, what had been learned, and what it should consider doing next. We kept the two most recent actions verbatim so the local context was not lost, while the candidate ledger remained untouched and persisted in full.
+
+This meant we could aggressively compact the model’s conversational history without compressing the scientific record itself. Older reasoning could be summarized, but candidate identities, measurements, failed gates, and remaining evidence stayed exact. This was particularly useful on the longer-running tasks, where the agent could otherwise spend much of its context repeatedly reconstructing decisions it had already made.
+
+Importantly, the harness did not suggest which molecule to test next or otherwise influence the scientific search. It simply made the current state explicit. At any point, the agent could inspect a candidate together with its measurements, unmet constraints, and remaining budget, while older conversational history could be compacted without losing that authoritative state.
+
+This also changed how final submissions worked. Under the original setup, the molecule written to the `solution.smi` file could differ from the one actually tested, or carry a known failing score from an earlier turn. The new harness required submissions to reference a registered candidate directly and accepted a normal submission only when that exact structure had complete passing evidence. The agent could still force an incomplete submission as a fallback, but that became a deliberate choice rather than an accidental state-tracking error.
+
+The intervention did not change how the model searched. It simply made the evidence it had already gathered much harder to lose, misattribute, or misread.

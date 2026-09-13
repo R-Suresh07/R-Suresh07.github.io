@@ -1,0 +1,456 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const safeguards = [
+  { id: 'spec', stage: 'Task specification', label: 'Immutable TaskSpec', note: 'comparator + threshold', kind: 'document' },
+  { id: 'identity', stage: 'Candidate', label: 'Candidate registry', note: 'canonical ID + lineage', kind: 'registry' },
+  { id: 'evidence', stage: 'Evidence', label: 'Attached evidence', note: 'value + gate + margin', kind: 'measure' },
+  { id: 'decision', stage: 'Decision', label: 'Decision view', note: 'failed + missing gates', kind: 'table' },
+  { id: 'submission', stage: 'Submission', label: 'Guarded submission', note: 'exact candidate required', kind: 'lock' },
+];
+---
+
+<lo-state-harness id="lo-state-harness">
+  <figure aria-label="Five persistent state objects introduced in the V2 Lead Optimization harness">
+    <FigureHeading label="FIG. 14" title="Moving state out of the trajectory" />
+
+    <div class="figure-meta"><b>inspect a safeguard</b></div>
+    <p class="dek">The model still chose the chemistry. The harness made the facts durable.</p>
+
+    <div class="map-scroll">
+      <nav class="state-map" aria-label="Inspect a V2 state safeguard">
+        {safeguards.map((item) => (
+          <button type="button" data-state-button={item.id} aria-expanded="false" aria-controls="state-detail">
+            <span class="stage">{item.stage}</span>
+            <span class:list={['state-node', item.kind]} aria-hidden="true"><i></i><b></b><em></em></span>
+            <strong>{item.label}</strong>
+            <small>{item.note}</small>
+          </button>
+        ))}
+        <div class="authoritative-rail" aria-hidden="true"><span>authoritative state</span></div>
+      </nav>
+    </div>
+
+    <div id="state-detail" class="detail-region" aria-live="polite" hidden>
+      <section class="story spec-story" data-state-story="spec" hidden>
+        <header class="story-heading">
+          <div><span>01</span><h3>The requirement is compiled once.</h3></div>
+          <p>GPT-5.4 · ABL1_3 · V2 TaskSpec</p>
+        </header>
+
+        <div class="spec-layout">
+          <article class="spec-card">
+            <header><span>compiled constraint</span><b>immutable</b></header>
+            <h4>solubility</h4>
+            <dl>
+              <div><dt>baseline</dt><dd>−5.237</dd></div>
+              <div class="primary"><dt>comparator</dt><dd>≥</dd></div>
+              <div class="primary"><dt>threshold</dt><dd>−5.737</dd></div>
+              <div><dt>direction</dt><dd>decrease</dd></div>
+              <div><dt>tolerance</dt><dd>0.5</dd></div>
+            </dl>
+            <footer>source · task specification</footer>
+          </article>
+
+          <div class="durability-note">
+            <span class="pin" aria-hidden="true"><i></i><b></b></span>
+            <p><strong>Reason over it; do not rewrite it.</strong>The comparator and threshold are returned from the same stored object on every check.</p>
+          </div>
+        </div>
+
+        <p class="scene-caption">This is an analogous V2 trajectory rather than a rerun of the exact Cathepsin_K_20 case in Fig. 13. It shows the mechanism that prevents a directional bound from becoming a reconstructed interval.</p>
+      </section>
+
+      <section class="story identity-story" data-state-story="identity" hidden>
+        <header class="story-heading">
+          <div><span>02</span><h3>Related molecules receive distinct, durable identities.</h3></div>
+          <p>GPT-5.4 · ABL1_11 · turn 17</p>
+        </header>
+
+        <div class="registry-layout">
+          <article class="candidate-card">
+            <header><strong>C007</strong><span>new candidate</span></header>
+            <code>OCc1ccc(F)cc1-c1ccc2cc(NC(=O)C3CC3)ncc2c1</code>
+            <dl><div><dt>parent</dt><dd>C003</dd></div><div><dt>similarity</dt><dd>0.7091</dd></div><div><dt>ADMET</dt><dd>attached to C007</dd></div><div><dt>Boltz</dt><dd>missing</dd></div></dl>
+          </article>
+
+          <article class="candidate-card">
+            <header><strong>C008</strong><span>new candidate</span></header>
+            <code>CC(O)c1cc(F)ccc1-c1ccc2cc(NC(=O)C3CC3)ncc2c1</code>
+            <dl><div><dt>parent</dt><dd>C003</dd></div><div><dt>similarity</dt><dd>0.7455</dd></div><div><dt>ADMET</dt><dd>missing</dd></div><div><dt>Boltz</dt><dd>missing</dd></div></dl>
+          </article>
+        </div>
+
+        <div class="identity-guard"><span>proposal p9</span><code>same canonical graph as C003</code><i aria-hidden="true">→</i><strong>rejected</strong><p>Candidate C003 already has immutable parent C000.</p></div>
+        <p class="scene-caption">The registry binds canonical structure, lineage, deterministic checks, and oracle outputs to one candidate ID. A new prose label cannot silently turn an existing graph into a different candidate.</p>
+      </section>
+
+      <section class="story evidence-story" data-state-story="evidence" hidden>
+        <header class="story-heading">
+          <div><span>03</span><h3>The measurement arrives with its decision context.</h3></div>
+          <p>GPT-5.4 · Cathepsin_K_13 · turn 28</p>
+        </header>
+
+        <article class="evidence-record">
+          <header><div><span>candidate</span><strong>C016</strong></div><b>Boltz · replicate 1</b></header>
+          <div class="evidence-values">
+            <dl><dt>observed</dt><dd>−1.6753426</dd></dl>
+            <dl><dt>comparator</dt><dd>≤</dd></dl>
+            <dl><dt>threshold</dt><dd>−1.6725892</dd></dl>
+            <dl class="margin"><dt>signed margin</dt><dd>+0.0027533</dd></dl>
+            <dl><dt>calls used</dt><dd>1</dd></dl>
+            <dl><dt>calls remain</dt><dd>7</dd></dl>
+          </div>
+          <div class="margin-scale" aria-label="Observed affinity is only 0.0027533 inside the passing threshold">
+            <span class="pass-zone"></span><i class="threshold-mark"></i><b class="value-mark"></b>
+            <small class="observed-label">observed</small><small class="threshold-label">threshold</small>
+          </div>
+          <footer><span>failed gates · none</span><span>missing gates · none</span><b>overall · pass</b></footer>
+        </article>
+
+        <p class="scene-caption">V2 does not remove stochasticity or decide whether one replicate is enough. It keeps the raw value, comparator, signed margin, replicate count, candidate identity, and remaining budget adjacent.</p>
+      </section>
+
+      <section class="story decision-story" data-state-story="decision" hidden>
+        <header class="story-heading">
+          <div><span>04</span><h3>The model can inspect the live ledger instead of reconstructing it.</h3></div>
+          <p>GPT-5.4 · BACE1_11 · turn 20 · V2.0.1</p>
+        </header>
+
+        <div class="decision-table-scroll">
+          <table class="decision-table">
+            <thead><tr><th>candidate</th><th>evidence stage</th><th>failed gates</th><th>missing gates</th><th>limiting margin</th><th>relation</th></tr></thead>
+            <tbody>
+              <tr><th>C003</th><td>ADMET complete</td><td><span class="fail-chip">BBB</span></td><td>Boltz probability</td><td class="negative">−0.028531</td><td><span class="frontier-chip">frontier</span></td></tr>
+              <tr><th>C004</th><td>ADMET complete</td><td><span class="fail-chip">CYP3A4</span></td><td>Boltz probability</td><td class="negative">−0.006714</td><td><span class="frontier-chip">frontier</span></td></tr>
+              <tr class="dominated"><th>C009</th><td>ADMET complete</td><td><span class="fail-chip">CYP3A4</span> <span class="fail-chip">BBB</span></td><td>Boltz probability</td><td class="negative">−0.142795</td><td>dominated by C003</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="comparison-notes">
+          <p><span>C003 ↔ C004</span><strong>complementary near-passes</strong><small>C003 passes CYP3A4; C004 passes BBB.</small></p>
+          <p><span>C009</span><strong>within-set dominated</strong><small>Same evidence stage; worse measured task gates than C003.</small></p>
+        </div>
+        <p class="scene-caption">The view exposes failures, missing evaluations, lineage, signed margins, and dominance. It organizes evidence without recommending the next molecule or experiment.</p>
+      </section>
+
+      <section class="story submission-story" data-state-story="submission" hidden>
+        <header class="story-heading">
+          <div><span>05</span><h3>Submission checks the exact candidate’s ledger.</h3></div>
+          <p>GPT-5.4 · A2A_Adenosine_0 · turns 8–16</p>
+        </header>
+
+        <div class="submission-paths">
+          <article class="blocked-path">
+            <header><span>forced attempt · turn 8</span><b>blocked</b></header>
+            <div class="submission-candidate"><strong>C003</strong><small>canonical candidate record</small></div>
+            <ul><li><span>BBB</span><b>✕ 0.95089 outside [0.7375, 0.9375]</b></li><li><span>Boltz affinity</span><b>? missing</b></li><li><span>Boltz probability</span><b>? missing</b></li></ul>
+            <div class="gate-lock" aria-hidden="true"><i></i><b></b></div>
+            <p>ADMET 14 · Boltz 8 remain<br />Actionable evaluations still exist.</p>
+          </article>
+
+          <article class="accepted-path">
+            <header><span>normal submission · turn 16</span><b>accepted</b></header>
+            <div class="submission-candidate"><strong>C001</strong><small>canonical candidate record</small></div>
+            <ul><li><span>failed gates</span><b>✓ none</b></li><li><span>missing gates</span><b>✓ none</b></li><li><span>verified file</span><b>✓ exact contents</b></li></ul>
+            <div class="gate-open" aria-hidden="true"><i></i><b>→</b></div>
+            <p>Binding probability 0.76461<br />Overall candidate state: pass.</p>
+          </article>
+        </div>
+
+        <div class="force-note"><strong>Force is deliberate, not accidental.</strong><span>A reason is required, and force remains unavailable while actionable oracle evaluations remain.</span></div>
+        <p class="scene-caption">Normal submission requires complete passing evidence for the registered candidate being submitted. A file-write success can no longer masquerade as scientific validity.</p>
+      </section>
+    </div>
+
+    <figcaption><strong>WORK IN PROGRESS, FIGURE NOT DONE YET.</strong> Selected examples from real V2 Lead Optimization trajectories. Persistent state makes task semantics, candidate identity, evidence provenance, and submission eligibility available without asking the model to recover them from conversation history.</figcaption>
+  </figure>
+</lo-state-harness>
+
+<script>
+  class LoStateHarness extends HTMLElement {
+    cleanup?: () => void;
+
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+
+      const buttons = [...this.querySelectorAll<HTMLButtonElement>('[data-state-button]')];
+      const stories = [...this.querySelectorAll<HTMLElement>('[data-state-story]')];
+      const detail = this.querySelector<HTMLElement>('.detail-region')!;
+      const aborter = new AbortController();
+      let activeState: string | null = null;
+      const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const collapse = () => {
+        activeState = null;
+        delete this.dataset.activeState;
+        buttons.forEach((button) => {
+          button.classList.remove('active', 'dimmed');
+          button.setAttribute('aria-expanded', 'false');
+        });
+        const finish = () => {
+          if (activeState !== null) return;
+          detail.hidden = true;
+          stories.forEach((story) => { story.hidden = true; });
+        };
+        if (reducedMotion()) finish();
+        else {
+          detail.getAnimations().forEach((animation) => animation.cancel());
+          const animation = detail.animate(
+            [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-6px)' }],
+            { duration: 170, easing: 'ease', fill: 'forwards' },
+          );
+          animation.finished.then(() => { animation.cancel(); finish(); }).catch(() => {});
+        }
+      };
+
+      const selectState = (state: string) => {
+        if (activeState === state) { collapse(); return; }
+        activeState = state;
+        this.dataset.activeState = state;
+        buttons.forEach((button) => {
+          const active = button.dataset.stateButton === state;
+          button.classList.toggle('active', active);
+          button.classList.toggle('dimmed', !active);
+          button.setAttribute('aria-expanded', String(active));
+        });
+        stories.forEach((story) => { story.hidden = story.dataset.stateStory !== state; });
+        detail.getAnimations().forEach((animation) => animation.cancel());
+        detail.hidden = false;
+        if (!reducedMotion()) detail.animate(
+          [{ opacity: 0, transform: 'translateY(-7px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 280, easing: 'cubic-bezier(.22,1,.36,1)' },
+        );
+      };
+
+      buttons.forEach((button, index) => {
+        button.addEventListener('click', () => selectState(button.dataset.stateButton!), { signal: aborter.signal });
+        button.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && activeState !== null) { event.preventDefault(); collapse(); return; }
+          if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          const offset = event.key === 'ArrowRight' ? 1 : -1;
+          buttons[(index + offset + buttons.length) % buttons.length].focus();
+        }, { signal: aborter.signal });
+      });
+
+      this.cleanup = () => aborter.abort();
+    }
+
+    disconnectedCallback() { this.cleanup?.(); }
+  }
+
+  if (!customElements.get('lo-state-harness')) customElements.define('lo-state-harness', LoStateHarness);
+</script>
+
+<style>
+  lo-state-harness {
+    --accent:#087c83;
+    --accent-soft:#e3f0ee;
+    --failure:#a24e35;
+    --failure-soft:#f3e7e1;
+    display:block;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:13px/1.5 var(--font-sans);
+  }
+  figure { margin:0; }
+  button { color:inherit; font:inherit; }
+  .figure-meta { display:flex; margin:-13px 0 19px; }
+  .figure-meta b { margin-left:auto; color:var(--accent); font:9px/1.5 var(--font-mono); font-weight:500; }
+  .dek { max-width:680px; margin:0 0 27px; color:var(--accent); font:15px/1.6 var(--font-serif); }
+  .map-scroll { overflow-x:auto; padding-bottom:3px; scrollbar-width:thin; scrollbar-color:var(--color-line) transparent; }
+  .state-map { position:relative; display:grid; grid-template-columns:repeat(5,1fr); min-width:780px; padding-bottom:0; transition:padding-bottom .2s ease; }
+  lo-state-harness[data-active-state] .state-map { padding-bottom:31px; }
+  .state-map::before { position:absolute; top:50px; right:10%; left:10%; border-top:1px solid #aaa69c; content:''; }
+  .state-map button { position:relative; z-index:1; display:flex; align-items:center; flex-direction:column; min-width:0; padding:0 9px 16px; border:0; background:none; text-align:center; cursor:pointer; transition:opacity .2s; }
+  .state-map button::after { position:absolute; bottom:0; left:50%; height:17px; border-left:1px solid #aaa69c; content:''; opacity:0; transition:opacity .16s ease; }
+  .state-map button.dimmed { opacity:.35; }
+  .state-map button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+  .stage { min-height:28px; color:var(--color-ink-soft); font:8px/1.25 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+  .state-node { position:relative; display:block; width:58px; height:42px; margin:2px 0 7px; background:var(--color-paper); }
+  .state-node > i, .state-node > b, .state-node > em { position:absolute; display:block; box-sizing:border-box; }
+  .state-map button > strong { color:var(--color-ink); font:13px/1.25 var(--font-serif); font-weight:500; }
+  .state-map button > small { min-height:27px; margin-top:3px; color:var(--color-ink-soft); font:8px/1.35 var(--font-sans); }
+  .state-map button:hover > strong, .state-map button.active > strong { color:var(--accent); }
+  .state-map button.active .state-node { color:var(--accent); }
+  .state-map button.active::after { border-left:2px solid var(--accent); }
+  .authoritative-rail { position:absolute; right:5%; bottom:0; left:5%; height:17px; border:1px solid color-mix(in srgb, var(--accent) 58%, var(--color-line)); border-bottom:0; opacity:0; transition:opacity .16s ease; }
+  lo-state-harness[data-active-state] .state-map button::after,
+  lo-state-harness[data-active-state] .authoritative-rail { opacity:1; }
+  .authoritative-rail span { position:absolute; top:7px; left:50%; padding:0 9px; background:var(--color-paper); color:var(--accent); font:7px/1.4 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; transform:translateX(-50%); white-space:nowrap; }
+
+  .document > i { top:8px; left:19px; width:21px; height:26px; border:1px solid currentColor; background:var(--color-paper); }
+  .document > b, .document > em { left:24px; width:11px; border-top:1px solid currentColor; }
+  .document > b { top:17px; } .document > em { top:23px; }
+  .registry > i, .registry > b { top:8px; width:22px; height:27px; border:1px solid currentColor; background:var(--color-paper); }
+  .registry > i { left:9px; } .registry > b { right:9px; }
+  .registry > em { top:15px; left:16px; width:5px; height:5px; border-radius:50%; background:currentColor; box-shadow:21px 0 0 currentColor; }
+  .measure > i { top:21px; left:8px; width:42px; border-top:1px solid currentColor; }
+  .measure > b { top:10px; left:32px; height:24px; border-left:1px solid currentColor; }
+  .measure > em { top:17px; left:27px; width:9px; height:9px; border:2px solid var(--color-paper); border-radius:50%; background:currentColor; }
+  .table > i { top:8px; left:9px; width:40px; height:27px; border:1px solid currentColor; background:repeating-linear-gradient(to bottom, transparent 0 8px, currentColor 8px 9px); }
+  .table > b { top:8px; left:25px; height:27px; border-left:1px solid currentColor; }
+  .lock > i { top:17px; left:16px; width:27px; height:19px; border:1px solid currentColor; background:var(--color-paper); }
+  .lock > b { top:7px; left:21px; width:17px; height:17px; border:1px solid currentColor; border-bottom:0; border-radius:9px 9px 0 0; }
+  .lock > em { top:24px; left:28px; width:3px; height:5px; background:currentColor; }
+
+  .detail-region { border-top:1px solid var(--color-line); padding-top:25px; margin-top:19px; }
+  .detail-region[hidden], .story[hidden] { display:none; }
+  .story-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:25px; }
+  .story-heading > div { display:flex; align-items:baseline; gap:12px; }
+  .story-heading > div > span { color:var(--accent); font:9px/1 var(--font-mono); }
+  .story-heading h3 { max-width:700px; margin:0; font:21px/1.25 var(--font-serif); font-weight:500; }
+  .story-heading > p { flex:0 0 auto; margin:3px 0 0; color:var(--color-ink-soft); font:8px/1.5 var(--font-mono); }
+  .scene-caption { border-top:1px solid var(--color-line); padding-top:11px; margin:21px 0 0; color:var(--color-ink-soft); font:11px/1.65 var(--font-sans); }
+  figcaption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+
+  .spec-layout { display:grid; grid-template-columns:minmax(330px,1fr) minmax(260px,.8fr); align-items:center; gap:34px; max-width:820px; margin:0 auto; }
+  .spec-card { border:1px solid var(--color-line); background:color-mix(in srgb, var(--color-paper-raised) 68%, transparent); }
+  .spec-card header { display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--color-line); color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-transform:uppercase; }
+  .spec-card header b { color:var(--accent); font-weight:600; }
+  .spec-card h4 { padding:14px 16px 8px; margin:0; font:21px/1.2 var(--font-serif); font-weight:500; }
+  .spec-card dl { display:grid; grid-template-columns:repeat(5,1fr); margin:0; padding:5px 11px 14px; }
+  .spec-card dl div { padding:7px 9px; border-left:1px solid var(--color-line); }
+  .spec-card dl div:first-child { border-left:0; }
+  .spec-card dt, .spec-card dd { margin:0; font:7px/1.4 var(--font-mono); }
+  .spec-card dt { color:var(--color-ink-soft); }
+  .spec-card dd { margin-top:5px; font-size:11px; }
+  .spec-card .primary dd { color:var(--accent); font-size:15px; }
+  .spec-card footer { padding:7px 14px; border-top:1px solid var(--color-line); color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .durability-note { display:flex; align-items:center; gap:17px; }
+  .durability-note p { margin:0; color:var(--color-ink-soft); font:11px/1.6 var(--font-sans); }
+  .durability-note p strong { display:block; margin-bottom:3px; color:var(--color-ink); font:16px/1.35 var(--font-serif); font-weight:500; }
+  .pin { position:relative; flex:0 0 47px; height:47px; border:1px solid color-mix(in srgb, var(--accent) 52%, var(--color-line)); border-radius:50%; background:var(--accent-soft); }
+  .pin i { position:absolute; top:10px; left:16px; width:14px; height:17px; border:1px solid var(--accent); }
+  .pin b { position:absolute; top:27px; left:23px; height:11px; border-left:1px solid var(--accent); }
+
+  .registry-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .candidate-card { border:1px solid var(--color-line); }
+  .candidate-card header { display:flex; align-items:baseline; justify-content:space-between; padding:10px 13px; border-bottom:1px solid var(--color-line); }
+  .candidate-card header strong { color:var(--accent); font:18px/1.2 var(--font-serif); font-weight:500; }
+  .candidate-card header span { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-transform:uppercase; }
+  .candidate-card > code { display:block; overflow-wrap:anywhere; padding:12px 13px; border-bottom:1px solid var(--color-line); color:var(--color-ink-soft); font:8px/1.5 var(--font-mono); }
+  .candidate-card dl { display:grid; grid-template-columns:1fr 1fr; margin:0; }
+  .candidate-card dl div { display:flex; justify-content:space-between; gap:8px; padding:7px 11px; border-right:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .candidate-card dl div:nth-child(even) { border-right:0; }
+  .candidate-card dl div:nth-last-child(-n+2) { border-bottom:0; }
+  .candidate-card dt, .candidate-card dd { margin:0; font:7px/1.4 var(--font-mono); }
+  .candidate-card dt { color:var(--color-ink-soft); }
+  .candidate-card dd { color:var(--accent); text-align:right; }
+  .identity-guard { display:grid; grid-template-columns:auto minmax(190px,1fr) 24px auto minmax(220px,1fr); align-items:center; gap:10px; padding:10px 13px; margin-top:14px; border:1px solid color-mix(in srgb, var(--failure) 36%, var(--color-line)); background:var(--failure-soft); }
+  .identity-guard span, .identity-guard code, .identity-guard strong, .identity-guard p { font:8px/1.45 var(--font-mono); }
+  .identity-guard span { color:var(--color-ink-soft); text-transform:uppercase; }
+  .identity-guard code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .identity-guard i { color:var(--failure); font-style:normal; text-align:center; }
+  .identity-guard strong { color:var(--failure); text-transform:uppercase; }
+  .identity-guard p { margin:0; color:var(--color-ink-soft); }
+
+  .evidence-record { border:1px solid var(--color-line); }
+  .evidence-record > header { display:flex; align-items:center; justify-content:space-between; padding:11px 15px; border-bottom:1px solid var(--color-line); }
+  .evidence-record > header div { display:flex; align-items:baseline; gap:10px; }
+  .evidence-record > header span, .evidence-record > header b { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-transform:uppercase; }
+  .evidence-record > header strong { color:var(--accent); font:18px/1.2 var(--font-serif); font-weight:500; }
+  .evidence-record > header b { font-weight:500; }
+  .evidence-values { display:grid; grid-template-columns:1.35fr .65fr 1.35fr 1.35fr .8fr .8fr; }
+  .evidence-values dl { padding:14px 12px; border-right:1px solid var(--color-line); margin:0; }
+  .evidence-values dl:last-child { border-right:0; }
+  .evidence-values dt, .evidence-values dd { margin:0; font:7px/1.4 var(--font-mono); }
+  .evidence-values dt { color:var(--color-ink-soft); text-transform:uppercase; }
+  .evidence-values dd { margin-top:6px; font-size:11px; }
+  .evidence-values .margin { background:var(--accent-soft); }
+  .evidence-values .margin dd { color:var(--accent); font-weight:600; }
+  .margin-scale { position:relative; height:56px; border-top:1px solid var(--color-line); }
+  .margin-scale::before { position:absolute; top:25px; right:5%; left:5%; border-top:1px solid #aaa69c; content:''; }
+  .pass-zone { position:absolute; top:22px; left:5%; width:48%; height:7px; background:#a6ceca; opacity:.8; }
+  .threshold-mark { position:absolute; top:13px; left:53%; height:25px; border-left:1px solid var(--color-ink); }
+  .value-mark { position:absolute; top:20px; left:50.5%; width:11px; height:11px; border:2px solid var(--color-paper); border-radius:50%; background:var(--accent); transform:translateX(-50%); }
+  .margin-scale small { position:absolute; top:38px; color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .observed-label { left:50.5%; transform:translateX(-100%); } .threshold-label { left:54%; }
+  .evidence-record > footer { display:flex; justify-content:flex-end; gap:14px; padding:8px 14px; border-top:1px solid var(--color-line); color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .evidence-record > footer b { color:var(--accent); font-weight:600; }
+
+  .decision-table-scroll { overflow-x:auto; }
+  .decision-table { width:100%; min-width:760px; border-collapse:collapse; font:8px/1.45 var(--font-mono); }
+  .decision-table th, .decision-table td { padding:10px 12px; border:1px solid var(--color-line); text-align:left; }
+  .decision-table thead th { color:var(--color-ink-soft); font-size:7px; font-weight:500; text-transform:uppercase; }
+  .decision-table tbody th { color:var(--accent); font:14px/1.3 var(--font-serif); font-weight:500; }
+  .decision-table .dominated { color:var(--color-ink-soft); background:color-mix(in srgb, var(--color-line) 18%, transparent); }
+  .negative { color:var(--failure); }
+  .fail-chip, .frontier-chip { display:inline-block; padding:2px 5px; }
+  .fail-chip { background:var(--failure-soft); color:var(--failure); }
+  .frontier-chip { background:var(--accent-soft); color:var(--accent); }
+  .comparison-notes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:13px; }
+  .comparison-notes p { padding:10px 12px; border-left:2px solid var(--accent); margin:0; background:color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+  .comparison-notes span, .comparison-notes strong, .comparison-notes small { display:block; }
+  .comparison-notes span { color:var(--accent); font:7px/1.4 var(--font-mono); }
+  .comparison-notes strong { margin:2px 0; font:13px/1.35 var(--font-serif); font-weight:500; }
+  .comparison-notes small { color:var(--color-ink-soft); font:8px/1.5 var(--font-sans); }
+
+  .submission-paths { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .submission-paths article { position:relative; padding:13px 15px 14px; border:1px solid var(--color-line); }
+  .submission-paths article > header { display:flex; justify-content:space-between; color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); text-transform:uppercase; }
+  .submission-paths article > header b { font-weight:600; }
+  .blocked-path > header b, .blocked-path li b { color:var(--failure); }
+  .accepted-path > header b, .accepted-path li b { color:var(--accent); }
+  .submission-candidate { padding:14px 0 10px; }
+  .submission-candidate strong { display:block; font:22px/1.2 var(--font-serif); font-weight:500; }
+  .submission-candidate small { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
+  .submission-paths ul { padding:0; margin:0; list-style:none; }
+  .submission-paths li { display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-top:1px solid var(--color-line); font:8px/1.45 var(--font-mono); }
+  .submission-paths li span { color:var(--color-ink-soft); }
+  .submission-paths li b { font-weight:500; text-align:right; }
+  .submission-paths article > p { padding-top:10px; margin:13px 45px 0 0; border-top:1px solid var(--color-line); color:var(--color-ink-soft); font:8px/1.55 var(--font-mono); }
+  .gate-lock, .gate-open { position:absolute; right:15px; bottom:14px; width:34px; height:34px; border:1px solid currentColor; border-radius:50%; }
+  .gate-lock { color:var(--failure); background:var(--failure-soft); }
+  .gate-lock i { position:absolute; top:14px; left:10px; width:13px; height:10px; border:1px solid currentColor; }
+  .gate-lock b { position:absolute; top:7px; left:13px; width:7px; height:8px; border:1px solid currentColor; border-bottom:0; border-radius:5px 5px 0 0; }
+  .gate-open { display:grid; place-items:center; color:var(--accent); background:var(--accent-soft); }
+  .gate-open i { position:absolute; top:8px; bottom:8px; left:10px; border-left:1px solid currentColor; }
+  .gate-open b { font:15px/1 var(--font-sans); font-weight:400; }
+  .force-note { display:flex; justify-content:center; gap:10px; padding:9px 12px; margin-top:13px; background:color-mix(in srgb, var(--color-line) 24%, transparent); font:8px/1.5 var(--font-mono); }
+  .force-note strong { color:var(--color-ink); font-weight:600; }
+  .force-note span { color:var(--color-ink-soft); }
+
+  @media (max-width:760px) {
+    .map-scroll { margin-right:calc(-1 * var(--page-gutter)); }
+    .state-map { min-width:720px; padding-right:var(--page-gutter); }
+    .story-heading { display:block; }
+    .story-heading > p { margin:8px 0 0 28px; }
+    .spec-layout { grid-template-columns:1fr; }
+    .durability-note { max-width:520px; }
+    .evidence-values { grid-template-columns:repeat(3,1fr); }
+    .evidence-values dl:nth-child(3) { border-right:0; }
+    .evidence-values dl:nth-child(-n+3) { border-bottom:1px solid var(--color-line); }
+  }
+  @media (max-width:580px) {
+    .dek { font-size:14px; }
+    .detail-region { padding-top:21px; }
+    .story-heading h3 { font-size:19px; }
+    .spec-card dl { grid-template-columns:repeat(2,1fr); }
+    .spec-card dl div { border-bottom:1px solid var(--color-line); }
+    .spec-card dl div:nth-child(odd) { border-left:0; }
+    .spec-card dl div:last-child { border-bottom:0; }
+    .registry-layout, .submission-paths, .comparison-notes { grid-template-columns:1fr; }
+    .identity-guard { grid-template-columns:auto 1fr; }
+    .identity-guard i { display:none; }
+    .identity-guard strong { text-align:right; }
+    .identity-guard p { grid-column:1 / -1; }
+    .evidence-values { grid-template-columns:repeat(2,1fr); }
+    .evidence-values dl:nth-child(3) { border-right:1px solid var(--color-line); }
+    .evidence-values dl:nth-child(even) { border-right:0; }
+    .evidence-values dl:nth-child(-n+4) { border-bottom:1px solid var(--color-line); }
+    .force-note { align-items:flex-start; flex-direction:column; gap:2px; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .state-map, .state-map button, .state-map button::after, .authoritative-rail { transition:none; }
+  }
+</style>

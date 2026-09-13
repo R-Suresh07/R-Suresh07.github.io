@@ -591,7 +591,7 @@ const breaks = [
   .disturbance { position:relative; z-index:1; display:block; width:58px; height:42px; margin:2px 0 7px; background:var(--color-paper); }
   .disturbance > i, .disturbance > b, .disturbance > em { position:absolute; display:block; box-sizing:border-box; }
   .disturbance > i { top:13px; left:22px; width:14px; height:14px; border:1px solid #77736b; border-radius:50%; background:var(--color-paper); }
-  .break-map button > strong { color:var(--color-ink); font:13px/1.25 var(--font-serif); font-weight:500; }
+  .break-map button > strong { position:relative; color:var(--color-ink); font:13px/1.25 var(--font-serif); font-weight:500; }
   .description { min-height:29px; margin-top:3px; color:var(--color-ink-soft); font-size:9px; line-height:1.35; }
   .break-map button > small { color:var(--color-ink-soft); font:7px/1.4 var(--font-mono); }
   .break-map button:hover > strong, .break-map button.active > strong { color:var(--accent); }
@@ -612,7 +612,7 @@ const breaks = [
   .bypass > em { top:12px; left:27px; width:8px; height:8px; background:var(--color-paper); transform:rotate(45deg); }
   .missing > b { top:8px; left:15px; width:28px; height:25px; border:1px solid #99958d; }
   .missing > em { top:16px; left:27px; width:8px; height:8px; background:var(--color-paper); box-shadow:0 0 0 2px var(--color-paper); }
-  .break-map button.active .disturbance::after { position:absolute; bottom:0; left:50%; width:11px; height:7px; border-right:2px solid var(--failure); border-bottom:2px solid var(--failure); content:''; transform:translateX(-50%) rotate(45deg); }
+  .break-map button.active > strong::before { position:absolute; top:-12px; left:50%; width:8px; height:8px; border-right:2px solid var(--failure); border-bottom:2px solid var(--failure); content:''; transform:translateX(-50%) rotate(45deg); }
   .resting-note { margin:13px 0 0; color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); text-align:center; }
   .resting-note span { color:var(--failure); }
   .failure-map-caption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
