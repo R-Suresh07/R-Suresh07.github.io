@@ -180,13 +180,13 @@ In an LO task, the agent starts with a protein-bound reference molecule and modi
 
 ### How well do current agents do?
 
-Current models rarely fail Lead Optimization because of invalid chemistry. Producing valid molecules is rarely a problem for any of the models, and even weaker agents routinely pass intermediate constraint checks.
+Current models handle Lead Optimization much better than Interaction Point Discovery. Generating valid molecules is rarely the main issue. The real challenge is improving target properties without breaking existing ones, all while maintaining strong binding throughout the search. Although a single pass or fail score flattens these complex trade-offs, it provides a clear baseline to see how much performance the harness can help recover.
+
+<LoBaselineFigure />
 
 The real difference occurs at the Boltz binding stage. GPT-5.4 and Gemini 3.1 Pro achieve an 89.7% pass rate, while Qwen 3.5 9B reaches only 54.4%. Claude offers a notable contrast, maintaining strong performance through pre-Boltz checks but losing final task completions due to a lower binding pass rate.
 
 This suggests that proposing a plausible candidate is only part of the problem. The agent still has to carry the right molecule and its associated evidence through the rest of the optimization process.
-
-<LoBaselineFigure />
 
 The search itself can be long and state-heavy. LO runs can stretch across dozens of turns, with some trajectories continuing for 75 turns or more. Over that time, an agent might propose multiple analogues, evaluate disjoint property subsets, discover marginal constraint violations, identify promising binding poses, and circle back to earlier candidates much later in the trajectory. Across these steps, it must continuously track which measurement belongs to which molecule, which properties remain unmeasured, which constraints are satisfied, and how much oracle budget remains.
 
