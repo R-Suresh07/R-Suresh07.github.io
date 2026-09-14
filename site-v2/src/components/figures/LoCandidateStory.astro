@@ -123,7 +123,7 @@ const measurementStages = stages.slice(1).map((stage, candidateIndex) => ({
 const initialMeasurementStage = stages[1];
 ---
 
-<lo-candidate-story data-view="story" data-stage="0">
+<lo-candidate-story data-view="story" data-stage="1">
   <figure aria-label="Selected optimization milestones from a Cathepsin K Lead Optimization trajectory">
     <FigureHeading
       label="FIG. 12"
@@ -146,7 +146,7 @@ const initialMeasurementStage = stages[1];
             <i></i><span>{stage.short}</span><small>baseline</small>
           </div>
         ) : (
-          <button type="button" data-stage-button={index}>
+          <button type="button" class:list={{ active: index === 1 }} data-stage-button={index} aria-current={index === 1 ? 'step' : undefined}>
             <i></i><span>{stage.short}</span><small>{stage.id}</small>
           </button>
         )
@@ -156,7 +156,7 @@ const initialMeasurementStage = stages[1];
 
     <section id="story-view" class="story-view" role="tabpanel">
       {stages.map((stage, index) => (
-        <div class="stage-scene" data-scene={index} hidden={index !== 0}>
+        <div class="stage-scene" data-scene={index} hidden={index !== 1}>
           {index === 0 ? (
             <div class="reference-opening">
               <div class="molecule-panel reference-panel">
@@ -248,9 +248,9 @@ const initialMeasurementStage = stages[1];
       ))}
 
       <div class="story-controls">
-        <button type="button" class="previous" disabled>← Previous</button>
-        <span class="progress">1 / 4</span>
-        <button type="button" class="next">Begin optimization →</button>
+        <button type="button" class="previous">← Previous</button>
+        <span class="progress">2 / 4</span>
+        <button type="button" class="next">Next: C02 →</button>
       </div>
     </section>
 
@@ -320,7 +320,7 @@ const initialMeasurementStage = stages[1];
       const previous = this.querySelector<HTMLButtonElement>('.previous')!;
       const next = this.querySelector<HTMLButtonElement>('.next')!;
       const progress = this.querySelector<HTMLElement>('.progress')!;
-      let selected = 0;
+      let selected = 1;
 
       const setStage = (index: number) => {
         selected = Math.max(0, Math.min(stages.length - 1, index));
@@ -385,7 +385,7 @@ const initialMeasurementStage = stages[1];
         measurements.hidden = showStory;
         this.dataset.view = showStory ? 'story' : 'measurements';
       }));
-      setStage(0);
+      setStage(1);
     }
 
     disconnectedCallback() { delete this.dataset.ready; }

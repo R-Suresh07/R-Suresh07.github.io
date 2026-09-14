@@ -46,7 +46,7 @@ const breaks = [
 ];
 ---
 
-<lo-failure-map id="lo-failure-map">
+<lo-failure-map id="lo-failure-map" data-active-mode="constraint">
   <figure aria-label="Five observed points where state broke in Lead Optimization trajectories">
     <FigureHeading label="FIG. 13" title="Where agent state breaks down" />
 
@@ -60,8 +60,9 @@ const breaks = [
         {breaks.map((item) => (
           <button
             type="button"
+            class:list={{ active: item.id === 'constraint', dimmed: item.id !== 'constraint' }}
             data-mode-button={item.id}
-            aria-expanded="false"
+            aria-expanded={item.id === 'constraint' ? 'true' : 'false'}
             aria-controls="failure-detail"
           >
             <span class="stage">{item.stage}</span>
@@ -76,10 +77,10 @@ const breaks = [
       </nav>
     </div>
 
-    <p class="resting-note"><span aria-hidden="true">↑</span> select a break to inspect the trajectory</p>
+    <p class="resting-note" hidden><span aria-hidden="true">↑</span> select a break to inspect the trajectory</p>
 
-    <div id="failure-detail" class="detail-region" aria-live="polite" hidden>
-      <section class="story constraint-story" data-story="constraint" hidden>
+    <div id="failure-detail" class="detail-region" aria-live="polite">
+      <section class="story constraint-story" data-story="constraint">
         <header class="story-heading">
           <div><span class="story-index">01</span><h3>The requirement changed while the search was running.</h3></div>
           <p>Kimi K2.5 · Cathepsin_K_20 · turns 23–24</p>
@@ -468,7 +469,7 @@ const breaks = [
       const detail = this.querySelector<HTMLElement>('.detail-region')!;
       const restingNote = this.querySelector<HTMLElement>('.resting-note')!;
       const aborter = new AbortController();
-      let activeMode: string | null = null;
+      let activeMode: string | null = 'constraint';
 
       const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

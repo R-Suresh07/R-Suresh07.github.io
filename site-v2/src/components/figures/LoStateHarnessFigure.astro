@@ -10,7 +10,7 @@ const safeguards = [
 ];
 ---
 
-<lo-state-harness id="lo-state-harness">
+<lo-state-harness id="lo-state-harness" data-active-state="spec">
   <figure aria-label="Five persistent state objects introduced in the V2 Lead Optimization harness">
     <FigureHeading label="FIG. 14" title="Moving state out of the trajectory" />
 
@@ -20,7 +20,13 @@ const safeguards = [
     <div class="map-scroll">
       <nav class="state-map" aria-label="Inspect a V2 state safeguard">
         {safeguards.map((item) => (
-          <button type="button" data-state-button={item.id} aria-expanded="false" aria-controls="state-detail">
+          <button
+            type="button"
+            class:list={{ active: item.id === 'spec', dimmed: item.id !== 'spec' }}
+            data-state-button={item.id}
+            aria-expanded={item.id === 'spec' ? 'true' : 'false'}
+            aria-controls="state-detail"
+          >
             <span class="stage">{item.stage}</span>
             <span class:list={['state-node', item.kind]} aria-hidden="true"><i></i><b></b><em></em></span>
             <strong>{item.label}</strong>
@@ -31,8 +37,8 @@ const safeguards = [
       </nav>
     </div>
 
-    <div id="state-detail" class="detail-region" aria-live="polite" hidden>
-      <section class="story spec-story" data-state-story="spec" hidden>
+    <div id="state-detail" class="detail-region" aria-live="polite">
+      <section class="story spec-story" data-state-story="spec">
         <header class="story-heading">
           <div><span>01</span><h3>The requirement is compiled once.</h3></div>
           <p>GPT-5.4 · ABL1_3 · V2 TaskSpec</p>
@@ -180,7 +186,7 @@ const safeguards = [
       const stories = [...this.querySelectorAll<HTMLElement>('[data-state-story]')];
       const detail = this.querySelector<HTMLElement>('.detail-region')!;
       const aborter = new AbortController();
-      let activeState: string | null = null;
+      let activeState: string | null = 'spec';
       const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       const collapse = () => {

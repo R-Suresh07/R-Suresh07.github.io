@@ -26,6 +26,7 @@ import LoHarnessOutcomes from '../../components/figures/LoHarnessOutcomes.astro'
 import LoVsScaffoldHopFigure from '../../components/figures/LoVsScaffoldHopFigure.astro';
 import BoltzInterfaceNote from '../../components/figures/BoltzInterfaceNote.astro';
 import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBaselineFigure.astro';
+import ScaffoldHopHarnessOutcomes from '../../components/figures/ScaffoldHopHarnessOutcomes.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -291,3 +292,23 @@ The more important change came after Boltz. In the original harness, the respons
 The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts needed to survive. Deciding whether a candidate preserved the important interactions, how to modify it when it did not, and whether another experiment was worthwhile remained part of the model's scientific reasoning. We also removed irrelevant tools and tied final submission to the same registered candidate state.
 
 This gave us a cleaner test of the remaining question: once the agent had direct visibility into both scaffold novelty and pocket geometry, would Scaffold Hopping success rates finally improve?
+
+### Did exposing the binding geometry help?
+
+The new harness fixed execution, yet the underlying scientific challenge remained difficult to solve.
+
+Under the original harness, Qwen 3.5 9B submitted answers on only 39 of 52 tasks, with 13 trajectories exhausting their turn limit. The updated harness increased completion significantly, reaching submission on 51 of 52 tasks and yielding 50 valid evaluations. It also became far more reliable at satisfying earlier task requirements, lifting scaffold-novelty passes from 36 to 50 and doubling the candidates that cleared the binding-probability threshold from 14 to 28.
+
+Yet final performance remained completely stagnant. Fully resolved tasks did not improve, shifting marginally from 2/52 down to 1/52.
+
+<ScaffoldHopHarnessOutcomes />
+
+The reason becomes clear at the final evaluation step. While the updated V2 harness produced more novel molecules and far more candidates with high predicted binding, it failed to improve preservation of the reference binding pattern. Only one candidate crossed that threshold, compared with three under the original harness. In fact, the two setups did not even solve the same tasks. The V2 harness found one novel solution while losing both tasks solved by the original baseline.
+
+This outcome stands in stark contrast to Lead Optimization. Fixing operational and state-management flaws previously unlocked major performance gains. Here, making 3D poses accessible simply cleaned up the workspace around an unsolved scientific bottleneck. Seeing the binding geometry did not help the model determine which contacts were essential or how to modify the core to retain them.
+
+The redesigned harness was also substantially cheaper to run. It used roughly 40% fewer tokens and 22% fewer turns, while reaching twelve more submissions and using slightly fewer Boltz calls. So the failure was not caused by giving the model less opportunity to search. If anything, V2 made the search cleaner and more efficient while leaving the same underlying difficulty exposed.
+
+At this point, further manual intervention would again start to cross the line we were trying to preserve. We could explicitly extract and compare pocket interactions for the model, rank candidates by how closely they reproduce the reference pose, or suggest structural edits that restore lost contacts. But those are increasingly decisions about how to solve Scaffold Hopping, rather than how to make the task easier for an agent to execute.
+
+Scaffold Hopping shows an important limit of this process. Cleaning up the interface can make the agent more reliable, more efficient, and much clearer about what evidence it has without necessarily improving the final success rate. Once those avoidable failures are removed, the remaining bottleneck can simply move closer to the scientific decision itself. In this case, exposing the binding geometry made the problem easier to see and act on, but it did not teach the model how to design a new scaffold that preserved the right interactions.
