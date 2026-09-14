@@ -23,6 +23,8 @@ import LoCandidateStory from '../../components/figures/LoCandidateStory.astro';
 import LoFailureMap from '../../components/figures/LoFailureMap.astro';
 import LoStateHarnessFigure from '../../components/figures/LoStateHarnessFigure.astro';
 import LoHarnessOutcomes from '../../components/figures/LoHarnessOutcomes.astro';
+import LoVsScaffoldHopFigure from '../../components/figures/LoVsScaffoldHopFigure.astro';
+import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBaselineFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -247,3 +249,30 @@ There was still a clear limit. Twenty V2 trajectories reached the turn limit wit
 
 Lead Optimization showed that a large fraction of failures could be recovered by making the agent’s state explicit and reliable. The next question was whether the same approach would help when the bottleneck was less about remembering the search and more about reasoning over the molecule itself.
 
+## Scaffold Hopping
+
+The difficulty is that these two goals pull in opposite directions. A scaffold hop must move far enough in chemical space to count as a genuinely different molecular solution, while preserving the interactions that made the original ligand work in the first place.
+
+<LoVsScaffoldHopFigure />
+
+In other words, Lead Optimization rewards controlled local change; Scaffold Hopping asks the agent to change the molecular representation while preserving its function inside the pocket.
+
+### How well do current agents do?
+
+Almost not at all. Across the 52 Scaffold Hopping tasks, no evaluated model solves more than two. Claude Sonnet 4.6, DeepSeek V3.2, GPT-5.4, and an additional Qwen 3.5 9B baseline each solve 2/52, while the remaining models solve one task or none.
+
+This is a sharp contrast with Lead Optimization, where current models can solve a substantial fraction of the benchmark. Here, even the best strict pass rate is only 3.8%.
+
+<ScaffoldHopBaselineFigure />
+
+The few successes are not simply the same easy tasks being rediscovered by every model. Across all eight models, nine different tasks are solved at least once, with different models occasionally finding different successful scaffold hops. The problem is therefore not confined to one universally impossible subset. Instead, almost every model appears to be running into the same broader bottleneck.
+
+### What are the agents getting wrong?
+
+The terminal scores suggest that Scaffold Hopping is impossible across the board, but breaking down the specific evaluation checks reveals a clearer pattern.
+
+Generating a structurally distinct molecule is rarely the bottleneck. Models consistently clear the Tanimoto and scaffold-novelty thresholds across most tasks, and several regularly propose structures with high predicted binding probability.
+
+The systematic failure lies in preserving the reference molecule’s binding pattern inside the pocket. No model manages this on more than 3 of 52 tasks. GPT-5.4 clears the binding-probability threshold on 46 tasks, yet reproduces the required pocket interactions on only 3. Claude satisfies all scaffold-novelty rules across all 52 tasks and clears binding on 48, but preserves the reference interaction pattern on just 2.
+
+This highlights the true challenge. Agents can readily generate novel chemistry that still appears capable of binding to the target. The hard part is designing a different scaffold that binds in the same way as the original molecule.
