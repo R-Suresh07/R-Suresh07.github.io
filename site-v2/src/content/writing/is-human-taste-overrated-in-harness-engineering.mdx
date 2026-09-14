@@ -24,6 +24,7 @@ import LoFailureMap from '../../components/figures/LoFailureMap.astro';
 import LoStateHarnessFigure from '../../components/figures/LoStateHarnessFigure.astro';
 import LoHarnessOutcomes from '../../components/figures/LoHarnessOutcomes.astro';
 import LoVsScaffoldHopFigure from '../../components/figures/LoVsScaffoldHopFigure.astro';
+import BoltzInterfaceNote from '../../components/figures/BoltzInterfaceNote.astro';
 import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBaselineFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
@@ -276,3 +277,17 @@ Generating a structurally distinct molecule is rarely the bottleneck. Models con
 The systematic failure lies in preserving the reference molecule’s binding pattern inside the pocket. No model manages this on more than 3 of 52 tasks. GPT-5.4 clears the binding-probability threshold on 46 tasks, yet reproduces the required pocket interactions on only 3. Claude satisfies all scaffold-novelty rules across all 52 tasks and clears binding on 48, but preserves the reference interaction pattern on just 2.
 
 This highlights the true challenge. Agents can readily generate novel chemistry that still appears capable of binding to the target. The hard part is designing a different scaffold that binds in the same way as the original molecule.
+
+### Exposing binding geometry to the agent
+
+The issue was rooted in how the original harness returned results. Boltz put the binding score directly in front of the model, while the evidence needed to verify the binding mode remained buried in generated structure files. Once an agent found a sufficiently novel molecule with a high binding probability, it was easy to treat the search as essentially complete.
+
+But binding strongly is not the same as binding in the same way. Verifying a scaffold hop required the agent to inspect the reference complex, locate the Boltz structure files, extract key protein-ligand interactions, and compare them against the predicted candidate poses. In practice, models rarely carried this full comparison through.
+
+We therefore redesigned the interface around making this structural evidence directly accessible. As in Lead Optimization, every proposed molecule was canonicalized, registered under a persistent candidate ID, and passed through deterministic novelty checks before spending an expensive Boltz call. The protein and pocket configuration were also bound directly to the task.
+
+The more important change came after Boltz. In the original harness, the response returned a binding probability together with the directory containing the generated structures. In V2, each result was attached directly to the candidate and returned the predicted pose files explicitly.<Sidenote number="5" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking whether a molecule appears to bind to inspecting how it binds.
+
+The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts needed to survive. Deciding whether a candidate preserved the important interactions, how to modify it when it did not, and whether another experiment was worthwhile remained part of the model's scientific reasoning. We also removed irrelevant tools and tied final submission to the same registered candidate state.
+
+This gave us a cleaner test of the remaining question: once the agent had direct visibility into both scaffold novelty and pocket geometry, would Scaffold Hopping success rates finally improve?

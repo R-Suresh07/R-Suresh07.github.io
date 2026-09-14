@@ -1,0 +1,30 @@
+<span class="boltz-interface-note">
+  <span class="note-copy">The difference is easiest to see in the raw tool outputs. V1 surfaced the scalar score directly but returned only a directory containing the predicted structures:</span>
+  <span class="output-block" aria-label="Original Boltz tool output">
+    <span><b>binding_probability:</b> 0.1583</span>
+    <span><b>affinity_pred_value:</b> 0.7236</span>
+    <span><b>cif_dir:</b> boltz_results/call_1/...</span>
+  </span>
+  <span class="note-copy">The agent then had to locate the individual CIF files itself before inspecting the poses.</span>
+  <span class="note-copy v2-copy">V2 instead attached the result to a registered candidate and returned the pose files explicitly:</span>
+  <span class="output-block" aria-label="Redesigned Boltz tool output">
+    <span><b>candidate_id:</b> C001</span>
+    <span><b>binding_probability:</b> 0.1665</span>
+    <span><b>pose_files:</b></span>
+    <span class="indent">model_0.cif</span>
+    <span class="indent">model_1.cif</span>
+    <span class="indent muted">...</span>
+    <span class="indent">model_9.cif</span>
+  </span>
+</span>
+
+<style>
+  .boltz-interface-note,.note-copy,.output-block,.output-block span { display:block; }
+  .boltz-interface-note { color:var(--color-ink-soft); font:0.72rem/1.5 var(--font-sans); }
+  .note-copy + .output-block { margin-top:0.55rem; }
+  .output-block { overflow-x:auto; padding:0.55rem 0.65rem; margin-bottom:0.65rem; border:1px solid var(--color-line); background:color-mix(in srgb,var(--color-line) 22%,transparent); color:var(--color-ink); font:0.66rem/1.55 var(--font-mono); white-space:nowrap; }
+  .output-block b { color:var(--color-accent); font-weight:550; }
+  .v2-copy { margin-top:0.75rem; }
+  .indent { padding-left:1rem; }.muted { color:var(--color-ink-soft); }
+  strong { display:block; padding-top:0.65rem; border-top:1px solid var(--color-line); color:var(--color-ink); font-weight:600; }
+</style>
