@@ -28,6 +28,7 @@ import BoltzInterfaceNote from '../../components/figures/BoltzInterfaceNote.astr
 import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBaselineFigure.astro';
 import ScaffoldHopHarnessOutcomes from '../../components/figures/ScaffoldHopHarnessOutcomes.astro';
 import HarnessOptimizationLoop from '../../components/figures/HarnessOptimizationLoop.astro';
+import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverviewFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -333,3 +334,17 @@ And after every redesign, the answer could still be wrong. Lead Optimization imp
 <HarnessOptimizationLoop />
 
 So, this raises an obvious question: **If this is a search process, how much of it can we automate?**
+
+## Can the harness engineer itself?
+
+There are already several ways to automate parts of harness engineering, including prompt optimizers such as GEPA. But our manual interventions touched much more than the prompt: tools, state representation, compaction, oracle wrappers, and submission logic all changed across the three tasks. We therefore wanted a method where the **entire executable harness** could be part of the search space.
+
+For this, we used **Meta-Harness**, which treats harness design itself as an iterative optimization problem.
+
+<MetaHarnessOverviewFigure />
+
+The loop is straightforward. A meta-agent sees the source code, execution traces, and evaluation scores from previous harnesses, proposes a new version, evaluates it on the task, stores the resulting traces and score, and repeats. Because the harness itself is executable code, the optimizer is free to change much more than instructions alone.
+
+We initialized this search from the same baseline harness used in our manual experiments and asked whether automated search could recover the kinds of improvements we had spent weeks finding by hand.
+
+There is one boundary we kept fixed. The optimizer could redesign how public task information was represented and how the agent interacted with its environment, but it could not expose hidden evaluator answers or directly encode task-specific solutions. The scientific policy still had to belong to the child agent.
