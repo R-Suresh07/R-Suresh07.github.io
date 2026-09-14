@@ -29,6 +29,7 @@ import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBasel
 import ScaffoldHopHarnessOutcomes from '../../components/figures/ScaffoldHopHarnessOutcomes.astro';
 import HarnessOptimizationLoop from '../../components/figures/HarnessOptimizationLoop.astro';
 import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverviewFigure.astro';
+import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHarnessSearchOverview.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -352,3 +353,21 @@ There is one boundary we kept fixed. The optimizer could redesign how public tas
 There was also a more personal reason I found this setup interesting. Throughout the manual phase, Claude Opus 5 had already been my main workhorse for reading trajectories, organizing failure modes, and brainstorming possible harness changes. I was still choosing which hypotheses to pursue, deciding where the model–harness boundary should sit, and implementing the final interventions, but a capable model was already involved in much of the analysis.
 
 Meta-Harness therefore made the comparison more direct. If essentially the same kind of model could inspect the traces, reason about what was going wrong, edit the harness itself, and evaluate the result, **how much was I actually contributing to the loop?** Was the human mainly providing taste and judgment that the model could not recover on its own, or was I just manually orchestrating a process that could already be automated?
+
+### How did we run the search?
+
+To make the comparison fair, we kept the downstream scientific agent fixed. Qwen 3.5 9B served as the model solving the SMDD tasks, while Claude Opus acted as the meta-agent optimizing the harness. This setup created a direct test against the human baseline: Opus had already been my primary tool for analyzing trajectories and brainstorming manual fixes. The question was whether the meta-agent still needed a human in the loop to translate diagnoses into working code.
+
+For each task family, the automated search started from the same original harness rather than from our manually improved version. The meta-agent could inspect the harness source code, trajectories produced by previous candidates, and their evaluation results, then propose a new executable harness for the next round.
+
+We placed very few restrictions on how it could improve that harness. Prompts were editable, but so were the tools themselves, how state was represented, what information tool calls returned, how context was managed, and the control logic around submission. In other words, the search space included essentially everything around the child model that we had spent the previous sections modifying by hand.
+
+What remained untouched was equally important. The child model was fixed, the underlying SMDD tasks and scientific oracles stayed constant, and the optimizer received no hidden answers or task-specific shortcuts. A candidate harness earned reward only by helping Qwen solve the task directly.
+
+**Terminal task success** served as the only reward signal for the outer loop. While the meta-agent analyzed rich execution traces to understand what went wrong, we provided no shaped rewards favoring our preferred harness patterns. The system received no instructions to create candidate ledgers, generate ligand probes, or expose 3D pose files. The optimizer had to uncover any effective structural abstractions entirely on its own.
+
+We ran this search independently for each of the three task families. Each search used 20 optimization tasks, with four rollouts per task, giving 80 trajectories for every candidate harness. Starting from the base harness, Meta-Harness then proposed 10 additional iterations, so each task family required 11 harness evaluations × 80 trajectories = 880 trajectories. Across all three task families, the automated search therefore generated 2,640 child-agent trajectories.
+
+<AutomatedHarnessSearchOverview />
+
+The automated optimizer started with the same raw ingredients as the human process (code, trajectories, error traces, and iterative attempts) while receiving none of our explicit diagnoses about what to fix.

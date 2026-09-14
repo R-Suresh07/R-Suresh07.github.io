@@ -1,0 +1,165 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+---
+
+<figure class="automated-search-overview" aria-label="Configuration of the automated harness search across three SMDD task families">
+  <FigureHeading
+    label="FIG. 21"
+    title="Automated harness search at a glance"
+    subtitle="Interaction Point Discovery · Lead Optimization · Scaffold Hopping"
+  />
+
+  <div class="search-card">
+    <p class="protocol">The same search protocol was run independently for Interaction Point Discovery, Lead Optimization, and Scaffold Hopping.</p>
+
+    <section class="band actors" aria-labelledby="search-actors-heading">
+      <h2 id="search-actors-heading">Who is optimizing whom?</h2>
+      <div class="actor-flow">
+        <article>
+          <span>Meta-agent</span>
+          <strong>Claude Opus 5</strong>
+          <p>redesigns the harness</p>
+        </article>
+        <div class="edit-arrow" aria-label="edits environment">
+          <span>edits environment</span><i>→</i>
+        </div>
+        <article>
+          <span>Scientific agent</span>
+          <strong>Qwen 3.5 9B</strong>
+          <p>solves the SMDD tasks</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="band evaluation" aria-labelledby="search-evaluation-heading">
+      <h2 id="search-evaluation-heading">One harness evaluation</h2>
+      <div class="equation" aria-label="20 tasks times 4 rollouts equals 80 trajectories">
+        <div><strong>20</strong><span>tasks</span></div>
+        <i>×</i>
+        <div><strong>4</strong><span>rollouts</span></div>
+        <i>=</i>
+        <div class="result"><strong>80</strong><span>trajectories</span></div>
+      </div>
+      <p>Every candidate harness is tested on the same optimization set.</p>
+    </section>
+
+    <section class="band full-search" aria-labelledby="full-search-heading">
+      <h2 id="full-search-heading">Full search</h2>
+      <div class="search-math">
+        <div class="iterations">
+          <p><span>base harness</span><i>+</i><span>10 new iterations</span></p>
+          <b aria-hidden="true">↓</b>
+          <strong>11 harness evaluations</strong>
+        </div>
+        <div class="family-total">
+          <p><b>11</b><i>×</i><b>80</b><i>=</i><strong>880</strong></p>
+          <span>trajectories / task family</span>
+        </div>
+        <div class="grand-total">
+          <small>3 task families</small>
+          <strong>2,640</strong>
+          <span>child-agent trajectories</span>
+        </div>
+      </div>
+
+      <div class="method-chips">
+        <details>
+          <summary><span>objective</span><strong>terminal task success</strong></summary>
+          <p>A harness receives credit only when the child agent solves the complete task; no intermediate behavior was manually rewarded.</p>
+        </details>
+        <details>
+          <summary><span>search space</span><strong>full executable harness</strong></summary>
+          <p>The meta-agent could modify prompts, tools, state representation, context handling, wrappers, control flow, and submission logic.</p>
+        </details>
+      </div>
+    </section>
+  </div>
+</figure>
+
+<style>
+  .automated-search-overview {
+    --accent:#087c83;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:14px/1.5 var(--font-sans);
+  }
+  .search-card { border:1px solid var(--color-line); background:color-mix(in srgb,var(--color-paper-raised) 70%,var(--color-paper)); }
+  .protocol { padding:14px 22px; margin:0; border-bottom:1px solid var(--color-line); color:var(--color-ink-soft); font:13px/1.55 var(--font-sans); text-align:center; }
+  .band { padding:21px 24px 23px; }
+  .band + .band { border-top:1px solid var(--color-line); }
+  .band > h2 { margin:0 0 17px; color:var(--color-ink-soft); font:600 11px/1.4 var(--font-mono); letter-spacing:.075em; text-align:center; text-transform:uppercase; }
+
+  .actor-flow { display:grid; grid-template-columns:1fr 180px 1fr; align-items:center; gap:18px; max-width:840px; margin:0 auto; }
+  .actor-flow article { min-width:0; text-align:center; }
+  .actor-flow article > span { display:block; color:var(--accent); font:600 11px/1.35 var(--font-mono); letter-spacing:.06em; text-transform:uppercase; }
+  .actor-flow article > strong { display:block; margin-top:4px; font:500 24px/1.25 var(--font-serif); }
+  .actor-flow article > p { margin:4px 0 0; color:var(--color-ink-soft); font-size:13px; }
+  .edit-arrow { display:flex; align-items:center; gap:9px; color:var(--accent); }
+  .edit-arrow::before { flex:1; border-top:1px solid var(--accent); content:''; }
+  .edit-arrow span { font:10px/1.3 var(--font-mono); white-space:nowrap; }
+  .edit-arrow i { font:17px/1 var(--font-mono); font-style:normal; }
+
+  .evaluation { text-align:center; }
+  .equation { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:22px; max-width:730px; margin:0 auto; }
+  .equation > div { display:flex; align-items:baseline; justify-content:center; gap:9px; padding:10px 13px; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .equation strong { color:var(--accent); font:500 36px/1 var(--font-serif); }
+  .equation span { color:var(--color-ink-soft); font:12px/1.3 var(--font-mono); text-transform:uppercase; }
+  .equation > i { color:var(--accent); font:20px/1 var(--font-mono); font-style:normal; }
+  .equation .result { background:color-mix(in srgb,var(--accent) 6%,transparent); }
+  .equation .result strong { font-size:42px; }
+  .evaluation > p { margin:12px 0 0; color:var(--color-ink-soft); font:12px/1.5 var(--font-mono); }
+
+  .search-math { display:grid; grid-template-columns:1fr 1fr 1.15fr; align-items:stretch; max-width:930px; margin:0 auto; }
+  .search-math > div { display:flex; align-items:center; justify-content:center; flex-direction:column; min-height:122px; padding:4px 24px; text-align:center; }
+  .search-math > div + div { border-left:1px solid var(--color-line); }
+  .iterations p, .family-total p { display:flex; align-items:baseline; justify-content:center; gap:8px; margin:0; }
+  .iterations p span { font:600 12px/1.35 var(--font-mono); text-transform:uppercase; }
+  .iterations p i, .family-total p i { color:var(--accent); font-style:normal; }
+  .iterations > b { margin:6px 0 3px; color:var(--accent); font:15px/1 var(--font-mono); }
+  .iterations > strong { font:500 18px/1.3 var(--font-serif); }
+  .family-total p b { color:var(--color-ink-soft); font:500 24px/1 var(--font-serif); }
+  .family-total p strong { color:var(--accent); font:500 31px/1 var(--font-serif); }
+  .family-total > span { margin-top:7px; color:var(--color-ink-soft); font:11px/1.35 var(--font-mono); }
+  .grand-total small { color:var(--color-ink-soft); font:11px/1.3 var(--font-mono); text-transform:uppercase; }
+  .grand-total strong { margin-top:2px; color:var(--accent); font:500 54px/.95 var(--font-serif); }
+  .grand-total span { margin-top:8px; font:600 12px/1.3 var(--font-mono); letter-spacing:.035em; text-transform:uppercase; }
+
+  .method-chips { display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:800px; margin:24px auto 0; }
+  details { border:1px solid var(--color-line); background:var(--color-paper); }
+  summary { display:grid; grid-template-columns:90px 1fr auto; align-items:center; gap:12px; padding:11px 13px; cursor:pointer; list-style:none; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { color:var(--accent); font:15px/1 var(--font-mono); content:'+'; }
+  details[open] summary::after { content:'−'; }
+  summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  summary span { color:var(--accent); font:600 10px/1.3 var(--font-mono); letter-spacing:.065em; text-transform:uppercase; }
+  summary strong { font:600 12px/1.35 var(--font-sans); }
+  details > p { padding:0 13px 12px 115px; margin:0; color:var(--color-ink-soft); font:12px/1.5 var(--font-sans); }
+
+  @media (max-width:720px) {
+    .actor-flow { grid-template-columns:1fr; gap:11px; }
+    .actor-flow article, .actor-flow article:first-child { text-align:center; }
+    .edit-arrow { justify-content:center; }
+    .edit-arrow::before { display:none; }
+    .edit-arrow i { transform:rotate(90deg); }
+    .equation { gap:9px; }
+    .equation > div { align-items:center; flex-direction:column; gap:4px; }
+    .equation strong { font-size:30px; }
+    .equation .result strong { font-size:36px; }
+    .search-math { grid-template-columns:1fr; }
+    .search-math > div { min-height:100px; padding:15px; }
+    .search-math > div + div { border-top:1px solid var(--color-line); border-left:0; }
+    .method-chips { grid-template-columns:1fr; }
+  }
+  @media (max-width:460px) {
+    .protocol, .band { padding-right:14px; padding-left:14px; }
+    .equation { grid-template-columns:1fr; }
+    .equation > i { transform:rotate(90deg); }
+    summary { grid-template-columns:75px 1fr auto; }
+    details > p { padding-left:13px; }
+  }
+</style>
