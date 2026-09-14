@@ -1,0 +1,187 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+interface Props { label?: string; }
+const { label = 'FIG. 19' } = Astro.props;
+---
+
+<harness-optimization-loop id="fig-19">
+  <figure aria-label="One repeated harness-engineering loop connected to three different task diagnoses">
+    <FigureHeading label={label} title="Harness engineering was another optimization loop" />
+
+    <div class="machine">
+      <article class="diagnosis ipd">
+        <span>Interaction Point Discovery</span>
+        <strong>Wrong representation</strong>
+        <p><b>representation</b><i>→</i> ligand-side evidence</p>
+      </article>
+
+      <article class="diagnosis lo">
+        <span>Lead Optimization</span>
+        <strong>State drift</strong>
+        <p><b>state</b><i>→</i> candidate ledger</p>
+      </article>
+
+      <div class="loop-machine">
+        <svg viewBox="0 0 480 360" aria-hidden="true">
+          <defs>
+            <marker id="fig19-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0 0L10 5L0 10Z" />
+            </marker>
+          </defs>
+          <g class="loop-arrows">
+            <path d="M254 65A118 118 0 0 1 346 137" />
+            <path d="M357 159A118 118 0 0 1 309 267" />
+            <path d="M286 284A118 118 0 0 1 174 275" />
+            <path d="M151 259A118 118 0 0 1 123 149" />
+            <path d="M134 126A118 118 0 0 1 226 65" />
+          </g>
+          <g class="internal-spokes">
+            <path d="M240 0V62" />
+            <path d="M0 180H122" />
+            <path d="M358 180H480" />
+          </g>
+          <circle class="inner-ring" cx="240" cy="180" r="82" />
+        </svg>
+
+        <div class="loop-copy">
+          <span>same manual loop</span>
+          <strong>different diagnosis<br />each time</strong>
+        </div>
+
+        <div class="step rollout"><b>01</b><span>Roll out agents</span></div>
+        <div class="step inspect"><b>02</b><span>Inspect failures</span></div>
+        <div class="step hypothesize"><b>03</b><span>Hypothesize a<br />harness change</span></div>
+        <div class="step implement"><b>04</b><span>Implement</span></div>
+        <div class="step rerun"><b>05</b><span>Rerun</span></div>
+      </div>
+
+      <article class="diagnosis sh">
+        <span>Scaffold Hopping</span>
+        <strong>Binding score ≠ binding mode</strong>
+        <p><b>observability</b><i>→</i> predicted poses</p>
+      </article>
+    </div>
+
+    <div class="scale-strip" aria-label="Scale of the manual harness iteration">
+      <span>3 task families</span><i>·</i>
+      <span>hundreds of trajectories inspected</span><i>·</i>
+      <span>repeated benchmark reruns</span><i>·</i>
+      <span>~6 weeks of manual iteration</span>
+    </div>
+
+  </figure>
+</harness-optimization-loop>
+
+<style>
+  harness-optimization-loop {
+    --accent:#087c83;
+    --accent-soft:#d8ebe8;
+    display:block;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:14px/1.5 var(--font-sans);
+  }
+  figure { margin:0; }
+  .machine {
+    display:grid;
+    grid-template-columns:minmax(220px,1fr) 480px minmax(220px,1fr);
+    grid-template-rows:112px 360px;
+    align-items:center;
+    gap:0 34px;
+    padding:20px 0 11px;
+    margin-top:20px;
+    border-top:1px solid var(--color-line);
+    border-bottom:1px solid var(--color-line);
+  }
+
+  .diagnosis {
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:300px;
+    box-sizing:border-box;
+    padding:13px 2px 14px;
+    border-top:1px solid var(--color-line);
+    border-bottom:1px solid var(--color-line);
+    background:var(--color-paper);
+  }
+  .diagnosis::after { position:absolute; background:var(--color-line); content:''; }
+  .diagnosis::before { position:absolute; z-index:2; width:6px; height:6px; background:var(--accent); content:''; }
+  .diagnosis.ipd { grid-column:2; grid-row:1; justify-self:center; text-align:center; }
+  .diagnosis.ipd::after { top:100%; left:50%; width:1px; height:35px; }
+  .diagnosis.ipd::before { bottom:-38px; left:calc(50% - 2.5px); }
+  .diagnosis.lo { grid-column:1; grid-row:2; justify-self:end; text-align:right; }
+  .diagnosis.lo::after { top:50%; left:100%; width:34px; height:1px; }
+  .diagnosis.lo::before { top:calc(50% - 2.5px); right:-37px; }
+  .diagnosis.sh { grid-column:3; grid-row:2; justify-self:start; }
+  .diagnosis.sh::after { top:50%; right:100%; width:34px; height:1px; }
+  .diagnosis.sh::before { top:calc(50% - 2.5px); left:-37px; }
+  .diagnosis > span { display:block; color:var(--accent); font:600 11px/1.4 var(--font-mono); letter-spacing:.055em; text-transform:uppercase; }
+  .diagnosis > strong { display:block; margin-top:5px; font:500 19px/1.25 var(--font-serif); }
+  .diagnosis p { display:flex; align-items:center; gap:6px; margin:7px 0 0; color:var(--color-ink-soft); font:11px/1.4 var(--font-mono); }
+  .diagnosis.ipd p { justify-content:center; }
+  .diagnosis.lo p { justify-content:flex-end; }
+  .diagnosis p b { color:var(--color-ink); font-weight:600; }
+  .diagnosis p i { color:var(--accent); font-style:normal; }
+
+  .loop-machine { position:relative; grid-column:2; grid-row:2; width:480px; height:360px; }
+  .loop-machine svg { display:block; width:100%; height:100%; }
+  .loop-arrows path { fill:none; stroke:var(--accent); stroke-width:1.7; marker-end:url(#fig19-arrow); }
+  .loop-arrows marker path { fill:var(--accent); stroke:none; }
+  .internal-spokes path { fill:none; stroke:var(--color-line); stroke-width:1; }
+  .inner-ring { fill:none; stroke:color-mix(in srgb,var(--accent) 18%,var(--color-line)); stroke-width:1; stroke-dasharray:2 5; }
+  .loop-copy { position:absolute; top:50%; left:50%; width:175px; text-align:center; transform:translate(-50%,-50%); }
+  .loop-copy span { display:block; color:var(--color-ink-soft); font:500 18px/1.25 var(--font-serif); }
+  .loop-copy strong { display:block; margin-top:7px; color:var(--accent); font:600 10px/1.5 var(--font-mono); letter-spacing:.055em; text-transform:uppercase; }
+
+  .step { position:absolute; z-index:2; display:flex; align-items:center; gap:6px; padding:3px 6px; background:var(--color-paper); white-space:nowrap; }
+  .step b { color:var(--accent); font:600 9px/1 var(--font-mono); }
+  .step span { color:var(--color-ink); font:600 11px/1.25 var(--font-mono); letter-spacing:.02em; text-transform:uppercase; }
+  .step.rollout { top:15px; left:50%; transform:translateX(-50%); }
+  .step.inspect { top:107px; right:3px; }
+  .step.hypothesize { right:22px; bottom:13px; align-items:flex-start; }
+  .step.implement { bottom:13px; left:37px; }
+  .step.rerun { top:107px; left:11px; }
+
+  .scale-strip { display:flex; justify-content:center; flex-wrap:wrap; gap:5px 10px; padding:13px 18px; border-bottom:1px solid var(--color-line); color:var(--color-ink-soft); font:11px/1.5 var(--font-mono); text-align:center; }
+  .scale-strip i { color:var(--accent); font-style:normal; }
+  @media (max-width:1020px) {
+    .machine { grid-template-columns:minmax(190px,1fr) 420px minmax(190px,1fr); gap:0 20px; }
+    .loop-machine { width:420px; }
+    .diagnosis > strong { font-size:17px; }
+    .diagnosis.lo::after, .diagnosis.sh::after { width:20px; }
+    .diagnosis.lo::before { right:-23px; }
+    .diagnosis.sh::before { left:-23px; }
+    .step.inspect { right:-14px; }
+    .step.rerun { left:-6px; }
+  }
+  @media (max-width:760px) {
+    .machine { display:flex; flex-direction:column; gap:13px; padding:16px 0; }
+    .loop-machine { order:1; width:min(480px,100%); height:auto; aspect-ratio:4 / 3; }
+    .diagnosis { max-width:none; text-align:left !important; }
+    .diagnosis.ipd { order:2; }
+    .diagnosis.lo { order:3; }
+    .diagnosis.sh { order:4; }
+    .diagnosis::after { display:none; }
+    .diagnosis::before { top:15px !important; right:2px !important; bottom:auto !important; left:auto !important; }
+    .diagnosis p { justify-content:flex-start !important; }
+  }
+  @media (max-width:460px) {
+    .step span { font-size:9px; }
+    .step b { font-size:8px; }
+    .step.inspect { right:-2px; }
+    .step.rerun { left:2px; }
+    .step.hypothesize { right:7px; bottom:9px; }
+    .step.implement { bottom:9px; left:20px; }
+    .loop-copy span { font-size:15px; }
+    .loop-copy strong { font-size:8px; }
+    .scale-strip { align-items:center; flex-direction:column; }
+    .scale-strip i { display:none; }
+  }
+</style>

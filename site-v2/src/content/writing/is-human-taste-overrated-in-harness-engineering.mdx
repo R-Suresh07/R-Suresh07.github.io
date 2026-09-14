@@ -27,6 +27,7 @@ import LoVsScaffoldHopFigure from '../../components/figures/LoVsScaffoldHopFigur
 import BoltzInterfaceNote from '../../components/figures/BoltzInterfaceNote.astro';
 import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBaselineFigure.astro';
 import ScaffoldHopHarnessOutcomes from '../../components/figures/ScaffoldHopHarnessOutcomes.astro';
+import HarnessOptimizationLoop from '../../components/figures/HarnessOptimizationLoop.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -312,3 +313,23 @@ The redesigned harness was also substantially cheaper to run. It used roughly 40
 At this point, further manual intervention would again start to cross the line we were trying to preserve. We could explicitly extract and compare pocket interactions for the model, rank candidates by how closely they reproduce the reference pose, or suggest structural edits that restore lost contacts. But those are increasingly decisions about how to solve Scaffold Hopping, rather than how to make the task easier for an agent to execute.
 
 Scaffold Hopping shows an important limit of this process. Cleaning up the interface can make the agent more reliable, more efficient, and much clearer about what evidence it has without necessarily improving the final success rate. Once those avoidable failures are removed, the remaining bottleneck can simply move closer to the scientific decision itself. In this case, exposing the binding geometry made the problem easier to see and act on, but it did not teach the model how to design a new scaffold that preserved the right interactions.
+
+## What was the human doing all this time?
+
+When you look back, the final interventions look pretty obvious. Interaction Point Discovery pushed us to expose better ligand-side evidence which is easier for the model to understand. Lead Optimization pushed us to externalize the persistent state of candidate molecules. Scaffold Hopping pushed us to surface the predicted binding geometry that had previously been difficult for the model to inspect.
+
+Getting to those conclusions was much less obvious.
+
+Each iteration to improve the model's performance was essentially from the same core manual loop: run agents, read failed trajectories, work out whether the failure came from the model's lack of scientific ability or the interface around it, change the harness, rerun the benchmark, and then inspect what went wrong. Across the three tasks, we manually audited hundreds of trajectories, often following individual tool calls and candidate histories across dozens of turns before a consistent failure pattern became visible.
+
+Across the three tasks, this process took roughly **a month and a half** of manual iteration. The final changes were often relatively small. Most of the time went into figuring out which failures actually belonged to the harness, testing a fix, rerunning the benchmark, and then working out what had broken next.
+
+More importantly, the useful intervention was different each time. In IPD, we eventually realised that the model was being asked to infer an ensemble property from a representation that exposed almost none of the relevant ligand-side evidence. In Lead Optimization, the chemistry was often good enough and the real problem was that the candidate state degraded over long trajectories. In Scaffold Hopping, the necessary structural information technically existed, but the interface made a scalar binding score much easier to use than the predicted poses needed to verify the binding mode.
+
+None of these fixes came from a general rule like "add more tools" or "write a better prompt". The difficult part was deciding **what kind of failure we were looking at, what information the harness should make explicit, and where to stop before the harness started solving the scientific problem directly instead of letting the agent be the one solving it.**
+
+And after every redesign, the answer could still be wrong. Lead Optimization improved dramatically. IPD improved but exposed a deeper probe-selection problem. Scaffold Hopping became cleaner and more efficient without improving terminal success. Manual harness engineering was therefore not just implementation work. It was an iterative search over possible representations, interfaces, and model–environment boundaries.
+
+<HarnessOptimizationLoop />
+
+So, this raises an obvious question: **If this is a search process, how much of it can we automate?**
