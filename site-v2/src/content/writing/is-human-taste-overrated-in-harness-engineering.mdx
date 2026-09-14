@@ -348,3 +348,7 @@ The loop is straightforward. A meta-agent sees the source code, execution traces
 We initialized this search from the same baseline harness used in our manual experiments and asked whether automated search could recover the kinds of improvements we had spent weeks finding by hand.
 
 There is one boundary we kept fixed. The optimizer could redesign how public task information was represented and how the agent interacted with its environment, but it could not expose hidden evaluator answers or directly encode task-specific solutions. The scientific policy still had to belong to the child agent.
+
+There was also a more personal reason I found this setup interesting. Throughout the manual phase, Claude Opus 5 had already been my main workhorse for reading trajectories, organizing failure modes, and brainstorming possible harness changes. I was still choosing which hypotheses to pursue, deciding where the model–harness boundary should sit, and implementing the final interventions, but a capable model was already involved in much of the analysis.
+
+Meta-Harness therefore made the comparison more direct. If essentially the same kind of model could inspect the traces, reason about what was going wrong, edit the harness itself, and evaluate the result, **how much was I actually contributing to the loop?** Was the human mainly providing taste and judgment that the model could not recover on its own, or was I just manually orchestrating a process that could already be automated?
