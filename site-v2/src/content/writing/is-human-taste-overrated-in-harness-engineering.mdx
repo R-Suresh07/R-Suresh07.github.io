@@ -380,3 +380,16 @@ So, **which harness worked better?**
 **Manual engineering came out ahead overall, but not on every task.**
 
 <HumanVsAHEFigure />
+
+The largest advantage was in Lead Optimization. Human V2 solved 33 of 68 tasks, compared with 13 under both the original harness and automated search. On the paired comparison, V2 uniquely solved 26 tasks while AHE uniquely solved six. The automated optimizer had therefore failed to produce a meaningful improvement over the starting harness, while the manual redesign recovered a large fraction of the benchmark.
+
+Interaction Point Discovery showed the same direction, although the signal was better expressed through partial credit. The original harness recovered 10 of 75 hidden points, automated search recovered 12, and Human V2 recovered 30. V2 improved the point count on 16 of the 25 paired tasks and regressed on only three. Complete solutions remained rare (two under V2 and none under AHE), so the stronger result here is not the terminal solve count, but the much broader recovery of correct interaction points.
+
+Scaffold Hopping was the exception. The original harness solved two of 52 tasks and Human V2 solved only one, while the automated harness solved five. The absolute numbers are small, and the paired terminal difference is not statistically decisive. The direction remains revealing nonetheless, as this was the only task family where automated search found a harness that improved over both the starting point and our manual redesign.
+
+The more useful distinction was what kind of change helped. Our largest gains came from fixing representation and state, while Scaffold Hopping improved when automated search changed the search strategy itself.
+
+### What did the automated optimizer actually learn?
+
+Across all three tasks, Claude did not converge on one generic recipe for making Qwen more reliable. Each run developed its own sequence of hypotheses, reacting to failures in the previous harness and gradually changing both the workflow and the instructions given to the child model.
+
