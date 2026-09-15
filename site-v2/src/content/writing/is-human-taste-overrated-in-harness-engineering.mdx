@@ -30,6 +30,7 @@ import ScaffoldHopHarnessOutcomes from '../../components/figures/ScaffoldHopHarn
 import HarnessOptimizationLoop from '../../components/figures/HarnessOptimizationLoop.astro';
 import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverviewFigure.astro';
 import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHarnessSearchOverview.astro';
+import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -244,7 +245,7 @@ For Qwen 3.5 9B, the impact was substantial. Across the benchmark of 68 Lead Opt
 
 What makes this result more interesting is that V2 did not get there by submitting more often. The original harness produced an answer on 66 of the 68 tasks, but only 13 of those submissions passed every requirement. Under V2, the agent submitted on just 48 tasks. Of those, 33 were normal submissions with complete passing evidence, while 9 were forced submissions with known failures and another 6 were missing required evidence. The remaining runs reached the turn limit before submitting.
 
-The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 68.8%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
+The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 70.2%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
 
 The gain also did not come from simply letting the model reason for longer. Across the full 68-task run, V2 used 12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls. Boltz usage moved in the opposite direction, increasing by 51%. With cheap constraints and candidate state handled explicitly, the model spent fewer turns and tokens overall while making substantially more use of Boltz, shifting more of its oracle budget towards checking whether promising candidates actually bound.
 
@@ -370,4 +371,12 @@ We ran this search independently for each of the three task families. Each searc
 
 <AutomatedHarnessSearchOverview />
 
+## Human taste vs automated search
+
 The automated optimizer started with the same raw ingredients as the human process (code, trajectories, error traces, and iterative attempts) while receiving none of our explicit diagnoses about what to fix.
+
+So, **which harness worked better?**
+
+**Manual engineering came out ahead overall, but not on every task.**
+
+<HumanVsAHEFigure />

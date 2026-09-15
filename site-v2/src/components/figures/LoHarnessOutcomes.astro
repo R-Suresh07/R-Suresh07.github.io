@@ -50,7 +50,7 @@ const structured: OutcomeCategory[] = [
     key: 'missing-evidence',
     label: 'forced · missing evidence',
     count: 6,
-    description: 'No known failure, but at least one required measurement had never been collected.',
+    description: 'Five submissions had no known failure but were missing at least one required measurement. One non-submission error is grouped here as the same missing-evidence outcome.',
   },
   {
     key: 'turn-limit',
@@ -106,12 +106,12 @@ if (original.reduce((sum, category) => sum + category.count, 0) !== 68
         </article>
         <article>
           <small>V1 <i>→</i> V2</small>
-          <p><span>66</span><i>→</i><strong>48</strong></p>
-          <h3><span>tasks submitted</span><em>97.1% → 70.6%</em></h3>
+          <p><span>66</span><i>→</i><strong>47</strong></p>
+          <h3><span>tasks submitted</span><em>97.1% → 69.1%</em></h3>
         </article>
         <article>
           <small>V1 <i>→</i> V2</small>
-          <p><span>19.7%</span><i>→</i><strong>68.8%</strong></p>
+          <p><span>19.7%</span><i>→</i><strong>70.2%</strong></p>
           <h3>success among submissions</h3>
         </article>
       </div>
