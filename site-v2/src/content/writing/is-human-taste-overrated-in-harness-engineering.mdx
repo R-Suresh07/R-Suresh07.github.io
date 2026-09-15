@@ -50,7 +50,7 @@ This raises the question: why even bother? How much of what the harness does is 
 
 {/* Temporarily disabled: <HarnessBoundaryFigure /> */}
 
-Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench, a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. Generative chemistry is comparatively underexplored, and evaluating an answer is both expensive and imperfect.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
+Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench ([Han et al., 2026](#han-et-al-2026)), a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. Generative chemistry is comparatively underexplored, and evaluating an answer is both expensive and imperfect.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
 
 ## Inside an SMDD task
 
@@ -450,3 +450,65 @@ The result is therefore a useful limit case for manual harness engineering. We m
 
 Across the three tasks, automated search was clearly capable of finding useful harness changes, but it did not simply rediscover the manual designs. In Lead Optimization it converged on similar bookkeeping failures but left more of the procedure in Qwen’s hands. In IPD it kept refining how Qwen reasoned from receptor geometry, while the manual harness changed the evidence available altogether. And in Scaffold Hopping, the direction flipped: the automated optimizer was willing to encode a stronger chemical search policy, and that produced the better harness. The remaining question, then, is less whether harness engineering can be automated and more where we want the harness to stop and the model’s scientific policy to begin.
 
+## Conclusion
+
+So, is human taste overrated in harness engineering?
+
+Not entirely. But its value depends heavily on what part of the problem we are trying to optimize.
+
+When the failure came from the way the task was represented to the model, what evidence it could access, or what state it was expected to maintain, the strongest gains came from human-designed abstractions. Lead Optimization improved when candidate identity and evidence stopped living inside the trajectory. Interaction Point Discovery improved when the harness stopped asking the model to infer conserved ligand behavior from a single receptor and instead exposed ligand-side evidence directly.
+
+Automated search was much more competitive once the problem shifted from making the task legible to finding a better policy within an already usable interface. Scaffold Hopping was the clearest example. Our manual harness made novelty exact and pose evidence easier to inspect, but Meta-Harness was more willing to shape how Qwen searched the chemical space itself, and ultimately produced the stronger harness.
+
+That suggests a useful division of labor. Human judgment still matters most when deciding what should be represented explicitly, what should be enforced by the environment, and what should remain the model’s responsibility. Once those choices are sensible, automated optimization can search over workflows, instructions, heuristics, and control policies far more cheaply than repeatedly doing the same loop by hand.
+
+A natural stopping point exists. Interventions that maintain deterministic state or surface accessible task data belong to infrastructure. When the harness prescribes chemical transformations, prioritizes specific contacts, or negotiates scientific trade-offs, it crosses into policy design. Further progress is then better achieved by fine-tuning or training the model directly rather than hardcoding scientific reasoning into the harness.
+
+So human taste is not disappearing from harness engineering. It is moving up a level. The interesting question is becoming less “What prompt or tool should I add?” and more “Where should the boundary between the environment and the scientist actually be?” Once that boundary is chosen well, much of the optimization inside it may not need a human at all.
+
+## Final thoughts
+
+SMDD-Bench has been useful precisely because many of its failures are difficult to classify cleanly as either “the model is bad at chemistry” or “the agent system is badly designed.” A model can propose chemically sensible candidates and still fail because it loses track of evidence; conversely, a perfectly organized harness can expose the remaining scientific bottleneck without actually solving it. That ambiguity makes the benchmark frustrating to work with, but also unusually useful for studying where scientific-agent capability actually lives.
+
+There is still a lot we have not resolved. Interaction Point Discovery remains extremely sparse at full-task success, Scaffold Hopping still struggles to preserve binding interactions reliably, and several of the manual interventions described here have not yet been explored across every model or task family. More broadly, our experiments only probe one point on the spectrum between changing the environment and changing the model. Once the harness has made the task legible and execution reliable, the obvious next step is to ask whether training the policy itself produces larger and more transferable gains than continuing to encode scientific strategy around it.
+
+{/* A nice milestone along the way was seeing SMDD-Bench accepted to NeurIPS 2026. Several of the people behind the benchmark are also collaborators on this project, and many others contributed to the task design, infrastructure, and evaluation work that made these experiments possible. It has been a lot of fun getting to stress-test the benchmark from the harness side. */}
+
+### Acknowledgments
+
+**Want to experiment with it?**
+
+We have also packaged SMDD-Bench into Harbor and Prime environments for running trajectories, evaluating harnesses, and training agents against the benchmark. The goal is to make it easier to move from one-off agent runs to reproducible training and evaluation workflows without rebuilding the environment from scratch.
+
+```PLACEHOLDER_URL```
+
+The environment is still evolving, particularly across the less-tested task families, so bug reports and contributions are very welcome.
+
+We thank the broader SMDD-Bench team for building the benchmark and for discussions throughout this project, and [grant/funding organization] and Lambda for supporting the compute used in these experiments.
+
+## References
+
+1. <span id="han-et-al-2026">Han, K., Zhang, R., Wei, K., Mahdavi, H., Mireshghallah, N., & Barati Farimani, A. (2026). “SMDD-Bench: Can LLMs Solve Real-World Small Molecule Drug Design Tasks?” *arXiv preprint arXiv:2605.21740*. [https://arxiv.org/abs/2605.21740](https://arxiv.org/abs/2605.21740).</span>
+
+## Citation
+
+Please cite this work as:
+
+```
+Suresh Raghu, Kevin Han, Niloofar Mireshghallah, and Aviral Kumar.
+"Is Human Taste Overrated in Harness Engineering,"
+Suresh Raghu Blog, Sep 2026.
+```
+
+And BibTeX:
+
+```
+@article{raghu2026humantaste,
+  author  = {Suresh Raghu and Kevin Han and Niloofar Mireshghallah and Aviral Kumar},
+  title   = {Is Human Taste Overrated in Harness Engineering},
+  journal = {Suresh Raghu Blog},
+  year    = {2026},
+  month   = sep,
+  note    = {https://r-suresh07.github.io/writing/is-human-taste-overrated-in-harness-engineering/}
+}
+```
