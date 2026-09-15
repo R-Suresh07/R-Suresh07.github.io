@@ -1,0 +1,256 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const aheSteps = [
+  { key:'ahe-3', iteration:'ITER. 3', title:'Simplify the workflow', lines:['condense the phases','write an answer early','debug immediately','warn harder near timeout'], note:'First terminal peak.' },
+  { key:'ahe-4', iteration:'ITER. 4', title:'Score whole point sets', lines:['choose three points jointly','enforce molecular-scale geometry','penalize diffuse or off-center sets'], note:'From isolated hotspots to set geometry.' },
+  { key:'ahe-8', iteration:'ITER. 8', title:'Distribute points through the envelope', lines:['infer the cavity axis','spread points along the envelope','compare distributed vs top-score sets'], note:'Best partial-credit result.' },
+];
+
+const humanSteps = [
+  { key:'human-representation', title:'Fix the representation', lines:['define ligand-side semantics','expose the matching contract','structured pharmacophore submission'], note:'Clarifies what the output actually means.' },
+  { key:'human-observations', title:'Create ligand-side observations', lines:['design probe molecules','predict bound poses','extract aligned ligand features'], note:'New evidence enters the loop.' },
+  { key:'human-ensemble', title:'Aggregate a probe ensemble', lines:['compare multiple probes','find recurring feature regions','cross-check with receptor chemistry'], note:'Conservation is inferred from repeated ligand evidence.' },
+];
+
+---
+
+<ipd-evidence-figure>
+  <figure class="ipd-figure" aria-label="Comparison of automated and human IPD harness redesigns from the same base harness">
+    <FigureHeading label="FIG. 24" title="Same ambiguity, different evidence" subtitle="Interaction Point Discovery · both approaches start from the same base harness" />
+
+    <div class="figure-shell">
+      <p class="interaction-hint">select a milestone to inspect the harness</p>
+      <div class="forked-timeline">
+        <button class="origin-node node-trigger" type="button" data-node="base" aria-expanded="false" aria-controls="fig-24-drawer">
+          <small>BASE HARNESS</small>
+          <strong>Target is hidden behind the receptor</strong>
+          <span>receptor structure + pocket center</span>
+          <span>generic drug-design tools</span>
+          <span>manual CSV submission</span>
+          <span>no ligand-side feature observations</span>
+          <em>inspect ↗</em>
+        </button>
+
+        <div class="lanes">
+          <section class="lane automated" aria-labelledby="ipd-ahe-title">
+            <header><strong id="ipd-ahe-title">AUTOMATED SEARCH</strong><span>GEOMETRY BECOMES A SEARCH POLICY</span></header>
+            <div class="lane-track">
+              {aheSteps.map(step => (
+                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-24-drawer">
+                  <i aria-hidden="true"></i><small>{step.iteration}</small><strong>{step.title}</strong>
+                  {step.lines.map(line => <span>{line}</span>)}<b>{step.note}</b><em>inspect ↗</em>
+                </button>
+              ))}
+              <div class="endpoint-summary">
+                <small>AHE</small><strong>Receptor-derived geometric policy</strong>
+                <span>simpler execution</span><span>set-level geometric heuristics</span>
+                <span>no stable ligand-side evidence source</span><b>0 valid molecular probes across search rollouts</b>
+              </div>
+            </div>
+          </section>
+
+          <section class="lane human" aria-labelledby="ipd-human-title">
+            <header><strong id="ipd-human-title">HUMAN V2.2</strong><span>LIGAND-SIDE EVIDENCE BECOMES OBSERVABLE</span></header>
+            <div class="lane-track">
+              {humanSteps.map(step => (
+                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-24-drawer">
+                  <i aria-hidden="true"></i><small>INTERFACE CHANGE</small><strong>{step.title}</strong>
+                  {step.lines.map(line => <span>{line}</span>)}<b>{step.note}</b><em>inspect ↗</em>
+                </button>
+              ))}
+              <div class="endpoint-summary">
+                <small>HUMAN V2.2</small><strong>Evidence-generating interface</strong>
+                <span>ligand-side semantics explicit</span><span>probe poses create observable evidence</span>
+                <span>features exposed directly</span><b>the model reasons over an ensemble</b>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <button class="drawer-backdrop" type="button" hidden aria-label="Close milestone details"></button>
+      <aside id="fig-24-drawer" class="drawer" hidden aria-label="IPD milestone details">
+        <header><div><small class="drawer-kicker"></small><h2 class="drawer-title"></h2></div><button class="drawer-close" type="button" aria-label="Close milestone details">×</button></header>
+        <div class="drawer-content"></div>
+      </aside>
+    </div>
+
+    <div class="takeaway"><span>AHE</span> improved how Qwen searched for three points. <strong>Human V2.2</strong> changed what evidence Qwen could search over.</div>
+
+    <figcaption><strong>Same ambiguity, different evidence.</strong> Both approaches started from the same IPD bottleneck: the hidden target depends on ligand-side interaction evidence that is not directly visible from the receptor alone. Automated search responded by progressively refining Qwen's search policy, moving from a simpler workflow to set-level geometric heuristics and cavity-envelope reasoning. Human V2.2 instead changed the interface itself, making ligand-side semantics explicit and exposing aligned pharmacophore features from receptor-bound probe poses. The difference was therefore not just one of quality but of abstraction: AHE improved inference from receptor geometry, while Human V2.2 made the missing scientific evidence observable.</figcaption>
+  </figure>
+
+  <template data-detail="base" data-kicker="BASE HARNESS" data-title="Target hidden behind the receptor">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="missing">Missing interface</button></nav>
+    <section data-panel="summary"><p>Qwen must infer conserved ligand-side interaction points from a single protein view: the receptor structure and pocket center.</p></section>
+    <section data-panel="missing"><ul><li>No explicit ligand-side semantics</li><li>No complementarity explanation</li><li>No one-to-one matching explanation</li><li>No clearly exposed strictly-below-2.5 Å matching contract</li><li>No tool for extracting ligand-side pharmacophore features from poses</li></ul></section>
+  </template>
+
+  <template data-detail="ahe-3" data-kicker="AUTOMATED SEARCH · ITER. 3" data-title="Simplify the workflow">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="behavior">How it behaved</button></nav>
+    <section data-panel="change"><ul><li>Four-stage workflow instead of five</li><li>Turn boundaries at 3, 12, and 20</li><li>“Write early, improve later”</li><li>Warnings at 30, 12, 6, and 3 turns remaining</li><li>Fewer than 25 tool calls encouraged</li></ul><p class="method-note">This step is mostly about execution discipline, not scientific representation.</p></section>
+    <section data-panel="behavior"><dl class="metrics"><div><dt>Mean turns</dt><dd>44.2</dd></div><div><dt>Submitted</dt><dd>79 / 80</dd></div><div><dt>Matched points</dt><dd>33 / 240</dd></div><div><dt>≥1 point</dt><dd>23 / 80</dd></div><div><dt>≥2 points</dt><dd>8 / 80</dd></div><div><dt>Full solves</dt><dd>2 / 80</dd></div></dl></section>
+  </template>
+
+  <template data-detail="ahe-4" data-kicker="AUTOMATED SEARCH · ITER. 4" data-title="Score whole point sets">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="behavior">How it behaved</button></nav>
+    <section data-panel="change"><ul><li>Set scoring instead of independent point ranking</li><li>Pairwise distances: 3.5–9 Å</li><li>Each point: 2.0–7.5 Å from pocket center</li><li>Centroid within 2.0 Å, relaxed to 3.0 Å</li></ul><p class="method-note">AHE becomes a set-level geometric heuristic rather than only a cleaner workflow.</p></section>
+    <section data-panel="behavior"><dl class="metrics"><div><dt>Matched points</dt><dd>32 / 240</dd></div><div><dt>≥1 point</dt><dd>26 / 80</dd></div><div><dt>≥2 points</dt><dd>5 / 80</dd></div><div><dt>Full solves</dt><dd>1 / 80</dd></div></dl></section>
+  </template>
+
+  <template data-detail="ahe-8" data-kicker="AUTOMATED SEARCH · ITER. 8" data-title="Distribute points through the envelope">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="behavior">How it behaved</button></nav>
+    <section data-panel="change"><ul><li>Burial-weighted PCA over the cavity lobe</li><li>Divide the cavity axis into three segments</li><li>Remove solvent-facing extremes</li><li>Enforce total span of about 5–11 Å</li><li>Compare a distributed-set candidate with a top-score candidate</li></ul><p class="method-note">AHE performs best when it learns a structured geometric prior over ligand shape, not when it discovers ligand-side evidence.</p></section>
+    <section data-panel="behavior"><dl class="metrics"><div><dt>Matched points</dt><dd>43 / 240 · best</dd></div><div><dt>≥1 point</dt><dd>30 / 80</dd></div><div><dt>≥2 points</dt><dd>12 / 80 · best</dd></div><div><dt>Full solves</dt><dd>1 / 80</dd></div><div><dt>Mean turns</dt><dd>39.4</dd></div></dl></section>
+  </template>
+
+  <template data-detail="human-representation" data-kicker="HUMAN V2.2 · REPRESENTATION" data-title="Fix the representation">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="contract">Matching contract</button></nav>
+    <section data-panel="summary"><p>Predictions are defined as ligand-side features rather than receptor atoms, and submission becomes structured through <code>submit_pharmacophore(...)</code>.</p></section>
+    <section data-panel="contract"><ul><li>Receptor donor → ligand Acceptor</li><li>Receptor acceptor → ligand Donor</li><li>Repeated feature types allowed</li><li>One-to-one matching</li><li>Distance threshold strictly below 2.5 Å</li></ul></section>
+  </template>
+
+  <template data-detail="human-observations" data-kicker="HUMAN V2.2 · OBSERVABILITY" data-title="Create ligand-side observations">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="interface">Interface</button><button role="tab" data-tab="usage">Observed usage</button></nav>
+    <section data-panel="interface"><pre><code>probe_id = predict_boltz(smiles)
+features = get_probe_pharmacophore_features(probe_id)</code></pre><ul><li>Task-bound structure prediction</li><li>Stable probe IDs and cached reuse</li><li>Donor / Acceptor / Aromatic / Hydrophobic / Cation / Anion features</li></ul></section>
+    <section data-panel="usage"><dl class="metrics"><div><dt>Boltz invocations</dt><dd>160</dd></div><div><dt>Successful unique probes</dt><dd>138</dd></div><div><dt>Failed calls</dt><dd>20</dd></div><div><dt>Reused results</dt><dd>2</dd></div><div><dt>Successful feature extractions</dt><dd>135</dd></div><div><dt>Ligand-feature records</dt><dd>694</dd></div><div><dt>Tasks with multiple successful probes</dt><dd>23 / 25</dd></div></dl></section>
+  </template>
+
+  <template data-detail="human-ensemble" data-kicker="HUMAN V2.2 · ENSEMBLE" data-title="Aggregate a probe ensemble">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="evidence">Evidence</button></nav>
+    <section data-panel="summary"><p>The interface warns that one pose is only supporting evidence. The agent compares recurring or clustered ligand-side features across probes and cross-checks them against receptor chemistry.</p></section>
+    <section data-panel="evidence"><dl class="metrics"><div><dt>Tasks with multiple successful probe-feature extractions</dt><dd>23 / 25</dd></div></dl><p class="method-note">Receptor-only speculation is replaced with ensemble-backed hypotheses about conserved ligand-side features.</p></section>
+  </template>
+</ipd-evidence-figure>
+
+<script>
+  class IpdEvidenceFigure extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const shell=this.querySelector<HTMLElement>('.figure-shell');
+      const timeline=this.querySelector<HTMLElement>('.forked-timeline');
+      const drawer=this.querySelector<HTMLElement>('.drawer');
+      const backdrop=this.querySelector<HTMLButtonElement>('.drawer-backdrop');
+      const content=this.querySelector<HTMLElement>('.drawer-content');
+      const title=this.querySelector<HTMLElement>('.drawer-title');
+      const kicker=this.querySelector<HTMLElement>('.drawer-kicker');
+      const close=this.querySelector<HTMLButtonElement>('.drawer-close');
+      const triggers=[...this.querySelectorAll<HTMLButtonElement>('.node-trigger')];
+      let active:HTMLButtonElement|null=null;
+
+      const activateTab=(tab:HTMLButtonElement)=>{
+        if(!content)return;
+        const name=tab.dataset.tab;
+        content.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach(button=>{const selected=button===tab;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
+        content.querySelectorAll<HTMLElement>('[data-panel]').forEach(panel=>{panel.hidden=panel.dataset.panel!==name;});
+      };
+      const openDrawer=(trigger:HTMLButtonElement)=>{
+        const template=this.querySelector<HTMLTemplateElement>('template[data-detail="'+trigger.dataset.node+'"]');
+        if(!template||!drawer||!backdrop||!content||!title||!kicker)return;
+        active=trigger;
+        triggers.forEach(button=>{const selected=button===trigger;button.classList.toggle('selected',selected);button.setAttribute('aria-expanded',String(selected));});
+        timeline?.classList.add('has-selection');
+        kicker.textContent=template.dataset.kicker||'';title.textContent=template.dataset.title||'';
+        content.replaceChildren(template.content.cloneNode(true));
+        const tabs=[...content.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+        tabs.forEach(tab=>tab.addEventListener('click',()=>activateTab(tab)));if(tabs[0])activateTab(tabs[0]);
+        drawer.hidden=false;backdrop.hidden=false;shell?.classList.add('drawer-open');close?.focus();
+      };
+      const closeDrawer=()=>{
+        if(!drawer||!backdrop)return;
+        drawer.hidden=true;backdrop.hidden=true;shell?.classList.remove('drawer-open');timeline?.classList.remove('has-selection');
+        triggers.forEach(button=>{button.classList.remove('selected');button.setAttribute('aria-expanded','false');});
+        active?.focus();active=null;
+      };
+      triggers.forEach(trigger=>trigger.addEventListener('click',()=>openDrawer(trigger)));
+      close?.addEventListener('click',closeDrawer);backdrop?.addEventListener('click',closeDrawer);
+      this.addEventListener('keydown',event=>{if(event.key==='Escape'&&!drawer?.hidden)closeDrawer();});
+    }
+  }
+  if(!customElements.get('ipd-evidence-figure'))customElements.define('ipd-evidence-figure',IpdEvidenceFigure);
+</script>
+
+<style>
+  .ipd-figure {
+    --ahe:#a55a3e;--human:#087c83;
+    width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;
+    transform:translateX(-50%);color:var(--color-ink);font:14px/1.45 var(--font-sans);
+  }
+  .figure-shell{position:relative;overflow:hidden;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);}
+  .interaction-hint{margin:0;padding:9px 17px 0;color:var(--color-ink-soft);font:9px/1.3 var(--font-mono);text-align:right;}
+  .forked-timeline{display:grid;grid-template-columns:182px minmax(0,1fr);gap:40px;padding:14px 18px 8px;}
+  .origin-node,.milestone{appearance:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;}
+  .origin-node{position:relative;align-self:center;padding:12px 10px;border-top:1px solid var(--color-ink-soft);background:transparent;}
+  .origin-node small,.origin-node strong,.origin-node span{display:block;}
+  .origin-node small{color:var(--color-ink-soft);font:600 9px/1.3 var(--font-mono);letter-spacing:.06em;}
+  .origin-node strong{margin:5px 0 8px;font:600 11px/1.45 var(--font-mono);text-transform:uppercase;}
+  .origin-node span{color:var(--color-ink-soft);font:9px/1.5 var(--font-mono);}
+  .node-trigger em{display:block;margin-top:6px;color:currentColor;font:8px/1.3 var(--font-mono);font-style:normal;opacity:0;}
+  .node-trigger:hover em,.node-trigger:focus-visible em,.node-trigger.selected em{opacity:1;}
+  .node-trigger:focus-visible{outline:1px solid currentColor;outline-offset:4px;}
+  .node-trigger{transition:opacity .15s ease;}.forked-timeline.has-selection .node-trigger:not(.selected){opacity:.42;}
+
+  .lanes{position:relative;display:grid;gap:14px;min-width:0;}
+  .lanes::before{position:absolute;top:62px;bottom:62px;left:-40px;border-left:1px solid var(--color-line);content:'';}
+  .lane{position:relative;min-width:0;}
+  .lane::before{position:absolute;top:62px;left:-40px;width:40px;border-top:1px solid var(--color-line);content:'';}
+  .lane header{min-height:38px;margin:0 180px 10px 0;text-align:center;}
+  .lane header strong,.lane header span{display:block;font-family:var(--font-mono);}
+  .lane header strong{font-size:10px;letter-spacing:.06em;}.lane header span{margin-top:2px;color:var(--color-ink-soft);font-size:9px;letter-spacing:.055em;}
+  .automated header strong{color:var(--ahe);}.human header strong{color:var(--human);}
+  .lane-track{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 170px;gap:14px;min-height:174px;}
+  .lane-track::before{position:absolute;top:14px;right:8px;left:0;border-top:1px solid currentColor;content:'';}
+  .lane-track::after{position:absolute;top:10px;right:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:8px solid currentColor;content:'';}
+  .automated .lane-track{color:var(--ahe);}.human .lane-track{color:var(--human);}
+  .milestone{position:relative;z-index:1;min-width:0;padding:32px 7px 3px;background:transparent;}
+  .milestone>i{position:absolute;top:10px;left:50%;width:9px;height:9px;box-sizing:border-box;border:2px solid var(--color-paper);border-radius:50%;background:currentColor;box-shadow:0 0 0 1px currentColor;transform:translateX(-50%);transition:all .14s ease;}
+  .milestone::after{position:absolute;top:19px;left:50%;height:10px;border-left:1px solid currentColor;opacity:.55;content:'';}
+  .milestone:hover>i,.milestone:focus-visible>i,.milestone.selected>i{top:8px;width:13px;height:13px;}
+  .milestone small,.milestone strong,.milestone span,.milestone>b{display:block;}
+  .milestone small{font:600 8px/1.3 var(--font-mono);letter-spacing:.055em;}
+  .milestone strong{min-height:30px;margin:4px 0 6px;color:var(--color-ink);font:600 9px/1.45 var(--font-mono);text-transform:uppercase;}
+  .milestone:hover strong,.milestone:focus-visible strong,.milestone.selected strong{color:currentColor;}
+  .milestone span{color:var(--color-ink-soft);font:8px/1.45 var(--font-mono);}
+  .milestone>b{margin-top:5px;color:currentColor;font:400 7px/1.4 var(--font-mono);}
+  .endpoint-summary{position:relative;z-index:1;padding:32px 4px 0 8px;background:var(--color-paper);}
+  .endpoint-summary small,.endpoint-summary strong,.endpoint-summary span,.endpoint-summary b{display:block;}
+  .endpoint-summary small{font:600 8px/1.3 var(--font-mono);letter-spacing:.06em;}
+  .endpoint-summary strong{margin:4px 0 6px;color:var(--color-ink);font:600 8px/1.4 var(--font-mono);text-transform:uppercase;}
+  .endpoint-summary span,.endpoint-summary b{color:var(--color-ink-soft);font:7px/1.45 var(--font-mono);font-weight:400;}
+  .endpoint-summary b{margin-top:4px;color:currentColor;}
+
+  .drawer-backdrop{position:absolute;z-index:8;inset:0;width:100%;border:0;background:#f8f7f2b8;cursor:pointer;}
+  .drawer{position:absolute;z-index:9;top:0;right:0;bottom:0;width:min(520px,49%);box-sizing:border-box;overflow:auto;padding:15px 17px 18px;border-left:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:-18px 0 35px #00000014;}
+  .drawer>header{position:sticky;z-index:2;top:-15px;display:flex;justify-content:space-between;gap:16px;margin:-15px -17px 14px;padding:15px 17px 12px;border-bottom:1px solid var(--color-line);background:var(--color-paper-raised);}
+  .drawer-kicker{color:var(--human);font:600 9px/1.3 var(--font-mono);letter-spacing:.055em;}.drawer-title{margin:4px 0 0;font:400 21px/1.2 var(--font-serif);}
+  .drawer-close{padding:0 3px;border:0;background:none;color:var(--color-ink-soft);font:22px/1 var(--font-sans);cursor:pointer;}
+  .drawer-tabs{display:flex;flex-wrap:wrap;gap:5px 12px;margin-bottom:15px;border-bottom:1px solid var(--color-line);}
+  .drawer-tabs button{padding:0 0 6px;border:0;border-bottom:1px solid transparent;background:none;color:var(--color-ink-soft);font:9px/1.3 var(--font-mono);cursor:pointer;}
+  .drawer-tabs button[aria-selected="true"]{border-color:var(--human);color:var(--human);}
+  .drawer-content section{color:var(--color-ink-soft);font-size:12px;line-height:1.6}.drawer-content section>:first-child{margin-top:0;}
+  .drawer-content ul{margin:0;padding-left:18px}.drawer-content li+li{margin-top:4px}.drawer-content code{font-family:var(--font-mono);}
+  .drawer-content pre{overflow:auto;margin:0 0 12px;padding:11px 12px;background:var(--color-paper);color:var(--color-ink);font:10px/1.55 var(--font-mono);}
+  .metrics{margin:0}.metrics div{display:flex;justify-content:space-between;gap:15px;padding:6px 0;border-bottom:1px solid var(--color-line);}
+  .metrics dd{margin:0;color:var(--color-ink);font:600 10px/1.4 var(--font-mono);text-align:right}.method-note{margin-top:13px;padding-top:10px;border-top:1px solid var(--color-line);font-size:10px;}
+  [hidden]{display:none!important;}
+
+  .takeaway{padding:14px 18px;border-bottom:1px solid var(--color-line);color:var(--color-ink-soft);font:10px/1.55 var(--font-mono);text-align:center;}
+  .takeaway span{color:var(--ahe)}.takeaway strong{color:var(--human);font-weight:600;}
+  figcaption{margin:23px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans);}figcaption strong{color:var(--color-ink);font-weight:600;}
+
+  @media(max-width:900px){
+    .forked-timeline{grid-template-columns:142px minmax(0,1fr);gap:28px;padding-inline:10px}.lanes::before{left:-28px}.lane::before{left:-28px;width:28px}
+    .lane-track{grid-template-columns:repeat(3,minmax(0,1fr)) 130px;gap:7px}.lane header{margin-right:137px}.milestone{padding-inline:3px}.drawer{width:min(540px,65%);}
+  }
+  @media(max-width:680px){
+    .interaction-hint{text-align:left}.forked-timeline{display:block;padding:12px 10px 18px}.origin-node{width:min(270px,82%);margin:0 auto 36px}
+    .lanes{gap:32px}.lanes::before{display:none}.lane::before{top:-12px;left:50%;width:0;height:18px;border-top:0;border-left:1px solid var(--color-line)}
+    .lane header{margin-right:0}.lane-track{grid-template-columns:repeat(3,minmax(145px,1fr)) 135px;gap:8px;overflow-x:auto;padding-bottom:7px}
+    .drawer{width:100%}
+  }
+  @media(prefers-reduced-motion:reduce){.node-trigger,.milestone>i{transition:none}}
+</style>

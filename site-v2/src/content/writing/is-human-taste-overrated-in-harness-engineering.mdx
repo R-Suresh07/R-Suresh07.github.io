@@ -32,6 +32,7 @@ import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverv
 import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHarnessSearchOverview.astro';
 import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
 import AheVsHumanStateFigure from '../../components/figures/AheVsHumanStateFigure.astro';
+import IpdAheVsHumanFigure from '../../components/figures/IpdAheVsHumanFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -394,5 +395,38 @@ The more useful distinction was what kind of change helped. Our largest gains ca
 
 Across all three tasks, Claude did not converge on one generic recipe for making Qwen more reliable. Each run developed its own sequence of hypotheses, reacting to failures in the previous harness and gradually changing both the workflow and the instructions given to the child model.
 
+Lead Optimization was the clearest case where automated search converged toward many of the same problems we had identified manually. The base harness left almost all of the bookkeeping inside the trajectory. Qwen had to remember the task requirements, keep track of which measurements belonged to which molecule, decide what was still missing, and make sure the final submission corresponded to the candidate it had actually evaluated.
+
+Meta-Harness started attacking this quickly. By its second iteration, it had introduced a staged cheap-to-expensive workflow, a running candidate table, persistent memory for candidates and hypotheses, budget checkpoints, and explicit instructions to measure candidates before moving on. This made trajectories considerably more structured and shorter, although it did not yet improve correctness.
+
+The next iterations made the procedure progressively harder to violate. Iteration 3 stopped Qwen from freely typing candidate SMILES, required candidates to be generated through RDKit transformations, required objective measurements before submission, and added an explicit candidate-level gate table. It also verified that the exact molecule written to the output file was the one that had been measured. This became the highest-scoring harness observed during the automated search and was the version we retained for the final benchmark comparison.
+
+Claude later went even further. By iteration 5, every requirement was explicitly routed to its intended measurement source, unknown gates had to be measured before submission, known failures were supposed to keep the search running, and fully passing candidates were ranked by their weakest margin. In other words, the optimizer had independently arrived at much of the same high-level diagnosis: Lead Optimization was failing because evidence from different candidates and different gates was not being integrated reliably at the final decision.
+
 <AheVsHumanStateFigure />
 
+That difference showed up clearly in the held-out comparison. The selected AHE harness recovered 12 of 75 hidden points across the 25 tasks, while Human V2 recovered 30. The number of tasks with at least one correct point rose from 9 to 20, and complete three-point solutions rose from zero to two.
+
+Meta-Harness gave Qwen a progressively better procedure for maintaining state. It also introduced persistent memory and control machinery, so this was more than simply rewriting the prompt. But candidate identity, requirement completion, and final selection still ultimately depended on Qwen applying that machinery correctly.
+
+Our V2 redesign moved those responsibilities one level further out. The task specification was compiled once and made immutable. Every molecule received a canonical candidate ID. ADMET and Boltz results were attached to that ID in an append-only ledger rather than reconstructed from conversation history. Gate status and signed margins were computed from that stored evidence, and a normal submission was rejected unless every required gate was known and passing. Compaction could summarize the trajectory, but it could not rewrite the candidate state underneath it.
+
+That distinction is subtle, but important. Both approaches recognized the bookkeeping problem. Automated search made the bookkeeping easier for Qwen to perform, while Human V2 made less of the bookkeeping Qwen's responsibility in the first place.
+
+The automated search was also noisy. The chosen iteration achieved 37.5% in its initial 80-rollout evaluation and 27.5% upon re-evaluation, while another duplicate run shifted from 33.75% to 28.75%. The optimization trajectory was therefore noisy rather than monotonic, with substantial variance even between identical harnesses.
+
+<IpdAheVsHumanFigure />
+
+IPD diverged more sharply. Unlike Lead Optimization, the automated optimizer did not converge on the same abstraction we had chosen manually. Instead, it kept trying to make Qwen better at inferring the hidden pharmacophore directly from receptor geometry.
+
+Early changes focused on execution hygiene and task management. Iteration 3 stripped down an overcomplicated tool flow, guided Qwen to log a tentative answer early, and tightened turn-budget tracking. Iteration 4 replaced isolated hotspot rankings with whole-triplet scoring, enforcing limits on centroid location, inter-point distances, and spatial spread. By iteration 8, Claude introduced burial-weighted PCA to identify the main cavity axis and disperse the three points across a ligand-sized envelope. This setup achieved the best partial recovery in the automated run, identifying 43 of 240 points across 80 rollouts, while zero-shot complete solutions stayed rare.
+
+So the automated search was clearly adapting to the task. It recognized that individually plausible interaction sites were not enough, that the three points had to form a coherent molecular-scale configuration, and that spatial coverage of the pocket mattered. But all of these interventions were still variations on the same basic strategy: infer the missing ligand geometry from the receptor.
+
+Our manual redesign tackled the core representation directly. First, we made the output semantics explicit. Predictions represented ligand-side features, receptor donors mapped to ligand acceptors, repeated feature types were permitted, matching was strictly one-to-one, and predictions had to land within 2.5 Å of a target point. We also replaced manual file formatting with a structured pharmacophore submission interface.
+
+The larger change was giving the model a way to generate its own ligand-side evidence. Qwen could propose probe molecules, predict their binding poses with Boltz, and extract aligned pharmacophore features such as Donors, Acceptors, Aromatics, Hydrophobics, Cations, and Anions. Across the final evaluation runs, this generated 138 successful unique probes and 694 ligand-feature records, with 23 of 25 tasks gathering evidence from multiple molecules. In contrast, the automated search generated zero valid molecular Boltz probes across its 880 optimization rollouts, even after probe generation appeared in later search iterations.
+
+That distinction showed up clearly in the final paired evaluation. The selected automated harness recovered 12 of 75 hidden points, while Human V2 recovered 30. Tasks with at least one correct point rose from 9 to 20 out of 25, and tasks with at least two correct points grew from 3 to 8. Complete solutions remained rare (zero under AHE versus two under V2), but the shift in partial-credit recovery was unmistakable. Both configurations submitted on all 25 tasks, with V2 requiring fewer turns on average despite executing 146 Boltz predictions.
+
+Automated search became increasingly sophisticated at reasoning from the receptor. Human V2 changed what the model was allowed to observe. Instead of asking Qwen to infer conserved ligand interactions from one protein structure, the harness gave it a crude ligand ensemble from which those interactions could be inferred.
