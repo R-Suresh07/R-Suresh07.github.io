@@ -31,6 +31,7 @@ import HarnessOptimizationLoop from '../../components/figures/HarnessOptimizatio
 import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverviewFigure.astro';
 import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHarnessSearchOverview.astro';
 import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
+import AheVsHumanStateFigure from '../../components/figures/AheVsHumanStateFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -392,4 +393,6 @@ The more useful distinction was what kind of change helped. Our largest gains ca
 ### What did the automated optimizer actually learn?
 
 Across all three tasks, Claude did not converge on one generic recipe for making Qwen more reliable. Each run developed its own sequence of hypotheses, reacting to failures in the previous harness and gradually changing both the workflow and the instructions given to the child model.
+
+<AheVsHumanStateFigure />
 

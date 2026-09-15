@@ -1,0 +1,333 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const automatedSteps = [
+  { key:'ahe-2', iteration:'ITER. 2', title:'Build the workflow', lines:['staged search','persistent memory','budget checkpoints'] },
+  { key:'ahe-3', iteration:'ITER. 3', title:'Harden the candidate', lines:['RDKit-generated','measured finalist','exact-file check'], selected:true },
+  { key:'ahe-5', iteration:'ITER. 5', title:'Guard the decision', lines:['route requirements','complete gate table','refuse known failures'] },
+];
+
+const humanSteps = [
+  { key:'human-task', title:'Freeze task state', lines:['evaluator-derived spec','immutable requirements','specification hash'] },
+  { key:'human-ledger', title:'Bind evidence to candidates', lines:['canonical IDs','append-only ledger','oracle provenance'] },
+  { key:'human-submit', title:'Enforce the decision', lines:['signed gate margins','reject unsafe submit','verify exact output'] },
+];
+---
+
+<ahe-vs-human-state>
+  <figure class="abstraction-figure" aria-label="Automated and human Lead Optimization harness redesigns branching from the same base harness">
+    <FigureHeading label="FIG. 23" title="Same failure, different abstraction" subtitle="Lead Optimization · both approaches start from the same base harness" />
+
+    <div class="figure-shell">
+      <p class="interaction-hint">select a milestone to inspect the harness</p>
+      <div class="forked-timeline">
+        <button class="origin-node node-trigger" type="button" data-node="base" aria-expanded="false" aria-controls="fig-23-drawer">
+          <i aria-hidden="true"></i><small>BASE HARNESS</small><strong>State in the trajectory</strong>
+          <span>generic tools</span><span>no domain workflow</span><span>model coordinates evidence</span><em>inspect ↗</em>
+        </button>
+
+        <div class="lanes">
+          <section class="lane automated" aria-labelledby="automated-lane-title">
+            <header><strong id="automated-lane-title">AUTOMATED SEARCH</strong><span>STATE BECOMES AN EXPLICIT POLICY</span></header>
+            <div class="lane-track">
+              {automatedSteps.map(step => (
+                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-23-drawer">
+                  <i aria-hidden="true"></i><small>{step.iteration}</small><strong>{step.title}</strong>
+                  {step.lines.map(line => <span>{line}</span>)}
+                  {step.selected && <b>selected AHE harness</b>}<em>inspect ↗</em>
+                </button>
+              ))}
+              <div class="endpoint-summary"><small>AHE</small><strong>generic memory + procedural policy</strong><span>Qwen applies it correctly</span></div>
+            </div>
+          </section>
+
+          <section class="lane human" aria-labelledby="human-lane-title">
+            <header><strong id="human-lane-title">HUMAN V2</strong><span>STATE BECOMES INFRASTRUCTURE</span></header>
+            <div class="lane-track">
+              {humanSteps.map(step => (
+                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-23-drawer">
+                  <i aria-hidden="true"></i><small>HARNESS STATE</small><strong>{step.title}</strong>
+                  {step.lines.map(line => <span>{line}</span>)}
+                  {step.key === 'human-ledger' && <div class="micro-callouts"><b>compaction cannot rewrite this state</b><b>oracle results attach to candidate IDs</b></div>}
+                  <em>inspect ↗</em>
+                </button>
+              ))}
+              <div class="endpoint-summary"><small>HUMAN V2</small><strong>typed task + candidate state</strong><span>harness evaluates and enforces</span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <button class="drawer-backdrop" type="button" hidden aria-label="Close milestone details"></button>
+      <aside id="fig-23-drawer" class="drawer" hidden aria-label="Milestone details">
+        <header><div><small class="drawer-kicker"></small><h2 class="drawer-title"></h2></div><button class="drawer-close" type="button" aria-label="Close milestone details">×</button></header>
+        <div class="drawer-content"></div>
+      </aside>
+    </div>
+
+    <div class="takeaway">Same diagnosis, different enforcement. <span>AHE</span> encoded state management as a procedure for Qwen to follow; <strong>Human V2</strong> made candidate identity, evidence, and submission safety properties of the environment.</div>
+    <figcaption><strong>Both approaches recognized that Lead Optimization needed more disciplined state management, but they enforced it differently.</strong> Meta-Harness progressively introduced a structured search workflow, persistent memory, candidate verification, requirement routing, and submission guards. Human V2 instead made task specification, candidate identity, oracle evidence, and submission safety explicit properties of the harness. Select any milestone to inspect the underlying implementation and changes.</figcaption>
+  </figure>
+
+  <template data-detail="base" data-kicker="STARTING POINT" data-title="State in the trajectory">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="source">Source</button></nav>
+    <section data-panel="summary"><p>The starting harness contains no task-specific workflow, skills, state configuration, or control schedule. Qwen is responsible for coordinating task facts, candidate identities, measurements, and final selection through its trajectory.</p></section>
+    <section data-panel="source"><pre><code>HARNESS_POLICY = &#123;
+  "schema_version": 1,
+  "skills": {},
+  "task_overrides": {}
+&#125;</code></pre></section>
+  </template>
+
+  <template data-detail="ahe-2" data-kicker="AUTOMATED SEARCH · ITER. 2" data-title="Build the workflow">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="excerpt">Excerpt</button><button role="tab" data-tab="diff">Diff</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
+    <section data-panel="summary"><ul><li>Five-stage cheap-to-expensive search</li><li>25–40 local analogues</li><li>Running candidate table</li><li>Persistent candidate, hypothesis, and experiment memory</li><li>Turn and oracle-budget checkpoints</li><li>Compaction instructions</li></ul></section>
+    <section data-panel="excerpt"><blockquote>Follow a cheap-to-expensive protocol: read the task, compute everything possible locally with RDKit, screen a shortlist with the cheap predictor, confirm one finalist with the expensive structure predictor, then submit.</blockquote><blockquote>Keep a compact running table of every candidate you have measured.</blockquote></section>
+    <section data-panel="diff"><div class="diff-heading"><span>harness-1</span><span>harness-2</span></div><div class="split-diff"><pre><code>generic tools
+trajectory-only memory
+model schedules calls</code></pre><pre><code>+ staged RDKit → ADMET → Boltz
++ persistent candidate table
++ turn and oracle checkpoints
++ compaction protocol</code></pre></div></section>
+    <section data-panel="evaluation"><dl class="metrics"><div><dt>Selection-set reward</dt><dd>22.5% → 22.5%</dd></div><div><dt>Mean turns</dt><dd>73.9 → 52.3</dd></div></dl><p class="method-note">The workflow became substantially more structured without immediately becoming more accurate.</p></section>
+  </template>
+
+  <template data-detail="ahe-3" data-kicker="AUTOMATED SEARCH · ITER. 3" data-title="Harden the candidate">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="excerpt">Excerpt</button><button role="tab" data-tab="diff">Diff</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
+    <section data-panel="summary"><span class="drawer-badge">selected AHE harness</span><ul><li>Generate edits through RDKit rather than typing SMILES</li><li>Require objective measurement</li><li>Run a candidate-level <code>gate()</code></li><li>Make ADMET a submission prerequisite</li><li>Verify the exact final SMILES</li><li>Fall back toward conservative edits when binding fails</li></ul></section>
+    <section data-panel="excerpt"><blockquote>NEVER invent SMILES by typing characters; build analogs with RDKit transforms.</blockquote><blockquote>Never submit a molecule whose objective property was not measured by the cheap oracle and whose local gate() table is not all-PASS.</blockquote></section>
+    <section data-panel="diff"><div class="diff-heading"><span>harness-2</span><span>harness-3</span></div><div class="split-diff"><pre><code>model-written SMILES
+informal candidate checks
+unverified final string</code></pre><pre><code>+ RDKit-generated edits
++ objective measurement required
++ candidate-level gate()
++ exact final-SMILES check</code></pre></div></section>
+    <section data-panel="evaluation"><dl class="metrics"><div><dt>Observed reward</dt><dd>22.5% → 37.5%</dd></div></dl><p class="method-note">Highest observed selection-set reward; retained for the full benchmark. Repeated later as Iter. 9: 27.5%, so the search trace should not be read as a monotonic causal curve.</p></section>
+  </template>
+
+  <template data-detail="ahe-5" data-kicker="AUTOMATED SEARCH · ITER. 5" data-title="Guard the decision">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="excerpt">Excerpt</button><button role="tab" data-tab="diff">Diff</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
+    <section data-panel="summary"><ul><li>Route every requirement to its authoritative source</li><li>Require a complete final evidence table</li><li>Do not submit failed rows</li><li>Measure unknown rows first</li><li>Rank passing candidates by worst gate margin</li><li>Reserve best-effort behavior for the end</li></ul></section>
+    <section data-panel="excerpt"><blockquote>FIRST decide WHERE each requirement is measured, then measure it there.</blockquote><blockquote>If ANY row is FAIL, do NOT submit it.</blockquote><blockquote>If a row is UNKNOWN, measure it before submitting.</blockquote></section>
+    <section data-panel="diff"><p class="method-note">Diff shown: Iter. 4 → Iter. 5. Iteration 4 existed between the displayed milestones.</p><div class="diff-heading"><span>iter. 4</span><span>iter. 5</span></div><div class="split-diff"><pre><code>partial evidence table
+submit chosen finalist
+best-effort mixed in</code></pre><pre><code>+ authoritative requirement routing
++ UNKNOWN → measure
++ FAIL → keep searching
++ rank by worst margin</code></pre></div></section>
+    <section data-panel="evaluation"><p>Iteration 5 is shown as a conceptual milestone in the search trajectory, not as a separately selected final harness.</p></section>
+  </template>
+
+  <template data-detail="human-task" data-kicker="HUMAN V2 · TASK STATE" data-title="Freeze task state">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="excerpt">Excerpt</button><button role="tab" data-tab="implementation">Implementation</button></nav>
+    <section data-panel="summary"><p>V2 compiles the task directly from evaluator configuration, persists it, hashes it, and refuses to resume against a different specification.</p><p class="key-sentence">Qwen no longer reconstructs thresholds and directions from its own trajectory.</p></section>
+    <section data-panel="excerpt"><pre><code>@dataclass(frozen=True)
+class TaskSpec:
+    thresholds: tuple[Gate, ...]
+    objectives: tuple[Objective, ...]
+    specification_hash: str</code></pre></section>
+    <section data-panel="implementation"><ul><li>Evaluator-derived specification</li><li>Immutable requirements and comparator directions</li><li>Persisted specification hash</li><li>Resume rejected if the task specification changes</li><li>Compaction remains separate from authoritative state</li></ul></section>
+  </template>
+
+  <template data-detail="human-ledger" data-kicker="HUMAN V2 · CANDIDATE STATE" data-title="Bind evidence to candidates">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="excerpt">Excerpt</button><button role="tab" data-tab="implementation">Implementation</button></nav>
+    <section data-panel="summary"><p>Every molecule receives a stable identity. Measurements, provenance, budgets, and gate status are derived from append-only candidate events rather than reconstructed from the conversation.</p><div class="callout-stack"><span>compaction cannot rewrite this state</span><span>oracle results attach to candidate IDs</span></div></section>
+    <section data-panel="excerpt"><pre><code>C001
+C002
+C003
+
+candidate_events.jsonl
+candidate_ledger.json</code></pre></section>
+    <section data-panel="implementation"><ul><li>Canonicalized SMILES and stable candidate ID</li><li>Identity hash</li><li>Parent and edit provenance</li><li>ADMET keyed to candidate</li><li>Boltz keyed to candidate</li><li>Hash-chained events</li><li>Budget usage derived from events</li></ul></section>
+  </template>
+
+  <template data-detail="human-submit" data-kicker="HUMAN V2 · SUBMISSION" data-title="Enforce the decision">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="excerpt">Excerpt</button><button role="tab" data-tab="implementation">Implementation</button></nav>
+    <section data-panel="summary"><p>Submission operates on a registered candidate and its exact evidence state. Passed, failed, missing, and borderline gates remain explicit, while a separately labelled force route preserves best-effort behavior.</p></section>
+    <section data-panel="excerpt"><pre><code>safe_to_submit = overall == "passed"
+
+allowed = force_eligible \
+          if force \
+          else status["safe_to_submit"]</code></pre></section>
+    <section data-panel="implementation"><ul><li>Signed gate margins</li><li>Exact-file verification</li><li>Normal submission rejects unsafe candidates</li><li>Force route is explicit and separately labelled</li><li>Submitted output must match the registered candidate</li></ul></section>
+  </template>
+</ahe-vs-human-state>
+
+<script>
+  class AheVsHumanState extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const shell = this.querySelector<HTMLElement>('.figure-shell');
+      const timeline = this.querySelector<HTMLElement>('.forked-timeline');
+      const drawer = this.querySelector<HTMLElement>('.drawer');
+      const backdrop = this.querySelector<HTMLButtonElement>('.drawer-backdrop');
+      const content = this.querySelector<HTMLElement>('.drawer-content');
+      const title = this.querySelector<HTMLElement>('.drawer-title');
+      const kicker = this.querySelector<HTMLElement>('.drawer-kicker');
+      const close = this.querySelector<HTMLButtonElement>('.drawer-close');
+      const triggers = [...this.querySelectorAll<HTMLButtonElement>('.node-trigger')];
+      let activeTrigger: HTMLButtonElement | null = null;
+
+      const activateTab = (tab: HTMLButtonElement) => {
+        if (!content) return;
+        const name = tab.dataset.tab;
+        content.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach(button => {
+          const selected = button === tab;
+          button.setAttribute('aria-selected', String(selected));
+          button.tabIndex = selected ? 0 : -1;
+        });
+        content.querySelectorAll<HTMLElement>('[data-panel]').forEach(panel => { panel.hidden = panel.dataset.panel !== name; });
+      };
+
+      const openDrawer = (trigger: HTMLButtonElement) => {
+        const selector = 'template[data-detail="' + trigger.dataset.node + '"]';
+        const template = this.querySelector<HTMLTemplateElement>(selector);
+        if (!template || !drawer || !backdrop || !content || !title || !kicker) return;
+        activeTrigger = trigger;
+        triggers.forEach(button => {
+          const selected = button === trigger;
+          button.classList.toggle('selected', selected);
+          button.setAttribute('aria-expanded', String(selected));
+        });
+        timeline?.classList.add('has-selection');
+        kicker.textContent = template.dataset.kicker || '';
+        title.textContent = template.dataset.title || '';
+        content.replaceChildren(template.content.cloneNode(true));
+        const tabs = [...content.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+        tabs.forEach(tab => tab.addEventListener('click', () => activateTab(tab)));
+        if (tabs[0]) activateTab(tabs[0]);
+        drawer.hidden = false;
+        backdrop.hidden = false;
+        shell?.classList.add('drawer-open');
+        close?.focus();
+      };
+
+      const closeDrawer = () => {
+        if (!drawer || !backdrop) return;
+        drawer.hidden = true;
+        backdrop.hidden = true;
+        shell?.classList.remove('drawer-open');
+        timeline?.classList.remove('has-selection');
+        triggers.forEach(button => { button.classList.remove('selected'); button.setAttribute('aria-expanded','false'); });
+        activeTrigger?.focus();
+        activeTrigger = null;
+      };
+
+      triggers.forEach(trigger => trigger.addEventListener('click', () => openDrawer(trigger)));
+      close?.addEventListener('click', closeDrawer);
+      backdrop?.addEventListener('click', closeDrawer);
+      this.addEventListener('keydown', event => { if (event.key === 'Escape' && !drawer?.hidden) closeDrawer(); });
+    }
+  }
+  if (!customElements.get('ahe-vs-human-state')) customElements.define('ahe-vs-human-state', AheVsHumanState);
+</script>
+
+<style>
+  .abstraction-figure {
+    --ahe:#a55a3e; --human:#087c83;
+    width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter)); box-sizing:border-box;
+    margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%);
+    color:var(--color-ink); font:14px/1.45 var(--font-sans);
+  }
+  .figure-shell { position:relative; overflow:hidden; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .interaction-hint { margin:0; padding:9px 17px 0; color:var(--color-ink-soft); font:9px/1.3 var(--font-mono); text-align:right; }
+  .forked-timeline { display:grid; grid-template-columns:170px minmax(0,1fr); gap:40px; padding:15px 18px 20px; }
+  .origin-node,.milestone { appearance:none; border:0; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+  .origin-node { position:relative; align-self:center; padding:12px 10px; border-top:1px solid var(--color-ink-soft); background:transparent; }
+  .origin-node::before { position:absolute; top:50%; left:100%; width:41px; border-top:1px solid var(--color-line); content:''; }
+  .origin-node > i { position:absolute; top:calc(50% - 4px); right:-4px; z-index:2; width:8px; height:8px; border-radius:50%; background:var(--color-ink-soft); }
+  .origin-node small,.origin-node strong,.origin-node span { display:block; }
+  .origin-node small { color:var(--color-ink-soft); font:600 9px/1.3 var(--font-mono); letter-spacing:.06em; }
+  .origin-node strong { margin:5px 0 8px; font:600 12px/1.35 var(--font-mono); text-transform:uppercase; }
+  .origin-node span { color:var(--color-ink-soft); font:10px/1.5 var(--font-mono); }
+  .node-trigger em { display:block; margin-top:7px; color:currentColor; font:8px/1.3 var(--font-mono); font-style:normal; opacity:0; }
+  .node-trigger:hover em,.node-trigger:focus-visible em,.node-trigger.selected em { opacity:1; }
+  .node-trigger:focus-visible { outline:1px solid currentColor; outline-offset:4px; }
+  .node-trigger { transition:opacity .15s ease; }
+  .forked-timeline.has-selection .node-trigger:not(.selected) { opacity:.42; }
+
+  .lanes { position:relative; display:grid; gap:27px; min-width:0; }
+  .lanes::before { position:absolute; top:62px; bottom:62px; left:-40px; border-left:1px solid var(--color-line); content:''; }
+  .lane { position:relative; min-width:0; }
+  .lane::before { position:absolute; top:62px; left:-40px; width:40px; border-top:1px solid var(--color-line); content:''; }
+  .lane header { min-height:38px; margin:0 155px 10px 0; text-align:center; }
+  .lane header strong,.lane header span { display:block; font-family:var(--font-mono); }
+  .lane header strong { font-size:10px; letter-spacing:.06em; }
+  .lane header span { margin-top:2px; color:var(--color-ink-soft); font-size:9px; letter-spacing:.055em; }
+  .automated header strong { color:var(--ahe); } .human header strong { color:var(--human); }
+  .lane-track { position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 145px; gap:18px; min-height:166px; }
+  .lane-track::before { position:absolute; top:14px; right:8px; left:0; border-top:1px solid currentColor; content:''; }
+  .lane-track::after { position:absolute; top:10px; right:0; width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent; border-left:8px solid currentColor; content:''; }
+  .automated .lane-track { color:var(--ahe); } .human .lane-track { color:var(--human); }
+  .milestone { position:relative; z-index:1; min-width:0; padding:32px 8px 4px; background:transparent; }
+  .milestone > i { position:absolute; top:10px; left:50%; width:9px; height:9px; box-sizing:border-box; border:2px solid var(--color-paper); border-radius:50%; background:currentColor; box-shadow:0 0 0 1px currentColor; transform:translateX(-50%); transition:all .14s ease; }
+  .milestone::after { position:absolute; top:19px; left:50%; height:10px; border-left:1px solid currentColor; opacity:.55; content:''; }
+  .milestone:hover > i,.milestone:focus-visible > i,.milestone.selected > i { top:8px; width:13px; height:13px; }
+  .milestone small,.milestone strong,.milestone span { display:block; }
+  .milestone small { font:600 8px/1.3 var(--font-mono); letter-spacing:.055em; }
+  .milestone strong { min-height:30px; margin:4px 0 7px; color:var(--color-ink); font:600 10px/1.45 var(--font-mono); text-transform:uppercase; }
+  .milestone:hover strong,.milestone:focus-visible strong,.milestone.selected strong { color:currentColor; }
+  .milestone span { color:var(--color-ink-soft); font:9px/1.45 var(--font-mono); }
+  .milestone > b { display:inline-block; margin-top:6px; padding:2px 4px; color:var(--ahe); background:#eadbd3; font:600 7px/1.3 var(--font-mono); text-transform:uppercase; }
+  .micro-callouts { display:grid; gap:1px; margin-top:5px; }
+  .micro-callouts b { color:var(--human); font:7px/1.35 var(--font-mono); font-weight:400; }
+  .endpoint-summary { position:relative; z-index:1; padding:33px 5px 0 9px; background:var(--color-paper); }
+  .endpoint-summary small,.endpoint-summary strong,.endpoint-summary span { display:block; }
+  .endpoint-summary small { font:600 8px/1.3 var(--font-mono); letter-spacing:.06em; }
+  .endpoint-summary strong { margin:5px 0; color:var(--color-ink); font:600 9px/1.4 var(--font-mono); }
+  .endpoint-summary span { color:var(--color-ink-soft); font:8px/1.4 var(--font-mono); }
+
+  .drawer-backdrop { position:absolute; z-index:8; inset:0; width:100%; border:0; background:#f8f7f2b8; cursor:pointer; }
+  .drawer { position:absolute; z-index:9; top:0; right:0; bottom:0; width:min(520px,49%); box-sizing:border-box; overflow:auto; padding:15px 17px 18px; border-left:1px solid var(--color-line); background:var(--color-paper-raised); box-shadow:-18px 0 35px #00000014; }
+  .drawer > header { position:sticky; z-index:2; top:-15px; display:flex; justify-content:space-between; gap:16px; margin:-15px -17px 14px; padding:15px 17px 12px; border-bottom:1px solid var(--color-line); background:var(--color-paper-raised); }
+  .drawer-kicker { color:var(--human); font:600 9px/1.3 var(--font-mono); letter-spacing:.055em; }
+  .drawer-title { margin:4px 0 0; font:400 21px/1.2 var(--font-serif); }
+  .drawer-close { padding:0 3px; border:0; background:none; color:var(--color-ink-soft); font:22px/1 var(--font-sans); cursor:pointer; }
+  .drawer-tabs { display:flex; flex-wrap:wrap; gap:5px 12px; margin-bottom:15px; border-bottom:1px solid var(--color-line); }
+  .drawer-tabs button { padding:0 0 6px; border:0; border-bottom:1px solid transparent; background:none; color:var(--color-ink-soft); font:9px/1.3 var(--font-mono); cursor:pointer; }
+  .drawer-tabs button[aria-selected="true"] { border-color:var(--human); color:var(--human); }
+  .drawer-content section { color:var(--color-ink-soft); font-size:12px; line-height:1.6; }
+  .drawer-content section > :first-child { margin-top:0; }
+  .drawer-content ul { margin:0; padding-left:18px; } .drawer-content li + li { margin-top:4px; }
+  .drawer-content pre { overflow:auto; margin:0; padding:11px 12px; background:var(--color-paper); color:var(--color-ink); font:10px/1.55 var(--font-mono); }
+  .drawer-content blockquote { margin:0 0 12px; padding:8px 10px; border-left:2px solid var(--ahe); background:var(--color-paper); color:var(--color-ink); font:10px/1.6 var(--font-mono); }
+  .drawer-content code { font-family:var(--font-mono); }
+  .drawer-badge { display:inline-block; margin-bottom:11px; padding:3px 6px; color:var(--ahe); background:#eadbd3; font:600 8px/1.3 var(--font-mono); text-transform:uppercase; }
+  .diff-heading,.split-diff { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .diff-heading { margin-bottom:4px; color:var(--color-ink-soft); font:8px/1.3 var(--font-mono); text-transform:uppercase; }
+  .split-diff pre:last-child { color:var(--human); }
+  .metrics { margin:0; } .metrics div { display:flex; justify-content:space-between; gap:15px; padding:7px 0; border-bottom:1px solid var(--color-line); }
+  .metrics dd { margin:0; color:var(--color-ink); font:600 11px/1.4 var(--font-mono); }
+  .method-note { margin-top:13px; padding-top:10px; border-top:1px solid var(--color-line); font-size:10px; }
+  .key-sentence { color:var(--color-ink); font-weight:600; }
+  .callout-stack { display:grid; gap:5px; margin-top:14px; }
+  .callout-stack span { padding:5px 7px; border-left:2px solid var(--human); background:var(--color-paper); color:var(--human); font:9px/1.4 var(--font-mono); }
+  [hidden] { display:none !important; }
+
+  .takeaway { padding:14px 18px; border-bottom:1px solid var(--color-line); color:var(--color-ink-soft); font:10px/1.55 var(--font-mono); text-align:center; }
+  .takeaway span { color:var(--ahe); } .takeaway strong { color:var(--human); font-weight:600; }
+  figcaption { margin:23px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+
+  @media (max-width:900px) {
+    .forked-timeline { grid-template-columns:135px minmax(0,1fr); gap:28px; padding-inline:10px; }
+    .origin-node::before { width:29px; } .lanes::before { left:-28px; } .lane::before { left:-28px; width:28px; }
+    .lane-track { grid-template-columns:repeat(3,minmax(0,1fr)) 105px; gap:8px; }
+    .lane header { margin-right:113px; } .milestone { padding-inline:4px; } .drawer { width:min(540px,65%); }
+  }
+  @media (max-width:680px) {
+    .interaction-hint { text-align:left; }
+    .forked-timeline { display:block; padding:12px 10px 18px; }
+    .origin-node { width:min(260px,80%); margin:0 auto 36px; }
+    .origin-node::before { top:100%; left:50%; width:0; height:37px; border-top:0; border-left:1px solid var(--color-line); }
+    .origin-node > i { top:auto; right:auto; bottom:-4px; left:calc(50% - 4px); }
+    .lanes { gap:33px; } .lanes::before { display:none; }
+    .lane::before { top:-12px; left:50%; width:0; height:18px; border-top:0; border-left:1px solid var(--color-line); }
+    .lane header { margin-right:0; }
+    .lane-track { grid-template-columns:repeat(3,minmax(138px,1fr)) 120px; gap:8px; overflow-x:auto; padding-bottom:8px; }
+    .drawer { width:100%; }
+  }
+  @media (prefers-reduced-motion:reduce) { .node-trigger,.milestone > i { transition:none; } }
+</style>
