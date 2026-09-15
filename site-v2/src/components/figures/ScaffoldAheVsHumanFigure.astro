@@ -1,0 +1,161 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const aheSteps = [
+  { key:'ahe-2', iteration:'ITER. 2', title:'Executable search', lines:['task-bound candidate tools','batched cheap screening','candidate memory'], note:'Build a usable scaffold-hopping workflow.' },
+  { key:'ahe-5', iteration:'ITER. 5', title:'Conservative hops', lines:['preserve anchors + linker geometry','change the core','submit only oracle-tested candidates'], note:'Move away from extreme novelty without giving up the scaffold change.' },
+  { key:'ahe-8', iteration:'ITER. 8', title:'Rebalance evidence', lines:['recheck exact submitted chemistry','inspect predicted poses','reject high-binding but overly similar candidates'], note:'Keep the hop genuine while preserving more interaction evidence.', selected:true },
+];
+
+const humanSteps = [
+  { key:'human-novelty', title:'Make novelty exact', lines:['canonical candidate IDs','evaluator-matched Tanimoto + MCS','failed preflight blocks Boltz'], note:'“Different scaffold” becomes deterministic.' },
+  { key:'human-geometry', title:'Expose geometry', lines:['task-bound Boltz','explicit CIF pose paths','candidate-linked pose evidence'], note:'Binding geometry becomes much harder to overlook.' },
+  { key:'human-submit', title:'Enforce public gates', lines:['exact canonical output','novelty + binding enforced','interaction evidence remains non-blocking'], note:'Safe for exposed gates, not for the hidden interaction gate.' },
+];
+
+---
+
+<scaffold-harness-comparison>
+  <figure class="scaffold-figure" aria-label="Automated and human Scaffold Hopping harness redesigns from the same base harness">
+    <FigureHeading label="FIG. 25" title="Same binding task, different optimization pressure" subtitle="Scaffold Hopping · both approaches start from the same base harness" />
+
+    <div class="figure-shell">
+      <p class="interaction-hint">select a milestone to inspect the harness</p>
+      <div class="forked-timeline">
+        <button class="origin-node node-trigger" type="button" data-node="base" aria-expanded="false" aria-controls="fig-25-drawer">
+          <small>BASE HARNESS</small><strong>Binding mode is difficult to inspect</strong>
+          <span>binding probability returned directly</span><span>candidate poses awkward to inspect</span>
+          <span>interaction preservation not scored</span><span>novelty can pass while the reference pattern is lost</span>
+          <b>Qwen can tell whether a molecule may bind more easily than whether it binds in the same way.</b><em>inspect ↗</em>
+        </button>
+
+        <div class="lanes">
+          <section class="lane automated" aria-labelledby="sh-ahe-title">
+            <header><strong id="sh-ahe-title">AUTOMATED SEARCH</strong><span>TERMINAL REWARD PUSHES THE POLICY TOWARD BALANCE</span></header>
+            <div class="lane-track">
+              {aheSteps.map(step => (
+                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-25-drawer">
+                  <i aria-hidden="true"></i><small>{step.iteration}</small><strong>{step.title}</strong>
+                  {step.lines.map(line => <span>{line}</span>)}<b>{step.note}</b>
+                  {step.selected && <mark>selected AHE harness</mark>}<em>inspect ↗</em>
+                </button>
+              ))}
+              <div class="endpoint-summary"><small>AHE</small><strong>Balanced search policy</strong>
+                <span>novelty passage less consistent than V2</span><span>higher evaluator interaction similarity</span><span>stronger terminal result</span>
+                <b>interaction gate 8 / 45 · solved 5 / 52</b>
+              </div>
+            </div>
+          </section>
+
+          <section class="lane human" aria-labelledby="sh-human-title">
+            <header><strong id="sh-human-title">HUMAN V2</strong><span>NOVELTY BECOMES EXACT, BUT INTERACTION REMAINS HIDDEN</span></header>
+            <div class="lane-track">
+              {humanSteps.map(step => (
+                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-25-drawer">
+                  <i aria-hidden="true"></i><small>HARNESS CHANGE</small><strong>{step.title}</strong>
+                  {step.lines.map(line => <span>{line}</span>)}<b>{step.note}</b><em>inspect ↗</em>
+                </button>
+              ))}
+              <div class="endpoint-summary"><small>HUMAN V2</small><strong>Auditable public gates</strong>
+                <span>both novelty gates 50 / 50</span><span>interaction gate 1 / 50</span><span>solved 1 / 52</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <button class="drawer-backdrop" type="button" hidden aria-label="Close milestone details"></button>
+      <aside id="fig-25-drawer" class="drawer" hidden aria-label="Scaffold Hopping milestone details">
+        <header><div><small class="drawer-kicker"></small><h2 class="drawer-title"></h2></div><button class="drawer-close" type="button" aria-label="Close milestone details">×</button></header>
+        <div class="drawer-content"></div>
+      </aside>
+    </div>
+
+    <div class="takeaway"><strong>Human V2</strong> made novelty exact and geometry visible. <span>AHE</span> produced the better balance between scaffold change and interaction preservation.</div>
+    <figcaption><strong>Same binding task, different optimization pressure.</strong> Automated search progressively introduced task-bound candidate testing, conservative scaffold replacement, and pose-aware selection. Human V2 made candidate identity, novelty screening, Boltz execution, and submission substantially more auditable, but normal submission could enforce only the exposed novelty and binding gates; evaluator interaction similarity remained hidden and non-blocking. On the same 52 tasks, Human V2 passed both novelty gates on all 50 evaluable submissions but passed the interaction gate only once, while AHE passed it on 8 of 45 evaluable submissions and produced the stronger terminal result.</figcaption>
+  </figure>
+
+  <template data-detail="base" data-kicker="BASE HARNESS" data-title="Binding score is easier to see than binding mode">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="interface">Interface</button></nav>
+    <section data-panel="summary"><p>Binding probability is returned directly. Predicted candidate poses exist, but finding and comparing them against the reference complex requires substantially more work.</p></section>
+    <section data-panel="interface"><ul><li>Candidate pose files are not surfaced explicitly</li><li>Interaction preservation is not returned as a score</li><li>Novelty gates can pass without preserving the reference interaction pattern</li><li>Qwen must coordinate pose discovery and comparison through its trajectory</li></ul></section>
+  </template>
+
+  <template data-detail="ahe-2" data-kicker="AUTOMATED SEARCH · ITER. 2" data-title="Executable search">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="excerpt">Harness excerpt</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
+    <section data-panel="change"><ul><li>Task-bound tools</li><li>Persistent candidate memory</li><li>Batched cheap screening</li><li>A usable scaffold-hopping workflow</li></ul></section>
+    <section data-panel="excerpt"><pre><code>register candidate
+→ batch cheap checks
+→ retain candidate memory
+→ spend Boltz on finalists</code></pre></section>
+    <section data-panel="evaluation"><dl class="metrics"><div><dt>Optimizer-recorded successes</dt><dd>3 / 80</dd></div><div><dt>Original-attempt successes</dt><dd>2 / 80</dd></div></dl></section>
+  </template>
+
+  <template data-detail="ahe-5" data-kicker="AUTOMATED SEARCH · ITER. 5" data-title="Conservative hops">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="policy">Policy</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
+    <section data-panel="change"><ul><li>Preserve anchors, substituents, and linker geometry</li><li>Replace the core genuinely</li><li>Submit only oracle-tested candidates</li><li>Use binding margins to guide selection</li></ul></section>
+    <section data-panel="policy"><p>Move away from extreme novelty without giving up the scaffold change. The policy seeks candidates that remain genuinely distinct while retaining more of the geometry that supported binding.</p></section>
+    <section data-panel="evaluation"><dl class="metrics"><div><dt>Optimizer-recorded successes</dt><dd>9 / 80</dd></div></dl><p class="method-note">One of two peak harnesses in the search.</p></section>
+  </template>
+
+  <template data-detail="ahe-8" data-kicker="AUTOMATED SEARCH · ITER. 8" data-title="Rebalance evidence">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="policy">Policy</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
+    <section data-panel="change"><span class="drawer-badge">selected AHE harness</span><ul><li>Warn against similarity drift</li><li>Restore pose analysis</li><li>Recheck the exact submitted chemistry</li><li>Reject high-binding but overly similar candidates</li></ul></section>
+    <section data-panel="policy"><p>Keep the hop genuine while using predicted poses to preserve more interaction evidence. Exact novelty is rechecked on the molecule that will actually be submitted.</p></section>
+    <section data-panel="evaluation"><dl class="metrics"><div><dt>Optimizer-recorded successes</dt><dd>9 / 80</dd></div><div><dt>Original-attempt successes</dt><dd>8 / 80</dd></div></dl><p class="method-note">H5 and H8 tied on optimizer-recorded reward. H8 was selected for final evaluation.</p></section>
+  </template>
+
+  <template data-detail="human-novelty" data-kicker="HUMAN V2 · NOVELTY" data-title="Make novelty exact">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="implementation">Implementation</button></nav>
+    <section data-panel="summary"><p>“Different scaffold” becomes deterministic before an expensive structure call is spent.</p></section>
+    <section data-panel="implementation"><ul><li>Canonical candidate IDs</li><li>Evaluator-matched Tanimoto and scaffold-MCS calculations</li><li>Signed novelty margins</li><li>Candidate registration</li><li>Failed preflight blocks Boltz</li></ul></section>
+  </template>
+
+  <template data-detail="human-geometry" data-kicker="HUMAN V2 · BINDING GEOMETRY" data-title="Expose geometry">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="interface">Interface</button></nav>
+    <section data-panel="summary"><p>Binding geometry becomes much harder to overlook, but the harness does not expose or calculate the evaluator's interaction-similarity score.</p></section>
+    <section data-panel="interface"><ul><li>Task-bound Boltz execution</li><li>Explicit CIF pose paths</li><li>Pose evidence linked to candidate IDs</li><li>The supplied reference complex remains authoritative</li></ul></section>
+  </template>
+
+  <template data-detail="human-submit" data-kicker="HUMAN V2 · SUBMISSION" data-title="Enforce public gates">
+    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="logic">Enforcement logic</button></nav>
+    <section data-panel="summary"><p>Normal submission enforces novelty and binding. Interaction evidence remains advisory and non-blocking because evaluator interaction similarity is hidden.</p><p class="key-warning">force=false does not imply complete benchmark success on Scaffold Hopping.</p></section>
+    <section data-panel="logic"><ul><li>Exact canonical output</li><li>Novelty gates enforced</li><li>Binding gate enforced</li><li>Interaction evidence retained but not converted into a blocking evaluator score</li><li>Exact submitted molecule verified against the registry</li></ul></section>
+  </template>
+</scaffold-harness-comparison>
+
+<script>
+  class ScaffoldHarnessComparison extends HTMLElement {
+    connectedCallback(){
+      if(this.dataset.ready)return;this.dataset.ready='true';
+      const shell=this.querySelector<HTMLElement>('.figure-shell'),timeline=this.querySelector<HTMLElement>('.forked-timeline'),drawer=this.querySelector<HTMLElement>('.drawer'),backdrop=this.querySelector<HTMLButtonElement>('.drawer-backdrop'),content=this.querySelector<HTMLElement>('.drawer-content'),title=this.querySelector<HTMLElement>('.drawer-title'),kicker=this.querySelector<HTMLElement>('.drawer-kicker'),close=this.querySelector<HTMLButtonElement>('.drawer-close');
+      const triggers=[...this.querySelectorAll<HTMLButtonElement>('.node-trigger')];let active:HTMLButtonElement|null=null;
+      const activateTab=(tab:HTMLButtonElement)=>{if(!content)return;const name=tab.dataset.tab;content.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach(button=>{const selected=button===tab;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});content.querySelectorAll<HTMLElement>('[data-panel]').forEach(panel=>{panel.hidden=panel.dataset.panel!==name;});};
+      const openDrawer=(trigger:HTMLButtonElement)=>{const template=this.querySelector<HTMLTemplateElement>('template[data-detail="'+trigger.dataset.node+'"]');if(!template||!drawer||!backdrop||!content||!title||!kicker)return;active=trigger;triggers.forEach(button=>{const selected=button===trigger;button.classList.toggle('selected',selected);button.setAttribute('aria-expanded',String(selected));});timeline?.classList.add('has-selection');kicker.textContent=template.dataset.kicker||'';title.textContent=template.dataset.title||'';content.replaceChildren(template.content.cloneNode(true));const tabs=[...content.querySelectorAll<HTMLButtonElement>('[role="tab"]')];tabs.forEach(tab=>tab.addEventListener('click',()=>activateTab(tab)));if(tabs[0])activateTab(tabs[0]);drawer.hidden=false;backdrop.hidden=false;shell?.classList.add('drawer-open');close?.focus();};
+      const closeDrawer=()=>{if(!drawer||!backdrop)return;drawer.hidden=true;backdrop.hidden=true;shell?.classList.remove('drawer-open');timeline?.classList.remove('has-selection');triggers.forEach(button=>{button.classList.remove('selected');button.setAttribute('aria-expanded','false');});active?.focus();active=null;};
+      triggers.forEach(trigger=>trigger.addEventListener('click',()=>openDrawer(trigger)));close?.addEventListener('click',closeDrawer);backdrop?.addEventListener('click',closeDrawer);this.addEventListener('keydown',event=>{if(event.key==='Escape'&&!drawer?.hidden)closeDrawer();});
+    }
+  }
+  if(!customElements.get('scaffold-harness-comparison'))customElements.define('scaffold-harness-comparison',ScaffoldHarnessComparison);
+</script>
+
+<style>
+  .scaffold-figure{--ahe:#a55a3e;--human:#087c83;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:14px/1.45 var(--font-sans);}
+  .figure-shell{position:relative;overflow:hidden;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.interaction-hint{margin:0;padding:9px 17px 0;color:var(--color-ink-soft);font:9px/1.3 var(--font-mono);text-align:right}
+  .forked-timeline{display:grid;grid-template-columns:182px minmax(0,1fr);gap:40px;padding:14px 18px 9px}.origin-node,.milestone{appearance:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+  .origin-node{position:relative;align-self:center;padding:12px 10px;border-top:1px solid var(--color-ink-soft);background:transparent}.origin-node small,.origin-node strong,.origin-node span,.origin-node b{display:block}
+  .origin-node small{color:var(--color-ink-soft);font:600 9px/1.3 var(--font-mono);letter-spacing:.06em}.origin-node strong{margin:5px 0 8px;font:600 11px/1.45 var(--font-mono);text-transform:uppercase}.origin-node span{color:var(--color-ink-soft);font:8px/1.5 var(--font-mono)}.origin-node b{margin-top:7px;color:var(--color-ink-soft);font:400 8px/1.45 var(--font-mono)}
+  .node-trigger em{display:block;margin-top:6px;color:currentColor;font:8px/1.3 var(--font-mono);font-style:normal;opacity:0}.node-trigger:hover em,.node-trigger:focus-visible em,.node-trigger.selected em{opacity:1}.node-trigger:focus-visible{outline:1px solid currentColor;outline-offset:4px}.node-trigger{transition:opacity .15s ease}.forked-timeline.has-selection .node-trigger:not(.selected){opacity:.42}
+  .lanes{position:relative;display:grid;gap:22px;min-width:0}.lanes::before{position:absolute;top:62px;bottom:62px;left:-40px;border-left:1px solid var(--color-line);content:''}.lane{position:relative;min-width:0}.lane::before{position:absolute;top:62px;left:-40px;width:40px;border-top:1px solid var(--color-line);content:''}
+  .lane header{min-height:38px;margin:0 180px 10px 0;text-align:center}.lane header strong,.lane header span{display:block;font-family:var(--font-mono)}.lane header strong{font-size:10px;letter-spacing:.06em}.lane header span{margin-top:2px;color:var(--color-ink-soft);font-size:8px;letter-spacing:.05em}.automated header strong{color:var(--ahe)}.human header strong{color:var(--human)}
+  .lane-track{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 170px;gap:14px;min-height:185px}.lane-track::before{position:absolute;top:14px;right:8px;left:0;border-top:1px solid currentColor;content:''}.lane-track::after{position:absolute;top:10px;right:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:8px solid currentColor;content:''}.automated .lane-track{color:var(--ahe)}.human .lane-track{color:var(--human)}
+  .milestone{position:relative;z-index:1;min-width:0;padding:32px 7px 3px;background:transparent}.milestone>i{position:absolute;top:10px;left:50%;width:9px;height:9px;box-sizing:border-box;border:2px solid var(--color-paper);border-radius:50%;background:currentColor;box-shadow:0 0 0 1px currentColor;transform:translateX(-50%);transition:all .14s ease}.milestone::after{position:absolute;top:19px;left:50%;height:10px;border-left:1px solid currentColor;opacity:.55;content:''}.milestone:hover>i,.milestone:focus-visible>i,.milestone.selected>i{top:8px;width:13px;height:13px}
+  .milestone small,.milestone strong,.milestone span,.milestone>b,.milestone mark{display:block}.milestone small{font:600 8px/1.3 var(--font-mono);letter-spacing:.055em}.milestone strong{min-height:30px;margin:4px 0 6px;color:var(--color-ink);font:600 9px/1.45 var(--font-mono);text-transform:uppercase}.milestone:hover strong,.milestone:focus-visible strong,.milestone.selected strong{color:currentColor}.milestone span{color:var(--color-ink-soft);font:8px/1.45 var(--font-mono)}.milestone>b{margin-top:5px;color:currentColor;font:400 7px/1.4 var(--font-mono)}.milestone mark{width:max-content;margin-top:5px;padding:2px 4px;background:#eadbd3;color:var(--ahe);font:600 7px/1.3 var(--font-mono);text-transform:uppercase}
+  .endpoint-summary{position:relative;z-index:1;padding:32px 4px 0 8px;background:var(--color-paper)}.endpoint-summary small,.endpoint-summary strong,.endpoint-summary span,.endpoint-summary b{display:block}.endpoint-summary small{font:600 8px/1.3 var(--font-mono);letter-spacing:.06em}.endpoint-summary strong{margin:4px 0 6px;color:var(--color-ink);font:600 8px/1.4 var(--font-mono);text-transform:uppercase}.endpoint-summary span,.endpoint-summary b{color:var(--color-ink-soft);font:7px/1.45 var(--font-mono);font-weight:400}.endpoint-summary b{margin-top:5px;color:currentColor}
+  .drawer-backdrop{position:absolute;z-index:8;inset:0;width:100%;border:0;background:#f8f7f2b8;cursor:pointer}.drawer{position:absolute;z-index:9;top:0;right:0;bottom:0;width:min(520px,49%);box-sizing:border-box;overflow:auto;padding:15px 17px 18px;border-left:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:-18px 0 35px #00000014}.drawer>header{position:sticky;z-index:2;top:-15px;display:flex;justify-content:space-between;gap:16px;margin:-15px -17px 14px;padding:15px 17px 12px;border-bottom:1px solid var(--color-line);background:var(--color-paper-raised)}.drawer-kicker{color:var(--human);font:600 9px/1.3 var(--font-mono);letter-spacing:.055em}.drawer-title{margin:4px 0 0;font:400 21px/1.2 var(--font-serif)}.drawer-close{padding:0 3px;border:0;background:none;color:var(--color-ink-soft);font:22px/1 var(--font-sans);cursor:pointer}
+  .drawer-tabs{display:flex;flex-wrap:wrap;gap:5px 12px;margin-bottom:15px;border-bottom:1px solid var(--color-line)}.drawer-tabs button{padding:0 0 6px;border:0;border-bottom:1px solid transparent;background:none;color:var(--color-ink-soft);font:9px/1.3 var(--font-mono);cursor:pointer}.drawer-tabs button[aria-selected=true]{border-color:var(--human);color:var(--human)}.drawer-content section{color:var(--color-ink-soft);font-size:12px;line-height:1.6}.drawer-content section>:first-child{margin-top:0}.drawer-content ul{margin:0;padding-left:18px}.drawer-content li+li{margin-top:4px}.drawer-content code{font-family:var(--font-mono)}.drawer-content pre{overflow:auto;margin:0 0 12px;padding:11px 12px;background:var(--color-paper);color:var(--color-ink);font:10px/1.55 var(--font-mono)}.drawer-badge{display:inline-block;margin-bottom:10px;padding:3px 6px;color:var(--ahe);background:#eadbd3;font:600 8px/1.3 var(--font-mono);text-transform:uppercase}.metrics{margin:0}.metrics div{display:flex;justify-content:space-between;gap:15px;padding:6px 0;border-bottom:1px solid var(--color-line)}.metrics dd{margin:0;color:var(--color-ink);font:600 10px/1.4 var(--font-mono);text-align:right}.method-note,.key-warning{margin-top:13px;padding-top:10px;border-top:1px solid var(--color-line);font-size:10px}.key-warning{color:var(--color-ink);font-weight:600}[hidden]{display:none!important}
+  .takeaway{padding:14px 18px;border-bottom:1px solid var(--color-line);color:var(--color-ink-soft);font:10px/1.55 var(--font-mono);text-align:center}.takeaway span{color:var(--ahe)}.takeaway strong{color:var(--human);font-weight:600}figcaption{margin:23px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans)}figcaption strong{color:var(--color-ink);font-weight:600}
+  @media(max-width:900px){.forked-timeline{grid-template-columns:142px minmax(0,1fr);gap:28px;padding-inline:10px}.lanes::before{left:-28px}.lane::before{left:-28px;width:28px}.lane-track{grid-template-columns:repeat(3,minmax(0,1fr)) 130px;gap:7px}.lane header{margin-right:137px}.milestone{padding-inline:3px}.drawer{width:min(540px,65%)}}
+  @media(max-width:680px){.interaction-hint{text-align:left}.forked-timeline{display:block;padding:12px 10px 18px}.origin-node{width:min(270px,82%);margin:0 auto 36px}.lanes{gap:32px}.lanes::before{display:none}.lane::before{top:-12px;left:50%;width:0;height:18px;border-top:0;border-left:1px solid var(--color-line)}.lane header{margin-right:0}.lane-track{grid-template-columns:repeat(3,minmax(150px,1fr)) 140px;gap:8px;overflow-x:auto;padding-bottom:7px}.drawer{width:100%}}
+  @media(prefers-reduced-motion:reduce){.node-trigger,.milestone>i{transition:none}}
+</style>

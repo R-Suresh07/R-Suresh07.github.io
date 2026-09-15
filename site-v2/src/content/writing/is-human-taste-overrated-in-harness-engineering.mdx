@@ -33,6 +33,7 @@ import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHa
 import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
 import AheVsHumanStateFigure from '../../components/figures/AheVsHumanStateFigure.astro';
 import IpdAheVsHumanFigure from '../../components/figures/IpdAheVsHumanFigure.astro';
+import ScaffoldAheVsHumanFigure from '../../components/figures/ScaffoldAheVsHumanFigure.astro';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -430,3 +431,22 @@ The larger change was giving the model a way to generate its own ligand-side evi
 That distinction showed up clearly in the final paired evaluation. The selected automated harness recovered 12 of 75 hidden points, while Human V2 recovered 30. Tasks with at least one correct point rose from 9 to 20 out of 25, and tasks with at least two correct points grew from 3 to 8. Complete solutions remained rare (zero under AHE versus two under V2), but the shift in partial-credit recovery was unmistakable. Both configurations submitted on all 25 tasks, with V2 requiring fewer turns on average despite executing 146 Boltz predictions.
 
 Automated search became increasingly sophisticated at reasoning from the receptor. Human V2 changed what the model was allowed to observe. Instead of asking Qwen to infer conserved ligand interactions from one protein structure, the harness gave it a crude ligand ensemble from which those interactions could be inferred.
+
+<ScaffoldAheVsHumanFigure />
+
+Scaffold Hopping reversed the pattern. Here, automated search produced the stronger harness, but not because it made the workflow cleaner in the same way as our manual redesign. The two approaches ended up putting pressure on different parts of the task.
+
+The base harness made binding probability easy to observe, but preserving the reference binding mode was much harder. Candidate poses existed, yet the model still had to inspect them and determine whether key interactions remained intact. This created an obvious failure mode. The model would find a novel structure, observe a strong binding score, and terminate the search early despite disrupting the original contact network.
+
+Meta-Harness gradually pushed against that behavior. Early iterations introduced task-bound candidate tools, cheap screening, and candidate memory. Later policies became more conservative about the chemical change itself, explicitly preserving anchors and linker geometry while changing the core, and requiring candidates to be measured before submission. The selected harness then reintroduced pose analysis after prediction and warned against drifting back toward the reference while optimizing binding. The result was not a monotonic improvement, but the best policies were clearly trying to balance novelty against interaction preservation rather than optimize either one in isolation.
+
+Our manual V2 redesign went in a different direction. We made the deterministic parts of the task much harder to get wrong. Every candidate received a canonical identity, novelty was checked with evaluator-matched Tanimoto and scaffold-MCS calculations, malformed or non-novel candidates could be rejected before an expensive Boltz call, and predicted pose files were returned explicitly and attached to the tested candidate. The model no longer had to hunt through filesystem outputs just to inspect its own prediction.
+
+The important limitation was what the harness could actually enforce. Normal submission required the exposed novelty and binding gates to pass, but the evaluator's interaction-similarity score remained hidden. Pose inspection and model-written interaction evidence were available, but they were advisory rather than a blocking gate. A force=false submission could therefore be completely valid according to the public harness state and still fail the benchmark because the binding interaction pattern had changed.
+
+That is exactly what happened in the paired evaluation. Human V2 passed both novelty gates on all 50 evaluable submissions, compared with 39/45 for Tanimoto and 32/45 for scaffold MCS under AHE. But the interaction gate went the other way: 8/45 AHE submissions preserved the required interaction pattern, compared with only 1/50 under V2. Terminal success followed that difference, with AHE solving 5 of 52 tasks and Human V2 solving 1 of 52.
+
+The result is therefore a useful limit case for manual harness engineering. We made novelty exact, candidate identity reliable, Boltz execution task-bound, and pose evidence easier to inspect, but none of those changes could make the hidden interaction requirement enforceable without moving further into the scientific policy itself. Automated search was willing to do exactly that: it increasingly shaped how Qwen should modify the molecule and what trade-offs it should preserve.
+
+Across the three tasks, automated search was clearly capable of finding useful harness changes, but it did not simply rediscover the manual designs. In Lead Optimization it converged on similar bookkeeping failures but left more of the procedure in Qwen’s hands. In IPD it kept refining how Qwen reasoned from receptor geometry, while the manual harness changed the evidence available altogether. And in Scaffold Hopping, the direction flipped: the automated optimizer was willing to encode a stronger chemical search policy, and that produced the better harness. The remaining question, then, is less whether harness engineering can be automated and more where we want the harness to stop and the model’s scientific policy to begin.
+
