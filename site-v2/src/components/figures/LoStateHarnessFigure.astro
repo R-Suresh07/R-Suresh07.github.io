@@ -12,7 +12,7 @@ const safeguards = [
 
 <lo-state-harness id="lo-state-harness" data-active-state="spec">
   <figure aria-label="Five persistent state objects introduced in the V2 Lead Optimization harness">
-    <FigureHeading label="FIG. 14" title="Moving state out of the trajectory" />
+    <FigureHeading label="FIG. 14" title="Moving state into the harness makes it durable" />
 
     <div class="figure-meta"><b>inspect a safeguard</b></div>
     <p class="dek">The model still chose the chemistry. The harness made the facts durable.</p>
@@ -33,7 +33,7 @@ const safeguards = [
             <small>{item.note}</small>
           </button>
         ))}
-        <div class="authoritative-rail" aria-hidden="true"><span>authoritative state</span></div>
+        <div class="authoritative-rail" aria-hidden="true"><span>persistent, authoritative state</span></div>
       </nav>
     </div>
 
@@ -93,7 +93,7 @@ const safeguards = [
 
       <section class="story evidence-story" data-state-story="evidence" hidden>
         <header class="story-heading">
-          <div><span>03</span><h3>The measurement arrives with its decision context.</h3></div>
+          <div><span>03</span><h3>Evidence arrives with the context needed to interpret it.</h3></div>
           <p>GPT-5.4 · Cathepsin_K_13 · turn 28</p>
         </header>
 
@@ -170,7 +170,7 @@ const safeguards = [
       </section>
     </div>
 
-    <figcaption><strong>WORK IN PROGRESS, FIGURE NOT DONE YET.</strong> Selected examples from real V2 Lead Optimization trajectories. Persistent state makes task semantics, candidate identity, evidence provenance, and submission eligibility available without asking the model to recover them from conversation history.</figcaption>
+    <figcaption><strong>The harness externalizes facts that the model previously had to reconstruct from its own trajectory.</strong> Task semantics, candidate identity, measurement provenance, decision state, and submission eligibility remain persistent and authoritative, while the model continues to choose which molecules to propose, which experiments to run, and how to respond to the resulting evidence.</figcaption>
   </figure>
 </lo-state-harness>
 
@@ -288,10 +288,10 @@ const safeguards = [
   .state-map button:hover > strong, .state-map button.active > strong { color:var(--accent); }
   .state-map button.active .state-node { color:var(--accent); }
   .state-map button.active::after { border-left:2px solid var(--accent); }
-  .authoritative-rail { position:absolute; right:5%; bottom:0; left:5%; height:17px; border:1px solid color-mix(in srgb, var(--accent) 58%, var(--color-line)); border-bottom:0; opacity:0; transition:opacity .16s ease; }
+  .authoritative-rail { position:absolute; right:5%; bottom:0; left:5%; height:18px; border:2px solid color-mix(in srgb, var(--accent) 72%, var(--color-line)); border-bottom:0; opacity:0; transition:opacity .16s ease; }
   lo-state-harness[data-active-state] .state-map button::after,
   lo-state-harness[data-active-state] .authoritative-rail { opacity:1; }
-  .authoritative-rail span { position:absolute; top:7px; left:50%; padding:0 9px; background:var(--color-paper); color:var(--accent); font:10px/1.4 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; transform:translateX(-50%); white-space:nowrap; }
+  .authoritative-rail span { position:absolute; top:7px; left:50%; padding:0 10px; background:var(--color-paper); color:var(--accent); font:600 11px/1.4 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; transform:translateX(-50%); white-space:nowrap; }
 
   .document > i { top:8px; left:19px; width:21px; height:26px; border:1px solid currentColor; background:var(--color-paper); }
   .document > b, .document > em { left:24px; width:11px; border-top:1px solid currentColor; }

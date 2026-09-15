@@ -36,7 +36,7 @@ const checkpoints = [
   },
   {
     key: 'interactions',
-    label: 'Same binding mode',
+    label: 'Same interaction pattern',
     note: 'reference interactions',
     condition: 'Reference interaction pattern preserved',
     v1: 3,
@@ -70,7 +70,7 @@ const efficiency = [
   <figure aria-label="Scaffold Hopping outcomes and efficiency under the original and redesigned harnesses">
     <FigureHeading
       label={label}
-      title="The harness got cleaner. The binding mode did not."
+      title="The harness got cleaner. The interaction pattern did not."
       subtitle="Qwen 3.5 9B · same 52 Scaffold Hopping tasks · V1 → V2"
     />
 
@@ -90,7 +90,7 @@ const efficiency = [
     <section id="sh-outcome-panel" class="view-panel outcome-panel" role="tabpanel" aria-labelledby="sh-outcome-tab" data-panel="outcome">
       <div class="phase-headings" aria-hidden="true">
         <span>More of the search works</span>
-        <span>The original bottleneck remains</span>
+        <span>The scientific bottleneck remains</span>
       </div>
 
       <div class="checkpoint-grid" aria-label="Five Scaffold Hopping workflow checkpoints, all measured on the same zero-to-52 task scale">
@@ -137,7 +137,7 @@ const efficiency = [
     </section>
 
     <section id="sh-efficiency-panel" class="view-panel efficiency-panel" role="tabpanel" aria-labelledby="sh-efficiency-tab" data-panel="efficiency" hidden>
-      <h2>V2 reaches more submissions with less trajectory overhead</h2>
+      <h2>V2 reaches more submissions while using fewer resources</h2>
       <div class="efficiency-layout">
         <div class="efficiency-chart">
           {efficiency.map(metric => (
@@ -154,12 +154,16 @@ const efficiency = [
           <small>submissions</small>
           <p><span>39</span><i>→</i><strong>51</strong></p>
           <em>of 52 tasks</em>
+          <b class="per-submission">tokens per submission −54%</b>
         </aside>
       </div>
-      <p class="efficiency-takeaway">More runs completed, using fewer turns and tokens.</p>
+      <p class="efficiency-takeaway"><strong>51/52 trajectories reached submission, up from 39/52, despite using fewer tokens, turns, and Boltz calls overall.</strong></p>
     </section>
 
-    <figcaption><strong>V2 improves almost every observable part of the Scaffold Hopping workflow without improving the final task.</strong> More trajectories reach submission, more candidates satisfy the novelty constraints, and twice as many clear the binding threshold. The remaining failure is concentrated in preserving the reference molecule’s binding pattern.</figcaption>
+    <figcaption>
+      <span data-caption="outcome"><strong>V2 improves almost every observable part of the Scaffold Hopping workflow without improving terminal success.</strong> More trajectories reach submission, substantially more candidates satisfy the novelty constraints, and twice as many clear the binding threshold. Yet preservation of the reference interaction pattern falls from 3/52 to 1/52, leaving terminal success essentially unchanged.</span>
+      <span data-caption="efficiency" hidden><strong>The cleaner harness also reduced search overhead.</strong> Across the same 52 tasks, V2 used 40% fewer tokens, 22% fewer turns, and 10% fewer Boltz calls, while increasing the number of trajectories that reached submission from 39 to 51. This improved execution efficiency did not translate into higher terminal success, reinforcing that the remaining bottleneck lies elsewhere.</span>
+    </figcaption>
     <p class="punchline">The cleaner harness made the remaining bottleneck much easier to see, even if it could not solve it.</p>
   </figure>
 </scaffold-hop-harness-outcomes>
@@ -175,6 +179,7 @@ const efficiency = [
       const { signal } = controller;
       const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
       const panels = [...this.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+      const captions = [...this.querySelectorAll<HTMLElement>('[data-caption]')];
       const checkpoints = [...this.querySelectorAll<HTMLButtonElement>('.checkpoint')];
       const title = this.querySelector<HTMLElement>('.explainer-title')!;
       const condition = this.querySelector<HTMLElement>('.explainer-condition')!;
@@ -199,6 +204,7 @@ const efficiency = [
           if (active && focus) tab.focus();
         });
         panels.forEach(panel => { panel.hidden = panel.dataset.panel !== view; });
+        captions.forEach(caption => { caption.hidden = caption.dataset.caption !== view; });
       };
 
       const clearCheckpoint = () => {
@@ -342,7 +348,9 @@ const efficiency = [
   .submission-summary { padding:21px 0 21px 28px; border-left:1px solid var(--color-line); text-align:right; }
   .submission-summary p { margin-top:9px; font-size:32px; }
   .submission-summary p strong { color:var(--accent); }
+  .submission-summary .per-submission { display:block; margin-top:12px; color:var(--accent); font:600 11px/1.4 var(--font-mono); }
   .efficiency-takeaway { margin:24px 0 0; color:var(--color-ink); font:500 17px/1.5 var(--font-serif); }
+  .efficiency-takeaway strong { font-weight:500; }
 
   figcaption { margin:25px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
   figcaption strong { color:var(--color-ink); font-weight:600; }

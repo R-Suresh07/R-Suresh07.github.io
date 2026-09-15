@@ -62,8 +62,8 @@ const taskLabel = (task: typeof tasks[number]) => task.noCalls ? `${task.id}: no
 
 <ipd-probe-confidence>
   <figure aria-label="Boltz binding probabilities of synthetic probes across 25 IPD tasks">
-    <FigureHeading label="FIG. 9" title="Consensus from uncertain probes" subtitle={`Qwen 3.5 9B · ${tasks.length} IPD tasks`} />
-    <div class="summary-line"><span><strong>{probeCount}</strong> unique probes</span><span>only <strong class="exceptional">{aboveCount}</strong> above 0.7 <span class="fraction">({(aboveCount / probeCount * 100).toFixed(1)}%)</span></span></div>
+    <FigureHeading label="FIG. 9" title="The harness gives weak and strong probe evidence equal weight" subtitle={`Qwen 3.5 9B · ${tasks.length} IPD tasks`} />
+    <div class="summary-line"><span><strong>{probeCount}</strong> unique probes</span><span><strong class="exceptional">{aboveCount} / {probeCount}</strong> above 0.7 <span class="fraction">· {(aboveCount / probeCount * 100).toFixed(1)}%</span></span></div>
     <div class="plot-meta"><span>each dot = one probe · ◇ = task mean</span><span class="hint">hover, tap, or focus a task or dot</span></div>
     <div class="axis-title">Boltz binding probability <span class="mobile-hint">· swipe to see more tasks →</span></div>
     <div class="plot-scroll" tabindex="0" role="region" aria-label="Probe confidence plot; scroll horizontally on narrow screens">
@@ -74,7 +74,7 @@ const taskLabel = (task: typeof tasks[number]) => task.noCalls ? `${task.id}: no
         {[0, 1].map(row => <g class="reference" tabindex="0" role="button" aria-pressed="false" aria-label="About the 0.7 reference used by other SMDD tasks; it is not an IPD requirement.">
           <line class="reference-line" x1="49" x2="853" y1={y(reference, row)} y2={y(reference, row)} />
           <rect class="reference-hit" x="865" y={y(reference, row) - 20} width="132" height="42" />
-          <text class="reference-label" x="874" y={y(reference, row) - 3}>0.7 reference<tspan x="874" dy="16">other SMDD tasks</tspan></text>
+          <text class="reference-label" x="874" y={y(reference, row) - 3}>0.7 reference only<tspan x="874" dy="16">not an IPD threshold</tspan></text>
         </g>)}
         <g class="task-columns">
           {tasks.map(task => <g class="probe-task" data-index={task.index} data-id={task.id} tabindex="0" role="group" aria-label={taskLabel(task)}>
@@ -93,7 +93,7 @@ const taskLabel = (task: typeof tasks[number]) => task.noCalls ? `${task.id}: no
       </svg>
     </div>
     <div class="annotation">Probe recurrence is only as useful as the poses producing it.</div>
-    <figcaption>The redesigned harness gives pharmacophore evidence from every predicted pose equal weight. The dashed 0.7 line is a reference used in other SMDD task types; IPD does not require probes to exceed it.</figcaption>
+    <figcaption>The redesigned harness aggregates pharmacophore evidence from predicted probe poses without weighting by their Boltz binding probability. Across {probeCount} unique probes, only {aboveCount} exceed 0.7. The dashed line is shown only as a reference used elsewhere in SMDD-Bench; IPD itself does not require probes to cross this threshold.</figcaption>
     <div class="tooltip" role="status" aria-live="polite" hidden></div>
   </figure>
   <script is:inline type="application/json" class="probe-data" set:html={JSON.stringify(tasks)} />

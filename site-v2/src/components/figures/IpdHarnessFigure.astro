@@ -70,12 +70,12 @@ const plottedTasks = tasks.map(task => {
   const bend = (v2.x - v1.x) * .35;
   return { ...task, layouts, path: `M ${v1.x},${v1.y} C ${v1.x + bend},${v1.y} ${v2.x - bend},${v2.y} ${v2.x},${v2.y}` };
 });
-const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, compared with ${totalV1} under the original harness. ${improved} of the same ${tasks.length} tasks improved, ${unchanged} were unchanged, and ${declined} declined. ${v2Counts[3]} tasks recovered all three hidden points under V2.`;
+const caption = `The redesigned harness recovered ${totalV2}/${maxPoints} interaction points, compared with ${totalV1}/${maxPoints} under the original harness. Across the same ${tasks.length} tasks, ${improved} improved, ${unchanged} were unchanged, and ${declined} declined.`;
 ---
 
 <ipd-harness-figure data-view="transitions" data-filter="all">
   <figure aria-label="Interaction point recovery with the original and redesigned harnesses">
-    <FigureHeading label={label} title="A better representation changes the outcome" subtitle={`Qwen 3.5 9B · same ${tasks.length} tasks`} />
+    <FigureHeading label={label} title="Changing what the agent can observe triples point recovery" subtitle={`Qwen 3.5 9B · same ${tasks.length} tasks`} />
     <div class="headlines" aria-label="Overall results for all 25 tasks">
       <span><span class="old-value">{totalV1}</span><span class="arrow">→</span><strong>{totalV2} / {maxPoints}</strong> points recovered</span>
       <span><span class="old-value">{v1Counts[3]}</span><span class="arrow">→</span><strong>{v2Counts[3]}</strong><span class="denominator"> / {tasks.length}</span> tasks solved</span>
@@ -149,7 +149,7 @@ const caption = `V2 recovered ${totalV2} of ${maxPoints} interaction points, com
       <span class="threshold-note">All three points must match to solve a task.</span>
     </div>
     <div class="annotation">The gain was broader than the two solved tasks suggest.</div>
-    <figcaption class="figure-caption">{caption} <strong>{movedOffZero} of the {v1Counts[0]}</strong> tasks that recovered nothing under V1 recovered at least one point under V2.</figcaption>
+    <figcaption class="figure-caption">{caption} <strong>Most strikingly, {movedOffZero} of the {v1Counts[0]} tasks that recovered no points under the original harness recovered at least one under V2.</strong></figcaption>
     <div class="tooltip" role="status" aria-live="polite" hidden>
       <strong class="tooltip-id"></strong>
       <div class="tooltip-scores"><span>Original · V1<b class="tooltip-v1"></b></span><span class="arrow">→</span><span>Redesigned · V2<b class="tooltip-v2"></b></span></div>

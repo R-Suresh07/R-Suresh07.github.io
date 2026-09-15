@@ -5,7 +5,7 @@ import FigureHeading from '../FigureHeading.astro';
 <figure class="automated-search-overview" aria-label="Configuration of the automated harness search across three SMDD task families">
   <FigureHeading
     label="FIG. 21"
-    title="Automated harness search at a glance"
+    title="The meta-agent optimizes the harness, not the scientific agent"
     subtitle="Interaction Point Discovery · Lead Optimization · Scaffold Hopping"
   />
 
@@ -20,11 +20,11 @@ import FigureHeading from '../FigureHeading.astro';
           <strong>Claude Opus 5</strong>
           <p>redesigns the harness</p>
         </article>
-        <div class="edit-arrow" aria-label="edits environment">
-          <span>edits environment</span><i>→</i>
+        <div class="edit-arrow" aria-label="rewrites harness">
+          <span>rewrites harness</span><i>→</i>
         </div>
         <article>
-          <span>Scientific agent</span>
+          <span>Fixed scientific agent</span>
           <strong>Qwen 3.5 9B</strong>
           <p>solves the SMDD tasks</p>
         </article>
@@ -40,7 +40,7 @@ import FigureHeading from '../FigureHeading.astro';
         <i>=</i>
         <div class="result"><strong>80</strong><span>trajectories</span></div>
       </div>
-      <p>Every candidate harness is tested on the same optimization set.</p>
+      <p>Every candidate harness is tested on the same search set.</p>
     </section>
 
     <section class="band full-search" aria-labelledby="full-search-heading">
@@ -64,16 +64,17 @@ import FigureHeading from '../FigureHeading.astro';
 
       <div class="method-chips">
         <details>
-          <summary><span>objective</span><strong>terminal task success</strong></summary>
-          <p>A harness receives credit only when the child agent solves the complete task; no intermediate behavior was manually rewarded.</p>
+          <summary><span>objective</span><strong>terminal task success only</strong></summary>
+          <p>A candidate harness receives reward only when the child agent solves the complete task. No partial-credit signals, task-specific rubrics, or intermediate rewards are provided.</p>
         </details>
         <details>
           <summary><span>search space</span><strong>full executable harness</strong></summary>
-          <p>The meta-agent could modify prompts, tools, state representation, context handling, wrappers, control flow, and submission logic.</p>
+          <p>The meta-agent may modify prompts, tools, state representation, context handling, wrappers, control flow, and submission logic. <b>The scientific agent, tasks, and evaluator remain fixed.</b></p>
         </details>
       </div>
     </section>
   </div>
+  <figcaption><strong>We keep the scientific agent fixed and search over the executable harness around it.</strong> Claude Opus 5 acts as the meta-agent, proposing harness revisions that are evaluated by running Qwen 3.5 9B four times on each of 20 tasks. Each task family receives 11 harness evaluations, yielding 880 child-agent trajectories per family and 2,640 across the three experiments. The search objective is terminal task success only; no task-specific partial-credit reward is provided.</figcaption>
 </figure>
 
 <style>
@@ -139,6 +140,9 @@ import FigureHeading from '../FigureHeading.astro';
   summary span { color:var(--accent); font:600 10px/1.3 var(--font-mono); letter-spacing:.065em; text-transform:uppercase; }
   summary strong { font:600 12px/1.35 var(--font-sans); }
   details > p { padding:0 13px 12px 115px; margin:0; color:var(--color-ink-soft); font:12px/1.5 var(--font-sans); }
+  details > p b { color:var(--color-ink); font-weight:600; }
+  figcaption { margin:22px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
 
   @media (max-width:720px) {
     .actor-flow { grid-template-columns:1fr; gap:11px; }

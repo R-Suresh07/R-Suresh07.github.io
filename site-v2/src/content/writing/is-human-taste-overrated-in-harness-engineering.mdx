@@ -51,9 +51,8 @@ This means an agent system contains two decision procedures rather than one. The
   alt="Diagram showing an AI agent acting through an agent-environment interface that exposes language-model-friendly actions and returns structured observations, state, and results from a computer environment."
   width="wide"
   captionLabel="FIG. 1"
-  title="The agent–environment interface"
-  captionLead="The harness mediates the closed loop between a model and its environment."
-  caption="It determines the actions exposed to the agent and how observations, state, and tool results are returned."
+  title="An agent only sees the environment through its harness"
+  captionLead="The agent never interacts with the environment directly. The harness decides how raw environmental state is represented to the model, what information persists across turns, and which actions the model is allowed to execute."
   emphasizedCaption
 />
 
@@ -65,9 +64,9 @@ This raises the question behind this post. **How far can harness engineering tak
 
 Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench ([Han et al., 2026](#han-et-al-2026)), a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. Generative chemistry is comparatively underexplored, and evaluating an answer is both expensive and imperfect.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
 
-## Inside an SMDD task
+## Our testbed: SMDD-Bench
 
-SMDD-Bench has five task types and 502 task instances in total. Each one tests chemical and biological reasoning, 3D intuition about the pocket, and fluency with specialized tools, usually all at once. We focus on three: Lead Optimization, Scaffold Hopping, and Interaction Point Discovery. Together, they span a wide range of constraints and leave a lot of room for improvement. Lead Optimization is the most manageable of the three, whereas current models still only solve a tiny fraction of Scaffold Hopping and Interaction Point Discovery tasks.<Sidenote number="2" align="paragraph"><SmddPerformanceNote /></Sidenote>
+SMDD-Bench contains 502 instances across five small-molecule drug-design tasks. Each combines chemical and biological reasoning with specialized tools, and several also require reasoning over the 3D geometry of a protein pocket. We focus on three: Lead Optimization, Scaffold Hopping, and Interaction Point Discovery. Together, they span very different kinds of agent failure. Lead Optimization is comparatively tractable, while current models still solve only a small fraction of Scaffold Hopping and Interaction Point Discovery tasks.<Sidenote number="2" align="paragraph"><SmddPerformanceNote /></Sidenote>
 
 <Figure
   src={smddBenchOverview}
@@ -75,45 +74,36 @@ SMDD-Bench has five task types and 502 task instances in total. Each one tests c
   alt="Overview of the five SMDD-Bench task types."
   width="wide"
   captionLabel="FIG. 2"
-  title="Inside an SMDD task"
-  caption="Overview of the five SMDD-Bench task types."
+  title="SMDD-Bench spans five distinct drug-design tasks"
+  captionLead="Each task gives the agent a different scientific objective, input representation, and evaluation procedure."
+  caption="We focus on Interaction Point Discovery, Scaffold Hopping, and Lead Optimization."
   emphasizedCaption
 />
 
 ## Interaction Point Discovery
 
-The goal of Interaction Point Discovery (IPD) is to test whether an agent can identify valuable interaction hotspots inside a protein binding pocket.
+The goal of Interaction Point Discovery (IPD) is to identify valuable interaction hotspots inside a protein binding pocket. These hotspots mark regions that small molecules repeatedly exploit when binding to the same protein, making them useful for fragment growth, molecular optimization, and computational screening.
 
-These hotspots are useful because they indicate regions that small molecules repeatedly exploit when binding to the protein. They can guide fragment-based drug discovery, suggest where an existing molecule should be elaborated, or help prioritize molecules during computational screening.
-
-<Figure
-  src={figurePlaceholder}
-  alt="Placeholder for a figure showing how an IPD task is generated."
-  caption="How an IPD task is generated"
-/>
+The task has an unusual information asymmetry. **The agent receives a single receptor structure and the location of its binding pocket, but the hidden answer is derived from interactions recurring across many different bound ligands.** The agent must predict three ligand-side interaction points, specifying both their 3D coordinates and pharmacophore type.
 
 <InteractionPointExplorer
   initialTaskId="smdd_002_Q9Y6K1_0"
   width="full"
   captionLabel="FIG. 3"
-  caption="Anatomy of an Interaction Point Discovery task. The agent receives only the receptor and binding-pocket location. Step through the visualization to reveal the search region, the hidden target built from recurring interactions across many bound ligands, and how predictions are matched during evaluation."
+  title="The agent sees one receptor, but the target comes from many binders"
+  captionLead="The agent receives only the receptor and binding-pocket location."
+  caption="The hidden target is constructed from ligand-side interactions that recur across many bound molecules. Step through the visualization to see the search region, reveal those hidden targets, and inspect how submitted points are matched during evaluation. A prediction must be &lt;2.5 Å from a compatible, distinct hidden point."
 />
 
-The agent is given a PDB structure of the protein together with the location of its binding pocket. Its job is to predict the three ligand-side interaction points most likely to be conserved across a diverse set of small-molecule binders.
-
-For each point, the agent outputs its 3D coordinates and one of six pharmacophore labels: donor, acceptor, aromatic, hydrophobic, cation, or anion.
-
-The difficulty in this task mainly comes from the fact that the agent is asked to predict a property that is not directly visible in its input. It receives a single protein structure and the location of the binding pocket but the hidden points are constructed from interactions that occur many times across different ligand structures of the same protein. To put it simply, the agent can inspect what interactions look chemically plausible in one pocket but it has to reason which of those interactions would remain useful across a diverse set of binding molecules.
-
-There is also a high degree of spatial reasoning involved in the task. The agent has only three predictions and each must identify both the correct interaction type and approximately where that feature would occur in 3D space. So the problem combines chemical reasoning, geometrical analysis and reasoning about information that is only indirectly observable from the provided protein receptor. 
+This means the task is not simply asking which interactions look chemically plausible in the visible receptor. It asks which of those possibilities are likely to remain useful across a diverse set of binders. The agent also has only three predictions, so each one must identify both the right interaction type and approximately the right location in 3D space.
 
 ### How well do current agents do?
 
-Not great. Across the models evaluated in the original SMDD-Bench, only Gemini 3.1 Pro managed to solve a single IPD task, while every other model scored 0/25. Our additional Qwen 3.5 9B baseline also scored 0/25.
+Not great. Across the models evaluated in the original SMDD-Bench, only Gemini 3.1 Pro solved a single IPD task, while every other model scored 0/25. Our additional Qwen 3.5 9B baseline also scored 0/25. **However, the all-or-nothing task metric hides a more informative pattern: several models recover one or two of the three required interaction points without ever completing a task.**
 
 <IpdBaselineFigure />
 
-These aggregate results show that current agents struggle on this task, but they do not reveal the root cause of those failures. To understand whether the models were struggling with the intended scientific problem or with more basic aspects of the task, we examined the failed trajectories in detail.
+This partial recovery matters because it suggests that the models are not uniformly failing at every part of the task. To understand what prevents plausible partial predictions from becoming complete solutions, we inspected the failed trajectories directly.
 
 ### What are the agents getting wrong?
 
@@ -261,7 +251,7 @@ For Qwen 3.5 9B, the impact was substantial. Across the benchmark of 68 Lead Opt
 
 What makes this result more interesting is that V2 did not get there by submitting more often. The original harness produced an answer on 66 of the 68 tasks, but only 13 of those submissions passed every requirement. Under V2, the agent submitted on just 48 tasks. Of those, 33 were normal submissions with complete passing evidence, while 9 were forced submissions with known failures and another 6 were missing required evidence. The remaining runs reached the turn limit before submitting.
 
-The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 70.2%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
+The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 68.8%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
 
 The gain also did not come from simply letting the model reason for longer. Across the full 68-task run, V2 used 12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls. Boltz usage moved in the opposite direction, increasing by 51%. With cheap constraints and candidate state handled explicitly, the model spent fewer turns and tokens overall while making substantially more use of Boltz, shifting more of its oracle budget towards checking whether promising candidates actually bound.
 
@@ -287,7 +277,7 @@ This is a sharp contrast with Lead Optimization, where current models can solve 
 
 <ScaffoldHopBaselineFigure />
 
-The few successes are not simply the same easy tasks being rediscovered by every model. Across all eight models, nine different tasks are solved at least once, with different models occasionally finding different successful scaffold hops. The problem is therefore not confined to one universally impossible subset. Instead, almost every model appears to be running into the same broader bottleneck.
+The few successes are not simply the same easy tasks being rediscovered by every model. Across all eight models, nine different tasks are solved at least once, with different models occasionally finding different successful scaffold hops. The problem is therefore not confined to one universally impossible subset. Instead, almost every model appears to be running into the same broader bottleneck. The near-floor aggregate leaves open whether agents cannot propose viable scaffold changes at all, or whether useful candidates are being lost elsewhere in the trajectory.
 
 ### What are the agents getting wrong?
 
@@ -351,7 +341,7 @@ And after every redesign, the answer could still be wrong. Lead Optimization imp
 
 <HarnessOptimizationLoop />
 
-So, this raises an obvious question: **If this is a search process, how much of it can we automate?**
+**If harness engineering is itself a search process, how much of that search can we automate?**
 
 ## Can the harness engineer itself?
 
@@ -399,11 +389,11 @@ So, **which harness worked better?**
 
 <HumanVsAHEFigure />
 
-The largest advantage was in Lead Optimization. Human V2 solved 33 of 68 tasks, compared with 13 under both the original harness and automated search. On the paired comparison, V2 uniquely solved 26 tasks while AHE uniquely solved six. The automated optimizer had therefore failed to produce a meaningful improvement over the starting harness, while the manual redesign recovered a large fraction of the benchmark.
+The largest advantage was in Lead Optimization. Manual V2 solved 33 of 68 tasks, compared with 13 under both the original harness and automated search. On the paired comparison, V2 uniquely solved 26 tasks while AHE uniquely solved six. The automated optimizer had therefore failed to produce a meaningful improvement over the starting harness, while the manual redesign recovered a large fraction of the benchmark.
 
-Interaction Point Discovery showed the same direction, although the signal was better expressed through partial credit. The original harness recovered 10 of 75 hidden points, automated search recovered 12, and Human V2 recovered 30. V2 improved the point count on 16 of the 25 paired tasks and regressed on only three. Complete solutions remained rare (two under V2 and none under AHE), so the stronger result here is not the terminal solve count, but the much broader recovery of correct interaction points.
+Interaction Point Discovery showed the same direction, although the signal was better expressed through partial credit. The original harness recovered 10 of 75 hidden points, automated search recovered 12, and Manual V2 recovered 30. V2 improved the point count on 16 of the 25 paired tasks and regressed on only three. Complete solutions remained rare (two under V2 and none under AHE), so the stronger result here is not the terminal solve count, but the much broader recovery of correct interaction points.
 
-Scaffold Hopping was the exception. The original harness solved two of 52 tasks and Human V2 solved only one, while the automated harness solved five. The absolute numbers are small, and the paired terminal difference is not statistically decisive. The direction remains revealing nonetheless, as this was the only task family where automated search found a harness that improved over both the starting point and our manual redesign.
+Scaffold Hopping was the exception. Automated harness search produced the strongest observed Scaffold Hopping result, reaching 5/52 compared with 2/52 for V1 and 1/52 for Manual V2. The absolute numbers are small, and the paired terminal difference is not statistically decisive. The direction remains revealing nonetheless, as this was the only task family where automated search found a harness that improved over both the starting point and our manual redesign.
 
 The more useful distinction was what kind of change helped. Our largest gains came from fixing representation and state, while Scaffold Hopping improved when automated search changed the search strategy itself.
 

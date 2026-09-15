@@ -48,12 +48,12 @@ const breaks = [
 
 <lo-failure-map id="lo-failure-map" data-active-mode="constraint">
   <figure aria-label="Five observed points where state broke in Lead Optimization trajectories">
-    <FigureHeading label="FIG. 13" title="Where agent state breaks down" />
+    <FigureHeading label="FIG. 13" title="Useful chemistry can fail when the state around it breaks" />
 
     <div class="figure-meta">
       <b>inspect a failure</b>
     </div>
-    <p class="dek">Useful chemistry could survive while the state around it became inconsistent.</p>
+    <p class="dek">The chemistry could remain useful while the state around it became inconsistent.</p>
 
     <div class="map-scroll">
       <nav class="break-map" aria-label="Select a trajectory break">
@@ -82,7 +82,7 @@ const breaks = [
     <div id="failure-detail" class="detail-region" aria-live="polite">
       <section class="story constraint-story" data-story="constraint">
         <header class="story-heading">
-          <div><span class="story-index">01</span><h3>The requirement changed while the search was running.</h3></div>
+          <div><span class="story-index">01</span><h3>The model changed the requirement while the search was running.</h3></div>
           <p>Kimi K2.5 · Cathepsin_K_20 · turns 23–24</p>
         </header>
 
@@ -375,7 +375,7 @@ const breaks = [
 
       <section class="story finalist-story" data-story="finalist" hidden>
         <header class="story-heading">
-          <div><span class="story-index">05</span><h3>The exact finalist had an incomplete evidence record.</h3></div>
+          <div><span class="story-index">05</span><h3>The final edit created a molecule that had never been fully verified.</h3></div>
           <p>Claude Sonnet 4.6 · CDK2_20 · turns 32–35</p>
         </header>
 
@@ -452,7 +452,7 @@ const breaks = [
       </section>
     </div>
 
-    <figcaption class="failure-map-caption"><strong>Selected examples from real failed Lead Optimization trajectories.</strong> Each breakpoint opens the corresponding trace fragment, showing where the agent's working state diverged from the task specification, candidate identity, evidence it had collected, or the molecule it eventually submitted.</figcaption>
+    <figcaption class="failure-map-caption"><strong>Many Lead Optimization failures occurred after useful chemistry had already been generated.</strong> These selected trajectories show state breaking at five different points: the task specification, candidate identity, oracle evidence, final decision, and exact submitted molecule. Select a breakpoint to inspect the corresponding trace fragment.</figcaption>
   </figure>
 </lo-failure-map>
 

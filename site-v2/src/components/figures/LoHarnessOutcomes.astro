@@ -42,7 +42,7 @@ const structured: OutcomeCategory[] = [
   },
   {
     key: 'known-failure',
-    label: 'forced · known failure',
+    label: 'forced · known failed gate',
     count: 9,
     description: 'The harness knew at least one required gate was failing. The model explicitly chose to submit anyway.',
   },
@@ -50,7 +50,7 @@ const structured: OutcomeCategory[] = [
     key: 'missing-evidence',
     label: 'forced · missing evidence',
     count: 6,
-    description: 'Five submissions had no known failure but were missing at least one required measurement. One non-submission error is grouped here as the same missing-evidence outcome.',
+    description: 'Six submissions had no known failure but were missing at least one required measurement.',
   },
   {
     key: 'turn-limit',
@@ -89,7 +89,7 @@ if (original.reduce((sum, category) => sum + category.count, 0) !== 68
 
 <lo-harness-outcomes id="fig-15" data-view="outcome">
   <figure aria-label="Lead Optimization outcomes and resource use under the original and structured harnesses">
-    <FigureHeading label={label} title="The agent submitted less, and solved more" subtitle="Qwen 3.5 9B · same 68 tasks" />
+    <FigureHeading label={label} title="The agent submitted less and solved more" subtitle="Qwen 3.5 9B · same 68 tasks" />
 
     <div class="view-tabs" role="tablist" aria-label="Figure view">
       <button id="lo-outcome-tab" type="button" role="tab" aria-selected="true" aria-controls="lo-outcome-panel" tabindex="0" data-view="outcome">Outcome</button>
@@ -106,12 +106,12 @@ if (original.reduce((sum, category) => sum + category.count, 0) !== 68
         </article>
         <article>
           <small>V1 <i>→</i> V2</small>
-          <p><span>66</span><i>→</i><strong>47</strong></p>
-          <h3><span>tasks submitted</span><em>97.1% → 69.1%</em></h3>
+          <p><span>66</span><i>→</i><strong>48</strong></p>
+          <h3><span>terminal submissions</span><em>97.1% → 70.6%</em></h3>
         </article>
         <article>
           <small>V1 <i>→</i> V2</small>
-          <p><span>19.7%</span><i>→</i><strong>70.2%</strong></p>
+          <p><span>19.7%</span><i>→</i><strong>68.8%</strong></p>
           <h3>success among submissions</h3>
         </article>
       </div>
@@ -172,10 +172,13 @@ if (original.reduce((sum, category) => sum + category.count, 0) !== 68
           </div>
         </article>)}
       </div>
-      <p class="resource-takeaway"><strong>More tasks were solved with fewer turns and tokens, while expensive structure checks were used more often.</strong></p>
+      <p class="resource-takeaway"><strong>More tasks were solved with fewer turns and tokens, even as the agent spent more of its budget on expensive structure checks.</strong></p>
     </section>
 
-    <figcaption><strong>Qwen 3.5 9B on the same 68 Lead Optimization tasks.</strong> Each outcome cell represents one task. The original harness recorded only pass, failed submission, or turn limit; the structured harness retained the state needed to distinguish forced submissions with known failures from those with missing evidence.</figcaption>
+    <figcaption>
+      <span data-caption="outcome"><strong>The structured harness changed both what the agent submitted and what the system knew about those submissions.</strong> On the same 68 Lead Optimization tasks, Qwen 3.5 9B solved substantially more tasks while making fewer terminal submissions. Unlike V1, V2 distinguishes verified successes, explicit forced submissions with known failed gates, and submissions made with incomplete evidence.</span>
+      <span data-caption="resources" hidden><strong>The improvement did not come from simply spending more everywhere.</strong> Across the same 68 tasks, V2 used fewer turns, tokens, and ADMET calls, while increasing Boltz use by 51%.</span>
+    </figcaption>
   </figure>
 </lo-harness-outcomes>
 
@@ -190,6 +193,7 @@ if (original.reduce((sum, category) => sum + category.count, 0) !== 68
       const { signal } = controller;
       const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
       const panels = [...this.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+      const captions = [...this.querySelectorAll<HTMLElement>('[data-caption]')];
       const rows = [...this.querySelectorAll<HTMLElement>('.harness-row')];
       const explainerLabel = this.querySelector<HTMLElement>('.explainer-label')!;
       const explainerCopy = this.querySelector<HTMLElement>('.explainer-copy')!;
@@ -206,6 +210,7 @@ if (original.reduce((sum, category) => sum + category.count, 0) !== 68
           if (active && focus) tab.focus();
         });
         panels.forEach(panel => { panel.hidden = panel.dataset.panel !== view; });
+        captions.forEach(caption => { caption.hidden = caption.dataset.caption !== view; });
       };
 
       const clearCategory = () => {

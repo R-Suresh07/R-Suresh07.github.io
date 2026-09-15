@@ -16,7 +16,7 @@ const models = [
 
 <ipd-baseline-figure data-view="outcomes">
   <figure aria-label="IPD baseline performance across 25 tasks per model">
-    <FigureHeading label="FIG. 4" title="Almost never all three" subtitle="distribution of points matched per task · 25 tasks per model" />
+    <FigureHeading label="FIG. 4" title="Partial recovery rarely becomes a solved task" subtitle="distribution of points matched per task · 25 tasks per model" />
     <div class="toolbar">
       <div class="views" role="group" aria-label="Chart view">
         <span class="eyebrow">View</span>
@@ -25,7 +25,7 @@ const models = [
       </div>
       <span class="hint">hover, tap, or focus a row</span>
     </div>
-    <div class="sort-cue" aria-live="polite">Task outcomes · sorted by tasks solved</div>
+    <div class="sort-cue" aria-live="polite">Task outcomes · sorted by tasks solved, then points recovered</div>
     <div class="legend" aria-label="Points recovered per task">
       {[0, 1, 2, 3].map(n => <span><i class={`shade-${n}`}></i>{n} {n === 1 ? 'point' : 'points'}</span>)}
     </div>
@@ -44,7 +44,10 @@ const models = [
       ))}
     </div>
     <div class="annotation">Highest point recovery ≠ highest task success</div>
-    <FigureCaption caption="GPT-5.4 recovers the most individual interaction points, matching 17/75 despite solving no complete tasks. Gemini 3.1 Pro matches fewer points overall, but is the only model to recover all three on the same task. Qwen 3.5 9B recovers 10/75 points, twice as many as its much larger 397B-A17B counterpart." />
+    <FigureCaption
+      captionLead="Terminal success hides substantial variation in partial progress."
+      caption="GPT-5.4 recovers the most individual interaction points, matching 17/75 while solving no complete tasks. Gemini 3.1 Pro matches fewer points overall, but is the only model to recover all three points on the same task. Our Qwen 3.5 9B baseline recovers 10/75 points, twice as many as the 397B-A17B model evaluated in the original benchmark."
+    />
     <div class="tooltip" role="status" hidden></div>
   </figure>
   <script is:inline type="application/json" class="model-data" set:html={JSON.stringify(models)} />
@@ -119,7 +122,7 @@ const models = [
             });
           }
           this.querySelector('.sort-cue')!.textContent = button.dataset.view === 'outcomes'
-            ? 'Task outcomes · sorted by tasks solved'
+            ? 'Task outcomes · sorted by tasks solved, then points recovered'
             : 'Point recovery · sorted by points matched';
           this.dataset.view = button.dataset.view;
           this.querySelectorAll('button[data-view]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));

@@ -11,7 +11,7 @@ import metaHarnessOverview from '../../content/writing/data/meta-harness-overvie
     alt="Meta-Harness loop in which an agent reads previous harness code, traces, and scores from a filesystem, proposes a new harness, evaluates it with an LLM on tasks, and stores the resulting logs for the next iteration."
     loading="lazy"
   />
-  <figcaption><strong>Meta-Harness search loop.</strong> A meta-agent inspects previous harness implementations together with their execution traces and evaluation scores, proposes a new executable harness, evaluates it on the task, and stores the resulting code, traces, and score for the next iteration. This turns harness engineering itself into an iterative search process.</figcaption>
+  <figcaption><strong>Automated harness engineering turns the harness itself into an optimization target.</strong> A meta-agent inspects previous harness implementations together with their trajectories and terminal task scores, proposes a new executable harness, evaluates it with the same underlying agent model, and stores the resulting code, traces, and score for the next iteration.</figcaption>
 </figure>
 
 <style>

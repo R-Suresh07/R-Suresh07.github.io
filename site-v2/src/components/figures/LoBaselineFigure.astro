@@ -33,11 +33,11 @@ const models = [
   <figure aria-label="Lead Optimization performance across 68 tasks per model">
     <FigureHeading
       label="FIG. 11"
-      title="Current agents can make progress on Lead Optimization"
+      title="Current agents solve over half of Lead Optimization tasks"
       subtitle="68-task lite subset · original harness"
     />
 
-    <p class="dek">Unlike IPD, several models solve a substantial fraction of Lead Optimization tasks.</p>
+    <p class="dek">Unlike IPD, Lead Optimization gives us enough successful and failed trajectories to study where capable agents diverge.</p>
 
     <div class="toolbar">
       <div class="view-label"><span class="eyebrow">View</span><span>Terminal performance</span></div>
@@ -77,7 +77,7 @@ const models = [
     </section>
 
     <div class="annotation">A failed final molecule does not tell us what went wrong during the search.</div>
-    <FigureCaption caption="GPT-5.4 and Gemini 3.1 Pro lead the 68-task subset with 37 solved tasks each, while Qwen 3.5 9B, our additional baseline, solves 13." />
+    <FigureCaption caption="GPT-5.4 and Gemini 3.1 Pro each solve 37/68 tasks on the Lead Optimization Lite subset, with Claude Sonnet 4.6 close behind at 36/68. This mix of successes and failures gives us a useful setting for asking whether the bottleneck is molecular design itself or what happens after candidates are proposed." />
     <div class="tooltip" role="status" hidden></div>
   </figure>
   <script is:inline type="application/json" class="model-data" set:html={JSON.stringify({ models, gates, total })} />

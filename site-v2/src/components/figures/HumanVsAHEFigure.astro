@@ -10,11 +10,11 @@ const comparisons = [
     methods: [
       { name: 'V1 baseline', short: 'V1', kind: 'baseline', value: 13 },
       { name: 'Automated search', short: 'AHE', kind: 'ahe', value: 13 },
-      { name: 'Human V2', short: 'Human V2', kind: 'human', value: 33 },
+      { name: 'Manual V2', short: 'Manual V2', kind: 'human', value: 33 },
     ],
     bracketFrom: 13,
     bracketTo: 33,
-    primaryDelta: 'Human V2 +29.4 pp vs V1/AHE',
+    primaryDelta: 'Manual V2 +29.4 pp vs V1/AHE',
     minorDelta: 'AHE = V1',
     winner: 'human',
     evidence: [
@@ -31,16 +31,16 @@ const comparisons = [
   {
     key: 'ipd',
     task: 'Interaction Point Discovery',
-    metric: 'Point-match rate',
+    metric: 'Interaction points recovered',
     total: 75,
     methods: [
       { name: 'V1 baseline', short: 'V1', kind: 'baseline', value: 10 },
       { name: 'Automated search', short: 'AHE', kind: 'ahe', value: 12 },
-      { name: 'Human V2', short: 'Human V2', kind: 'human', value: 30 },
+      { name: 'Manual V2', short: 'Manual V2', kind: 'human', value: 30 },
     ],
     bracketFrom: 12,
     bracketTo: 30,
-    primaryDelta: 'Human V2 +24.0 pp vs AHE',
+    primaryDelta: 'Manual V2 +24.0 pp vs AHE',
     minorDelta: 'AHE +2.7 pp vs V1',
     winner: 'human',
     evidence: [
@@ -59,14 +59,14 @@ const comparisons = [
     metric: 'Tasks solved',
     total: 52,
     methods: [
-      { name: 'Human V2', short: 'Human V2', kind: 'human', value: 1 },
+      { name: 'Manual V2', short: 'Manual V2', kind: 'human', value: 1 },
       { name: 'V1 baseline', short: 'V1', kind: 'baseline', value: 2 },
       { name: 'Automated search', short: 'AHE', kind: 'ahe', value: 5 },
     ],
     bracketFrom: 2,
     bracketTo: 5,
     primaryDelta: 'AHE +5.8 pp vs V1',
-    minorDelta: 'AHE +7.7 pp vs Human V2',
+    minorDelta: 'AHE +7.7 pp vs Manual V2',
     winner: 'ahe',
     evidence: [
       ['AHE-only wins', '4'],
@@ -95,7 +95,7 @@ const comparisons = [
 <figure class="human-vs-ahe" aria-label="Comparison of baseline, automated, and manually engineered harnesses across three task families">
   <FigureHeading
     label="FIG. 22"
-    title="Different bottlenecks favored different harnesses"
+    title="No single harness wins across tasks"
     subtitle="Same child model · same task instances · only the harness changes"
   />
 
@@ -156,11 +156,11 @@ const comparisons = [
   <div class="legend" aria-label="Figure color key">
     <span><i class="baseline"></i>V1 baseline</span>
     <span><i class="ahe"></i>Automated search</span>
-    <span><i class="human"></i>Human V2</span>
+    <span><i class="human"></i>Manual V2</span>
     <em>hover or focus a task for paired evidence</em>
   </div>
 
-  <figcaption><strong>Base, automated, and manually engineered harnesses were evaluated with the same child model on matched task instances.</strong> Manual V2 produced the largest overall gains, substantially improving Lead Optimization and Interaction Point Discovery. Automated harness engineering produced the strongest Scaffold Hopping harness, outperforming both the original baseline and the manual redesign. The advantage therefore depended on the task bottleneck rather than one approach uniformly dominating across all three.</figcaption>
+  <figcaption><strong>No single harness-engineering strategy dominates across all three tasks.</strong> With the same Qwen 3.5 9B child model on matched instances, Manual V2 substantially improves Lead Optimization and Interaction Point Discovery, while automated search produces the strongest Scaffold Hopping result. The advantage therefore depends on the task and its remaining bottleneck rather than one approach uniformly outperforming the other.</figcaption>
 </figure>
 
 <style>

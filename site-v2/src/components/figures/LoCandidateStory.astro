@@ -127,7 +127,7 @@ const initialMeasurementStage = stages[1];
   <figure aria-label="Selected optimization milestones from a Cathepsin K Lead Optimization trajectory">
     <FigureHeading
       label="FIG. 12"
-      title="Inside a successful Lead Optimization trajectory"
+      title="A successful trajectory follows the moving bottleneck"
     />
 
     <div class="toolbar">
@@ -292,7 +292,7 @@ const initialMeasurementStage = stages[1];
 
     <div class="annotation">The model repairs one requirement, reads the new evidence, and shifts to the next bottleneck.</div>
     <figcaption class="editorial-figure-caption">
-      <span class="caption-lead">A matched structure–activity relationship (SAR)<Sidenote number="5"><b><a href="https://en.wikipedia.org/wiki/Structure%E2%80%93activity_relationship">Structure–activity relationship (SAR)</a></b> describes how changes to a molecule’s chemical structure affect its measured or predicted properties.</Sidenote> sequence from one successful Cathepsin K<Sidenote number="6"><b><a href="https://en.wikipedia.org/wiki/Cathepsin_K">Cathepsin K</a></b> is the protein target for this Lead Optimization task. The agent is modifying a starting molecule while trying to satisfy the task’s property and binding requirements.</Sidenote> trajectory.</span> Replacing the reference nitrile with dimethylamino reduced predicted mutagenicity (<b>Ames</b>) but disrupted binding. A hydroxymethyl analogue restored binding yet narrowly missed the <b>blood–brain barrier (BBB) permeability</b> window. One-carbon homologation crossed the BBB boundary while retaining the earlier gains, producing a candidate that passed every requirement.
+      <span class="caption-lead">Successful Lead Optimization is a closed-loop process of finding and repairing the current limiting constraint.</span> In this structure–activity relationship (SAR)<Sidenote number="5"><b><a href="https://en.wikipedia.org/wiki/Structure%E2%80%93activity_relationship">Structure–activity relationship (SAR)</a></b> describes how changes to a molecule’s chemical structure affect its measured or predicted properties.</Sidenote> sequence for Cathepsin K<Sidenote number="6"><b><a href="https://en.wikipedia.org/wiki/Cathepsin_K">Cathepsin K</a></b> is the protein target for this Lead Optimization task. The agent is modifying a starting molecule while trying to satisfy the task’s property and binding requirements.</Sidenote>, replacing the reference nitrile with dimethylamino reduced predicted mutagenicity (<b>Ames</b>) but disrupted binding. A hydroxymethyl analogue restored binding but narrowly missed the <b>blood–brain barrier (BBB) permeability</b> window. One-carbon homologation crossed the BBB boundary while retaining the earlier gains, producing a candidate that passed every requirement.
     </figcaption>
   </figure>
   <script is:inline type="application/json" class="stage-data" set:html={JSON.stringify(stages.map(({ image, ...stage }) => stage))} />
@@ -416,7 +416,7 @@ const initialMeasurementStage = stages[1];
   .timeline .active i { border-color:#087c83; background:#087c83; box-shadow:0 0 0 3px var(--color-paper), 0 0 0 4px #087c8355; }
   .timeline .reference { color:var(--reference-color); }
   .timeline .reference i, .timeline .reference.active i { border-color:var(--reference-color); background:var(--reference-color); box-shadow:0 0 0 3px var(--color-paper), 0 0 0 4px color-mix(in srgb, var(--reference-color) 34%, transparent); }
-  .milestone-note { margin:0 0 13px; color:var(--color-ink-soft); font:10px/1.45 var(--font-mono); text-align:center; }
+  .milestone-note { margin:0 0 13px; color:var(--color-ink-soft); font:9.5px/1.45 var(--font-mono); text-align:center; opacity:.8; }
   .story-view { border-top:1px solid var(--color-line); }
   .story-view[hidden], .measurements-view[hidden], .stage-scene[hidden], .measurement-panel[hidden] { display:none; }
   .comparison { display:grid; grid-template-columns:minmax(260px,1fr) 150px minmax(260px,1fr); gap:18px; align-items:center; min-height:302px; }

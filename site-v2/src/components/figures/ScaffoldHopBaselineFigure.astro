@@ -64,7 +64,7 @@ if (Math.max(...models.map(model => model.solved)) !== 2) {
   <figure aria-label="Scaffold Hopping tasks solved by eight models on a full zero-to-52 task scale">
     <FigureHeading
       label="FIG. 17"
-      title="Different models hit the same wall"
+      title="Different models hit the same Scaffold Hopping wall"
       subtitle="8 models · 52 tasks each"
     />
 
@@ -93,7 +93,8 @@ if (Math.max(...models.map(model => model.solved)) !== 2) {
       <div class="axis" aria-hidden="true"><span></span><span><i>0</i><i>52</i></span><span></span></div>
     </div>
 
-    <figcaption>Scaffold Hopping is effectively at floor across model scale and family.</figcaption>
+    <div class="annotation">Scaffold Hopping remains near floor across model scale and family.</div>
+    <figcaption><strong>Model choice barely changes the terminal picture.</strong> Across eight models evaluated on the same 52 Scaffold Hopping tasks, no model solves more than 2/52. Claude Sonnet 4.6, DeepSeek V3.2, GPT-5.4, and Qwen 3.5 9B tie for the best score at 3.8%.</figcaption>
     <div class="tooltip" role="status" hidden></div>
   </figure>
   <script is:inline type="application/json" class="model-data" set:html={JSON.stringify(models)} />
@@ -216,7 +217,9 @@ if (Math.max(...models.map(model => model.solved)) !== 2) {
   .axis { margin-top:5px; color:var(--color-ink-soft); font:10px/1.2 var(--font-mono); }
   .axis > span:nth-child(2) { display:flex; justify-content:space-between; }
   .axis i { font-style:normal; }
-  figcaption { border-top:1px solid var(--color-line); padding-top:14px; margin-top:22px; color:var(--accent); font:600 14px/1.5 var(--font-sans); }
+  .annotation { border-top:1px solid var(--color-line); padding-top:14px; margin-top:22px; color:var(--accent); font:600 14px/1.5 var(--font-sans); }
+  figcaption { margin-top:18px; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
   .tooltip { position:absolute; z-index:100; width:245px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:13px 14px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); box-shadow:0 10px 25px #0002; pointer-events:none; }
   .tooltip :global(> strong) { display:block; color:var(--accent); font-size:12px; }
   .tooltip :global(p) { margin:5px 0 8px; color:var(--color-ink-soft); }
