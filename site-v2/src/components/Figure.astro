@@ -11,6 +11,7 @@ interface Props {
   alt: string;
   width?: 'prose' | 'wide' | 'full';
   captionLabel?: string;
+  captionLead?: string;
   caption?: string;
   emphasizedCaption?: boolean;
   compactTop?: boolean;
@@ -25,6 +26,7 @@ const {
   alt,
   width = 'prose',
   captionLabel,
+  captionLead,
   caption,
   emphasizedCaption = false,
   compactTop = false,
@@ -38,7 +40,7 @@ const {
   {typeof src === 'string'
     ? <img src={src} alt={alt} loading="lazy" decoding="async" />
     : <Image src={src} alt={alt} loading="lazy" />}
-  <FigureCaption caption={title ? caption : undefined} credit={credit} source={source} />
+  <FigureCaption captionLead={title ? captionLead : undefined} caption={title ? caption : undefined} credit={credit} source={source} />
 </figure>
 
 <style>

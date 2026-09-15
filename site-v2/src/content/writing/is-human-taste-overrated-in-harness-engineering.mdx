@@ -12,7 +12,6 @@ topics:
 import Figure from '../../components/Figure.astro';
 import ResponsiveVideo from '../../components/ResponsiveVideo.astro';
 import Sidenote from '../../components/Sidenote.astro';
-import HarnessBoundaryFigure from '../../components/figures/HarnessBoundaryFigure.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
 import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.astro';
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
@@ -34,6 +33,7 @@ import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
 import AheVsHumanStateFigure from '../../components/figures/AheVsHumanStateFigure.astro';
 import IpdAheVsHumanFigure from '../../components/figures/IpdAheVsHumanFigure.astro';
 import ScaffoldAheVsHumanFigure from '../../components/figures/ScaffoldAheVsHumanFigure.astro';
+import fig1 from './data/fig1.png';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
@@ -42,13 +42,26 @@ import figurePlaceholder from '../../assets/fixtures/figure-placeholder.svg';
 
 ## Introduction
 
-An agent harness is everything that surrounds the model: the tools it can call, the state it can see, and how its observations arrive. Solving a task with an agent therefore involves two decision procedures rather than one. While the model decides what to do with the information it receives, the harness decides what information reaches the model at all, including what gets remembered, what gets compacted away, and which actions it can even take.
+An agent harness is everything that surrounds the model: the tools it can call, the state it can see, and how its observations arrive. An agent therefore does not act on the environment directly. Its actions pass through an interface that decides what capabilities are available, while observations and results are transformed before they return to the model.
 
-The two are optimized very differently. The model's procedure is learned through training, while the harness's procedure is still commonly written by hand. It relies on a developer's "taste," built up from previous experience of what has gone wrong and what could go wrong in the future. This process is often cumbersome and time-consuming, since you have to run the loop of analyzing trajectories → analyzing failure modes → hypothesizing optimizations → rolling out, and then repeat.
+This means an agent system contains two decision procedures rather than one. The model decides what to do with the information it receives; the harness decides **what information reaches the model, what gets remembered, and which actions are possible in the first place.**
 
-This raises the question: why even bother? How much of what the harness does is work the model could do itself? We think the useful framing is not how much harness engineering can be automated, but how little is needed before the returns run out and further gains must come from the model’s policy. Ultimately, how far does harness engineering take you, and can we reach that limit without doing it by hand?
+<Figure
+  src={fig1}
+  alt="Diagram showing an AI agent acting through an agent-environment interface that exposes language-model-friendly actions and returns structured observations, state, and results from a computer environment."
+  width="wide"
+  captionLabel="FIG. 1"
+  title="The agent–environment interface"
+  captionLead="The harness mediates the closed loop between a model and its environment."
+  caption="It determines the actions exposed to the agent and how observations, state, and tool results are returned."
+  emphasizedCaption
+/>
 
-{/* Temporarily disabled: <HarnessBoundaryFigure /> */}
+The asymmetry is that these two procedures are optimized very differently. The model’s policy is learned through training, while the harness around it is still commonly designed by hand. A developer decides which tools to expose, what state deserves a durable representation, how outputs should be structured, when context should be compacted, and what conditions should block an action or submission.
+
+Those choices rely heavily on **human taste**. Usually, we run an agent, inspect where it failed, form a hypothesis about whether the problem came from the model or its environment, modify the harness, and run everything again. The final fix can be a few lines of code; figuring out which few lines to change can take days.
+
+This raises the question behind this post. **How far can harness engineering take us before the remaining bottleneck is the model’s scientific policy itself?** And if harness engineering is another iterative search process, how much of that search actually requires a human?
 
 Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench ([Han et al., 2026](#han-et-al-2026)), a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. Generative chemistry is comparatively underexplored, and evaluating an answer is both expensive and imperfect.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
 
