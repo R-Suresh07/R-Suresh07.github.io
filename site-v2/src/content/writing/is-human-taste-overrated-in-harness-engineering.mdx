@@ -271,65 +271,69 @@ Lead Optimization produced a different dynamic than IPD. In IPD, expanding the e
 
 ## Scaffold Hopping
 
-The difficulty is that these two goals pull in opposite directions. A scaffold hop must move far enough in chemical space to count as a genuinely different molecular solution, while preserving the interactions that made the original ligand work in the first place.
+Scaffold Hopping asks the agent to do something almost opposite to Lead Optimization. Instead of staying close to the reference molecule, the new candidate must be **structurally different enough to count as a new scaffold while preserving the way the original molecule interacts with the protein pocket.**
+
+Those two goals pull in opposite directions. Moving farther away in chemical space makes it easier to satisfy the novelty requirement, but also makes it easier to disrupt the interactions and geometry that supported binding in the first place.
 
 <LoVsScaffoldHopFigure />
 
-In other words, Lead Optimization rewards controlled local change; Scaffold Hopping asks the agent to change the molecular representation while preserving its function inside the pocket.
+Lead Optimization therefore rewards controlled local change. Scaffold Hopping asks the agent to **change the molecular scaffold while preserving pocket behaviour.**
 
 ### How well do current agents do?
 
-Almost not at all. Across the 52 Scaffold Hopping tasks, no evaluated model solves more than two. Claude Sonnet 4.6, DeepSeek V3.2, GPT-5.4, and an additional Qwen 3.5 9B baseline each solve 2/52, while the remaining models solve one task or none.
-
-This is a sharp contrast with Lead Optimization, where current models can solve a substantial fraction of the benchmark. Here, even the best strict pass rate is only 3.8%.
+Almost not at all. Across the 52 Scaffold Hopping tasks, no evaluated model solves more than two. Claude Sonnet 4.6, DeepSeek V3.2, GPT-5.4, and our additional Qwen 3.5 9B baseline each solve **2/52**, while the remaining models solve one task or none.
 
 <ScaffoldHopBaselineFigure />
 
-The few successes are not simply the same easy tasks being rediscovered by every model. Across all eight models, nine different tasks are solved at least once, with different models occasionally finding different successful scaffold hops. The problem is therefore not confined to one universally impossible subset. Instead, almost every model appears to be running into the same broader bottleneck. The near-floor aggregate leaves open whether agents cannot propose viable scaffold changes at all, or whether useful candidates are being lost elsewhere in the trajectory.
+This is a sharp contrast with Lead Optimization, where current models solve a substantial fraction of the benchmark. Here, the best strict pass rate is only **3.8%**.
+
+The few successes are also not concentrated on the same handful of tasks. Across all eight models, **nine different tasks are solved at least once**, with different models occasionally finding different successful scaffold hops. So the benchmark does not appear to contain one tiny universally solvable subset surrounded by impossible cases. Instead, useful solutions seem possible in several places, but current agents reach them only rarely.
+
+That leaves an important question open: **are agents failing because they cannot generate viable scaffold changes, or because promising candidates are being lost somewhere later in the search?**
 
 ### What are the agents getting wrong?
 
-The terminal scores suggest that Scaffold Hopping is impossible across the board, but breaking down the specific evaluation checks reveals a clearer pattern.
+The terminal scores make Scaffold Hopping look uniformly hopeless, but the individual evaluation checks reveal a much clearer pattern.
 
-Generating a structurally distinct molecule is rarely the bottleneck. Models consistently clear the Tanimoto and scaffold-novelty thresholds across most tasks, and several regularly propose structures with high predicted binding probability.
+Generating a structurally distinct molecule is usually not the bottleneck. Models regularly clear the Tanimoto and scaffold-novelty thresholds, and several also propose candidates with high predicted binding probability.
 
-The systematic failure lies in preserving the reference molecule’s binding pattern inside the pocket. No model manages this on more than 3 of 52 tasks. GPT-5.4 clears the binding-probability threshold on 46 tasks, yet reproduces the required pocket interactions on only 3. Claude satisfies all scaffold-novelty rules across all 52 tasks and clears binding on 48, but preserves the reference interaction pattern on just 2.
+The consistent failure is preserving the **reference interaction pattern inside the pocket.** No model clears this requirement on more than 3 of the 52 tasks. GPT-5.4 passes the binding-probability threshold on **46/52** tasks, yet preserves the required pocket interactions on only **3/52**. Claude is even more revealing: it satisfies the scaffold-novelty requirements on all 52 tasks and clears binding on 48, but preserves the reference interaction pattern on just 2.
 
-This highlights the true challenge. Agents can readily generate novel chemistry that still appears capable of binding to the target. The hard part is designing a different scaffold that binds in the same way as the original molecule.
+So the problem is not simply finding novel chemistry that can still bind. Agents can often do both of those things independently. The difficult part is finding a **different scaffold that preserves the same interaction geometry in the pocket.**
 
 ### Exposing binding geometry to the agent
 
-The issue was rooted in how the original harness returned results. Boltz put the binding score directly in front of the model, while the evidence needed to verify the binding mode remained buried in generated structure files. Once an agent found a sufficiently novel molecule with a high binding probability, it was easy to treat the search as essentially complete.
+One problem was how the original harness presented Boltz results. The binding probability was returned directly to the model, while the structural evidence needed to inspect the predicted binding mode remained inside generated structure files. Once the agent found a sufficiently novel molecule with a high binding probability, it was therefore much easier to answer **whether it bound** than **whether it bound in the same way as the reference.**
 
-But binding strongly is not the same as binding in the same way. Verifying a scaffold hop required the agent to inspect the reference complex, locate the Boltz structure files, extract key protein-ligand interactions, and compare them against the predicted candidate poses. In practice, models rarely carried this full comparison through.
+But those are different requirements. Verifying a scaffold hop meant comparing the reference complex with the candidate’s predicted poses and reasoning about whether the important protein–ligand interactions had been preserved. Under the original interface, the model had to locate the generated structure files and reconstruct that comparison for itself.
 
-We therefore redesigned the interface around making this structural evidence directly accessible. As in Lead Optimization, every proposed molecule was canonicalized, registered under a persistent candidate ID, and passed through deterministic novelty checks before spending an expensive Boltz call. The protein and pocket configuration were also bound directly to the task.
+We redesigned the harness to make this evidence easier to access. As in Lead Optimization, proposed molecules were registered under persistent candidate IDs and passed through deterministic novelty checks before spending a Boltz call. The protein and pocket configuration were also bound directly to the task.
 
-The more important change came after Boltz. In the original harness, the response returned a binding probability together with the directory containing the generated structures. In V2, each result was attached directly to the candidate and returned the predicted pose files explicitly.<Sidenote number="8" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking whether a molecule appears to bind to inspecting how it binds.
+The larger change came after Boltz. Instead of returning a scalar binding score alongside a directory of generated structures, V2 attached the result directly to the candidate and surfaced the predicted pose files explicitly.<Sidenote number="9" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking **whether a candidate appeared to bind** to inspecting **how it was predicted to bind.**
 
-The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts needed to survive. Deciding whether a candidate preserved the important interactions, how to modify it when it did not, and whether another experiment was worthwhile remained part of the model's scientific reasoning. We also removed irrelevant tools and tied final submission to the same registered candidate state.
+The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts had to survive. Deciding whether a pose preserved the important interactions, how to modify a candidate when it did not, and whether another experiment was worth running remained part of the model’s scientific reasoning. Final submission was also tied to the same registered candidate state rather than an independently written molecule.
 
-This gave us a cleaner test of the remaining question: once the agent had direct visibility into both scaffold novelty and pocket geometry, would Scaffold Hopping success rates finally improve?
+This gave us a cleaner test of the remaining problem: **if the agent could directly inspect both structural novelty and predicted binding geometry, would that be enough to turn promising candidates into successful scaffold hops?**
 
 ### Did exposing the binding geometry help?
 
-The new harness fixed execution, yet the underlying scientific challenge remained difficult to solve.
+The redesigned harness made the Scaffold Hopping workflow much cleaner, but it did not improve terminal success.
 
-Under the original harness, Qwen 3.5 9B submitted answers on only 39 of 52 tasks, with 13 trajectories exhausting their turn limit. The updated harness increased completion significantly, reaching submission on 51 of 52 tasks and yielding 50 valid evaluations. It also became far more reliable at satisfying earlier task requirements, lifting scaffold-novelty passes from 36 to 50 and doubling the candidates that cleared the binding-probability threshold from 14 to 28.
-
-Yet final performance remained completely stagnant. Fully resolved tasks did not improve, shifting marginally from 2/52 down to 1/52.
+Under the original harness, Qwen 3.5 9B reached submission on **39/52** tasks. V2 reached submission on **51/52** and produced valid evaluated candidates on 50. It also moved substantially more tasks through the earlier requirements: scaffold-novelty passes increased from **36** to **50**, while candidates clearing the binding-probability threshold doubled from **14** to **28**.
 
 <ScaffoldHopHarnessOutcomes />
 
-The reason becomes clear at the final evaluation step. While the updated V2 harness produced more novel molecules and far more candidates with high predicted binding, it failed to improve preservation of the reference binding pattern. Only one candidate crossed that threshold, compared with three under the original harness. In fact, the two setups did not even solve the same tasks. The V2 harness found one novel solution while losing both tasks solved by the original baseline.
+But those gains stopped at the interaction-preservation gate. Terminal success did not improve, moving from **2/52 under V1 to 1/52 under V2.** The same pattern appears one step earlier: three V1 candidates preserved the required reference interaction pattern, compared with only one under V2.
 
-This outcome stands in stark contrast to Lead Optimization. Fixing operational and state-management flaws previously unlocked major performance gains. Here, making 3D poses accessible simply cleaned up the workspace around an unsolved scientific bottleneck. Seeing the binding geometry did not help the model determine which contacts were essential or how to modify the core to retain them.
+The two harnesses did not simply recover the same easy cases either. V2 solved a new task, but lost both tasks solved under the original harness. So the cleaner interface changed which parts of the search succeeded without producing a reliable improvement in the final scientific objective.
 
-The redesigned harness was also substantially cheaper to run. It used roughly 40% fewer tokens and 22% fewer turns, while reaching twelve more submissions and using slightly fewer Boltz calls. So the failure was not caused by giving the model less opportunity to search. If anything, V2 made the search cleaner and more efficient while leaving the same underlying difficulty exposed.
+This is very different from Lead Optimization. There, externalizing state removed enough avoidable failure to produce a large gain. Here, exposing the predicted poses made it easier for the model to inspect what had happened, but **seeing the binding geometry was not the same as knowing how to preserve it.** The model still had to decide which interactions mattered, which structural changes would retain them, and how to redesign the scaffold when they were lost.
 
-At this point, further manual intervention would again start to cross the line we were trying to preserve. We could explicitly extract and compare pocket interactions for the model, rank candidates by how closely they reproduce the reference pose, or suggest structural edits that restore lost contacts. But those are increasingly decisions about how to solve Scaffold Hopping, rather than how to make the task easier for an agent to execute.
+The redesigned harness was also more efficient. It used roughly 40% fewer tokens and 22% fewer turns, while reaching substantially more submissions and using slightly fewer Boltz calls. So the lack of improvement was not simply the result of giving the model less opportunity to search.
 
-Scaffold Hopping shows an important limit of this process. Cleaning up the interface can make the agent more reliable, more efficient, and much clearer about what evidence it has without necessarily improving the final success rate. Once those avoidable failures are removed, the remaining bottleneck can simply move closer to the scientific decision itself. In this case, exposing the binding geometry made the problem easier to see and act on, but it did not teach the model how to design a new scaffold that preserved the right interactions.
+At this point, the obvious next interventions start to move beyond representation and execution. We could explicitly extract the reference interactions, score how closely candidate poses reproduce them, or suggest structural edits that restore missing contacts. But each of those choices encodes more of the Scaffold Hopping strategy into the harness itself.
+
+That is the limit this task exposed. A harness can streamline search execution, clarify evidence inspection, and eliminate accidental operational failures without necessarily improving the model's scientific choices. **V2 made the remaining bottleneck far easier to see, but it did not solve it.**
 
 ## What was the human doing all this time?
 
