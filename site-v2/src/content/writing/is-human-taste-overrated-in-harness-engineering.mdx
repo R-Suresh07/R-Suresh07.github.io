@@ -13,7 +13,6 @@ import Figure from '../../components/Figure.astro';
 import ResponsiveVideo from '../../components/ResponsiveVideo.astro';
 import Sidenote from '../../components/Sidenote.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
-import SmddPerformanceNote from '../../components/figures/SmddPerformanceNote.astro';
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
 import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
 import IpdProbeConfidence from '../../components/figures/IpdProbeConfidence.astro';
@@ -42,10 +41,9 @@ import figurePlaceholder from '../../assets/fixtures/figure-placeholder.svg';
 
 ## Introduction
 
-An agent harness is everything that surrounds the model: the tools it can call, the state it can see, and how its observations arrive. An agent therefore does not act on the environment directly. Its actions pass through an interface that decides what capabilities are available, while observations and results are transformed before they return to the model.
+An agent harness is everything that surrounds the model: the tools it can call, the state it can see, and how observations are presented back to it. An agent therefore does not act on the environment directly. Its actions pass through an interface that decides what capabilities are available, while observations and results are transformed before they return to the model.
 
-This means an agent system contains two decision procedures rather than one. The model decides what to do with the information it receives; the harness decides **what information reaches the model, what gets remembered, and which actions are possible in the first place.**
-
+This means an agent system contains two decision procedures rather than one. The model decides what to do with the information it receives. The harness decides **what information reaches the model, what gets remembered, and which actions are possible in the first place.**
 <Figure
   src={fig1}
   alt="Diagram showing an AI agent acting through an agent-environment interface that exposes language-model-friendly actions and returns structured observations, state, and results from a computer environment."
@@ -58,15 +56,21 @@ This means an agent system contains two decision procedures rather than one. The
 
 The asymmetry is that these two procedures are optimized very differently. The model’s policy is learned through training, while the harness around it is still commonly designed by hand. A developer decides which tools to expose, what state deserves a durable representation, how outputs should be structured, when context should be compacted, and what conditions should block an action or submission.
 
-Those choices rely heavily on **human taste**. Usually, we run an agent, inspect where it failed, form a hypothesis about whether the problem came from the model or its environment, modify the harness, and run everything again. The final fix can be a few lines of code; figuring out which few lines to change can take days.
+Those choices rely heavily on **human taste**. Usually, we run an agent, inspect where it failed, form a hypothesis about whether the problem came from the model or its environment, modify the harness, and run everything again. The final fix can be a few lines of code. Figuring out which few lines to change can take days.
 
 This raises the question behind this post. **How far can harness engineering take us before the remaining bottleneck is the model’s scientific policy itself?** And if harness engineering is another iterative search process, how much of that search actually requires a human?
 
-Our testing ground is the Small Molecule Drug Discovery (SMDD) Bench ([Han et al., 2026](#han-et-al-2026)), a benchmark for challenging, multi-turn, long-horizon agentic tasks focused on small-molecule design. While LLMs have become very good at coding and math, which are easily and cheaply verifiable domains, generative chemistry provides a strong stress test. Generative chemistry is comparatively underexplored, and evaluating an answer is both expensive and imperfect.<Sidenote number="1">Boltz-2 lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It's much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> A task instance is also more than just a text prompt: the agent receives a 3D protein structure, information about where the relevant binding pocket is, and, for some tasks, the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret, so what the agent knows about the pocket depends heavily on what its tools compute and how that information is presented back to it.
+Our testing ground is the Small Molecule Drug Design benchmark, SMDD-Bench ([Han et al., 2026](#han-et-al-2026)), a collection of challenging, multi-turn agentic tasks in small-molecule design. Coding and math give agents relatively cheap and direct feedback when something goes wrong. Generative chemistry is far messier, because evaluating a candidate can require specialized scientific models, the feedback is imperfect, and several tasks depend on reasoning over 3D molecular structure.<Sidenote number="1">Boltz-2, which we shorten to Boltz below, lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It is much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote>
+
+A task is also more than a text prompt. The agent may receive a 3D protein structure, the location of its binding pocket, or the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret. **What the model knows about the scientific problem therefore depends heavily on what the harness computes, remembers, and chooses to show it.**
+
+We focus on three SMDD-Bench tasks that expose different kinds of harness dependence. We first engineer their harnesses by hand, then ask whether an automated optimizer can discover similar improvements.
 
 ## Our testbed: SMDD-Bench
 
-SMDD-Bench contains 502 instances across five small-molecule drug-design tasks. Each combines chemical and biological reasoning with specialized tools, and several also require reasoning over the 3D geometry of a protein pocket. We focus on three: Lead Optimization, Scaffold Hopping, and Interaction Point Discovery. Together, they span very different kinds of agent failure. Lead Optimization is comparatively tractable, while current models still solve only a small fraction of Scaffold Hopping and Interaction Point Discovery tasks.<Sidenote number="2" align="paragraph"><SmddPerformanceNote /></Sidenote>
+SMDD-Bench contains 502 instances across five small-molecule design tasks. Each combines chemical and biological reasoning with specialized tools, and several also require reasoning over the 3D geometry of a protein binding pocket.
+
+We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. They sit at very different points on the current capability curve. Lead Optimization is comparatively tractable, with the best reported model solving 57.6% of tasks, while the best reported pass rates for Scaffold Hopping and Interaction Point Discovery are only 3.8% and 4.0%, respectively.<Sidenote number="2" align="paragraph">These are the best reported pass rates in the original SMDD-Bench evaluation: GPT-5.4 for Lead Optimization, GPT-5.4 / Claude Sonnet 4.6 / DeepSeek V3.2 tied for Scaffold Hopping, and Gemini 3.1 Pro for Interaction Point Discovery.</Sidenote> This gives us one task where agents already succeed reasonably often and two where performance remains close to the floor.
 
 <Figure
   src={smddBenchOverview}
@@ -74,9 +78,9 @@ SMDD-Bench contains 502 instances across five small-molecule drug-design tasks. 
   alt="Overview of the five SMDD-Bench task types."
   width="wide"
   captionLabel="FIG. 2"
-  title="SMDD-Bench spans five distinct drug-design tasks"
+  title="SMDD-Bench spans five distinct small-molecule design tasks"
   captionLead="Each task gives the agent a different scientific objective, input representation, and evaluation procedure."
-  caption="We focus on Interaction Point Discovery, Scaffold Hopping, and Lead Optimization."
+  caption="Our experiments focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping."
   emphasizedCaption
 />
 
