@@ -337,21 +337,23 @@ That is the limit this task exposed. A harness can streamline search execution, 
 
 ## What was the human doing all this time?
 
-When you look back, the final interventions look pretty obvious. Interaction Point Discovery pushed us to expose better ligand-side evidence which is easier for the model to understand. Lead Optimization pushed us to externalize the persistent state of candidate molecules. Scaffold Hopping pushed us to surface the predicted binding geometry that had previously been difficult for the model to inspect.
-
-Getting to those conclusions was much less obvious.
-
-Each iteration to improve the model's performance was essentially from the same core manual loop: run agents, read failed trajectories, work out whether the failure came from the model's lack of scientific ability or the interface around it, change the harness, rerun the benchmark, and then inspect what went wrong. Across the three tasks, we manually audited hundreds of trajectories, often following individual tool calls and candidate histories across dozens of turns before a consistent failure pattern became visible.
-
-Across the three tasks, this process took roughly **a month and a half** of manual iteration. The final changes were often relatively small. Most of the time went into figuring out which failures actually belonged to the harness, testing a fix, rerunning the benchmark, and then working out what had broken next.
-
-More importantly, the useful intervention was different each time. In IPD, we eventually realised that the model was being asked to infer an ensemble property from a representation that exposed almost none of the relevant ligand-side evidence. In Lead Optimization, the chemistry was often good enough and the real problem was that the candidate state degraded over long trajectories. In Scaffold Hopping, the necessary structural information technically existed, but the interface made a scalar binding score much easier to use than the predicted poses needed to verify the binding mode.
-
-None of these fixes came from a general rule like "add more tools" or "write a better prompt". The difficult part was deciding **what kind of failure we were looking at, what information the harness should make explicit, and where to stop before the harness started solving the scientific problem directly instead of letting the agent be the one solving it.**
-
-And after every redesign, the answer could still be wrong. Lead Optimization improved dramatically. IPD improved but exposed a deeper probe-selection problem. Scaffold Hopping became cleaner and more efficient without improving terminal success. Manual harness engineering was therefore not just implementation work. It was an iterative search over possible representations, interfaces, and model–environment boundaries.
+Looking back, the final interventions are easy to summarize. IPD needed better ligand-side evidence. Lead Optimization needed durable candidate state. Scaffold Hopping needed easier access to predicted binding geometry.
 
 <HarnessOptimizationLoop />
+
+What took time was **finding the right diagnosis.**
+
+The manual process was almost always the same: run agents, inspect failed trajectories, form a hypothesis about whether the failure came from the model or the harness, change the interface, rerun the benchmark, and inspect what broke next. Across the three task families, we went through hundreds of trajectories and repeated benchmark runs over roughly six weeks of iteration.
+
+The difficult part was rarely implementing the eventual fix. It was deciding **what kind of failure we were looking at.**
+
+In IPD, the model was reasoning from the wrong kind of evidence for an ensemble-derived target. In Lead Optimization, useful chemistry was often already present, but the search state degraded across a long trajectory. In Scaffold Hopping, the relevant structural information existed, but the interface made the scalar binding score much easier to use than the predicted poses needed to inspect the interaction pattern.
+
+Those are very different diagnoses. None follows from a generic rule like “add more tools” or “write a better prompt.” The human contribution was deciding **what the harness should represent explicitly, what it should make persistent, and what should remain part of the model’s scientific policy.**
+
+That boundary mattered because more harness engineering was not always better. Lead Optimization improved dramatically. IPD improved, then exposed a deeper probe-selection problem. Scaffold Hopping became cleaner and more efficient without improving terminal success. A harness change could remove accidental difficulty, or it could start encoding the scientific strategy itself.
+
+Manual harness engineering was therefore far more than mere implementation work. It was an active search over **representations, interfaces, and the boundaries between model and environment.**
 
 **If harness engineering is itself a search process, how much of that search can we automate?**
 
