@@ -1,0 +1,12 @@
+display_index,harness_number,evaluation_number,selected,successful_trajectories,total_trajectories,mean_reward,reward_percent,best_so_far_percent,tasks_solved_at_least_once,total_tasks,replicate_1_successes,replicate_2_successes,replicate_3_successes,replicate_4_successes,ci95_low_percent,ci95_high_percent,retained_from_previous_tasks,new_vs_previous_tasks,lost_vs_previous_tasks,delta_vs_base_pp,mean_turns,mean_input_tokens,mean_output_tokens,annotation
+0,1,1,false,18,80,0.225,22.50,22.50,11,20,5,4,6,3,12.229,32.771,,,,0.00,73.86,2955584.5,52700.3,Base harness
+1,2,2,false,18,80,0.225,22.50,22.50,11,20,3,6,5,4,12.229,32.771,8,3,3,0.00,52.49,1534453.3,46597.4,Build staged workflow
+2,3,3,true,30,80,0.375,37.50,37.50,12,20,8,6,7,9,27.229,47.771,8,4,3,15.00,58.06,1592643.1,39342.5,Harden exact finalist and submission
+3,4,4,false,22,80,0.275,27.50,37.50,13,20,4,3,8,7,8.561,46.439,10,3,2,5.00,41.12,961744.8,30709.8,Simplify Python execution
+4,5,5,false,27,80,0.3375,33.75,37.50,12,20,6,8,8,5,21.816,45.684,10,2,3,11.25,54.77,1505500.9,38509.4,Route requirements and guard submission
+5,6,6,false,24,80,0.300,30.00,37.50,12,20,5,6,7,6,23.504,36.496,10,2,2,7.50,52.71,1487751.1,36882.3,
+6,7,7,false,20,80,0.250,25.00,37.50,11,20,4,6,6,4,15.813,34.187,10,1,2,2.50,50.92,1401693.9,34985.7,
+7,8,8,false,23,80,0.2875,28.75,37.50,13,20,7,6,6,4,18.739,38.761,10,3,1,6.25,49.95,1193525.2,34768.4,Compact protocol rewrite
+8,9,9,false,22,80,0.275,27.50,37.50,11,20,3,9,5,5,7.478,47.522,11,0,2,5.00,54.33,1472183.8,36194.8,
+9,10,10,false,24,80,0.300,30.00,37.50,12,20,7,6,7,4,18.748,41.252,11,1,0,7.50,53.00,1443330.9,35188.9,Fixed two-batch screening recipe
+10,11,11,false,23,80,0.2875,28.75,37.50,12,20,5,5,7,6,21.133,36.367,11,1,1,6.25,58.96,1669880.8,42055.7,Return to flexible guarded workflow
