@@ -86,9 +86,9 @@ We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping
 
 ## Interaction Point Discovery
 
-The goal of Interaction Point Discovery (IPD) is to identify valuable interaction hotspots inside a protein binding pocket. These hotspots mark regions that small molecules repeatedly exploit when binding to the same protein, making them useful for fragment growth, molecular optimization, and computational screening.
+The goal of Interaction Point Discovery (IPD) is to identify conserved interaction hotspots inside a protein binding pocket: regions where different molecules repeatedly make the same kinds of interactions when binding to the protein. These hotspots can then guide the design and optimization of new molecules.
 
-The task has an unusual information asymmetry. **The agent receives a single receptor structure and the location of its binding pocket, but the hidden answer is derived from interactions recurring across many different bound ligands.** The agent must predict three ligand-side interaction points, specifying both their 3D coordinates and pharmacophore type.
+The task contains a deliberate information asymmetry. **The agent receives a single protein receptor and the location of its binding pocket, but the hidden answer is derived from interactions recurring across many different bound ligands.** The agent must predict three ligand-side interaction points, specifying both their 3D coordinates and their **pharmacophore type** (the kind of chemical interaction the ligand feature can make, such as a hydrogen-bond donor, acceptor, or hydrophobic interaction).
 
 <InteractionPointExplorer
   initialTaskId="smdd_002_Q9Y6K1_0"
@@ -96,22 +96,24 @@ The task has an unusual information asymmetry. **The agent receives a single rec
   captionLabel="FIG. 3"
   title="The agent sees one receptor, but the target comes from many binders"
   captionLead="The agent receives only the receptor and binding-pocket location."
-  caption="The hidden target is constructed from ligand-side interactions that recur across many bound molecules. Step through the visualization to see the search region, reveal those hidden targets, and inspect how submitted points are matched during evaluation. A prediction must be &lt;2.5 Å from a compatible, distinct hidden point."
+  caption="The hidden target is constructed from ligand-side interactions that recur across many bound molecules. Step through the visualization to see the search region, reveal those hidden targets, and inspect how submitted points are matched during evaluation. A prediction must fall within 2.5 Å of a compatible hidden point, and each hidden point can match at most one prediction."
 />
 
-This means the task is not simply asking which interactions look chemically plausible in the visible receptor. It asks which of those possibilities are likely to remain useful across a diverse set of binders. The agent also has only three predictions, so each one must identify both the right interaction type and approximately the right location in 3D space.
+This means the task is not simply asking which interactions look chemically plausible in the visible receptor. It asks which of those possibilities are likely to **recur across a diverse set of binders**. A chemically plausible interaction may therefore still be the wrong answer. And because the agent gets only three predictions, each one has to identify both the right interaction type and approximately the right location in 3D space.
 
 ### How well do current agents do?
 
-Not great. Across the models evaluated in the original SMDD-Bench, only Gemini 3.1 Pro solved a single IPD task, while every other model scored 0/25. Our additional Qwen 3.5 9B baseline also scored 0/25. **However, the all-or-nothing task metric hides a more informative pattern: several models recover one or two of the three required interaction points without ever completing a task.**
+Not great. Across the models evaluated in the original SMDD-Bench, only Gemini 3.1 Pro solved a single IPD task, while every other model scored **0/25**. Our additional Qwen 3.5 9B baseline also solved **0/25**.
+
+But the all-or-nothing task metric hides substantial partial progress. **GPT-5.4, for example, recovered 17 of the 75 individual interaction points while solving no complete tasks.** Gemini recovered fewer points overall, 14/75, but was the only model to get all three points right on the same task.
 
 <IpdBaselineFigure />
 
-This partial recovery matters because it suggests that the models are not uniformly failing at every part of the task. To understand what prevents plausible partial predictions from becoming complete solutions, we inspected the failed trajectories directly.
+This gap between point-level recovery and full-task success suggests that the models are not simply failing everywhere. They can often identify part of the answer, but those partial successes rarely come together into a complete prediction. To understand what was preventing that, we inspected the failed trajectories directly.
 
 ### What are the agents getting wrong?
 
-One common strategy that the models used was to inspect the receptor.pdb, identify chemically plausible interaction sites around the pocket, and treat those as likely conserved hotspots. But **plausibility is not the same as conservation**. A binding pocket can contain many chemically attractive places for a ligand to interact, but what we actually care about is which of those possibilities are repeatedly used by different molecules binding to the same protein. This might sound like a small distinction, but it changes the problem considerably. A site can look perfectly reasonable from the receptor structure and still rarely recur across real binders.
+One common strategy was to inspect the receptor structure, identify chemically plausible interaction sites around the pocket, and treat those as likely conserved hotspots. **But plausibility is not the same as conservation.** A binding pocket can contain many reasonable places for a ligand to interact, while the task asks which of those interactions actually recur across different molecules binding to the same protein. A site can therefore look perfectly sensible from the receptor structure and still be a poor prediction of the hidden ensemble.
 
 {/* TODO: Insert figure of problem 1. */}
 
@@ -123,7 +125,7 @@ One common strategy that the models used was to inspect the receptor.pdb, identi
   caption="Plausibility versus conservation. A chemically plausible interaction site may rarely recur across real binders; the task targets hotspots shared by diverse ligands."
 />
 
-A more surprising failure was that agents sometimes predicted the wrong side of the interaction altogether. The interaction points belong to the ligand, not the receptor itself. For example, if the protein exposes a hydrogen-bond donor, the target is not the donor atom itself, but the location where a ligand acceptor would sit. The agent therefore has to infer what complementary feature should occupy the empty pocket space based on the surrounding protein chemistry. This difference turned out to matter much more than we initially expected.
+Agents also frequently reasoned about the wrong side of the interaction. The submitted points are supposed to describe **ligand-side features in empty pocket space**, not receptor atoms themselves. If the protein exposes a hydrogen-bond donor, for example, the relevant prediction is where a ligand acceptor would sit nearby. The model therefore has to reason about the **complementary feature a ligand would place in the pocket**, rather than simply identifying chemically interesting atoms on the protein.
 
 {/* TODO: Insert figure of problem 2. */}
 
@@ -135,7 +137,7 @@ A more surprising failure was that agents sometimes predicted the wrong side of 
   caption="Ligand points versus receptor atoms. The agent must predict where a complementary ligand feature would sit in the pocket, rather than report the protein atom it interacts with."
 />
 
-Even when agents identified sensible regions of the pocket, spatial precision created another failure mode. The agent gets only three guesses, and each one has to get both the interaction type and the 3D location right. During evaluation, a prediction has to fall within **2.5 Å** of a compatible hidden point, and each hidden point can match at most one prediction. So clustering three good guesses around the same hotspot still only gives you one correct answer.
+Even when agents found sensible regions of the pocket, they could still waste their three predictions on the same interaction. The evaluator matches submitted points one-to-one against distinct hidden hotspots, so several nearby guesses around one region can still recover only a single point. With only three predictions available, the agent has to choose three distinct hypotheses and localize each one accurately.
 
 {/* TODO: Insert figure of problem 3. */}
 
@@ -147,39 +149,41 @@ Even when agents identified sensible regions of the pocket, spatial precision cr
   caption="Precision with only three guesses. Each prediction needs a compatible interaction type and a location within 2.5 Å of a hidden point; repeated guesses around one hotspot count only once."
 />
 
-There was also a more general interface problem. The original harness exposed the same generic drug-design tools across tasks, even though IPD only required the agent to reason about three 3D points and submit them in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness requires the agent to manually construct `solution.csv`, save it correctly, and then submit its file path. Agents sometimes fumbled the file creation or formatting step. In `smdd_002_Q92769_0`, the model produced the intended three points but separated the values with spaces instead of commas, which left the evaluator unable to parse the CSV.</Sidenote> This added unnecessary execution burden around tool choice, formatting, and submission that was separate from the core scientific problem itself.
+There was also a simpler interface problem. The original harness exposed the same generic drug-design tools across tasks, even though IPD only required the agent to reason about three 3D points and submit them in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness required the agent to manually construct `solution.csv` and submit its path. This occasionally failed for reasons unrelated to the scientific prediction itself. In `smdd_002_Q92769_0`, for example, the model produced three intended points but separated the values with spaces rather than commas, leaving the evaluator unable to parse the file.</Sidenote> This added tool-selection, file-writing, and formatting work that was separate from the scientific problem itself.
 
-These failures were not all failures of scientific reasoning. Some arose because the model was operating with an ambiguous representation of the task itself. That gave us an obvious first question for harness engineering: how much performance could we recover simply by making the intended problem easier to perceive and execute correctly?
+The important distinction is that these failures sit at different levels. **Inferring conservation from a single receptor is part of the scientific challenge. Confusing receptor atoms with ligand-side points, duplicating the same hotspot, or losing an otherwise valid answer to file formatting are not.** That gave us a natural place to start. We would remove the representation and execution failures first, then see what scientific difficulty remained.
 
 ### Fixing the representations
 
-The first set of failures gave us an easy place to start. We made it explicit that the model had to predict ligand-side interaction points in the pocket, rather than receptor atoms themselves. We also removed irrelevant tools<Sidenote number="4" align="paragraph">The original harness exposed the same generic drug-design interface across tasks, including tools such as ADMET prediction and generic file-based submission. For IPD, most of this interface was unnecessary: Boltz was later reintroduced deliberately as a way for the agent to generate its own ligand-side evidence.</Sidenote> and replaced manual CSV formatting with a dedicated submission interface which directly accepts the 3 points from the model instead of needing a CSV file.
+The first set of failures gave us a clear place to start. We refer to the original SMDD-Bench interface as V1, and the redesigned task-specific interface below as V2. We made it explicit that the model had to predict **ligand-side interaction points in the pocket**, rather than receptor atoms themselves. We also removed tools that were irrelevant to IPD<Sidenote number="4" align="paragraph">The original harness exposed the same generic drug-design interface across tasks, including ADMET property prediction and file-based submission. Most of these tools were irrelevant to IPD and added execution choices unrelated to predicting three interaction points.</Sidenote> and replaced manual CSV construction with a dedicated submission interface that accepts the three predicted points directly.
 
-These changes removed some of the execution difficulty, but they did not solve the central problem we saw in the trajectories. Even when the model identified chemically sensible regions of the pocket, it still had little evidence for deciding which of those interactions would actually be observed across different binding molecules.
+That removed some avoidable execution burden, but it did not solve the central problem we saw in the trajectories. Even when the model identified chemically sensible regions of the pocket, it still had little evidence for deciding which of those interactions would actually recur across different bound ligands.
 
-So we made one more change to the harness. Instead of having the model infer conservation entirely from a single receptor structure, we gave it a way to perform small computational experiments. The agent could design probe molecules, use Boltz to predict how they might bind, and inspect the ligand-side pharmacophore features in the resulting poses. By comparing several probes, it could construct a crude ligand ensemble of its own and look for interaction regions that appeared repeatedly.
+So we changed what the agent could observe. Instead of asking it to infer conservation entirely from a single receptor structure, we gave it a way to run small computational experiments. The agent could design **probe molecules**, use Boltz to predict their bound poses, and inspect the ligand-side pharmacophore features produced by each probe. By comparing several probes, it could build a small computational ligand ensemble of its own and look for interaction regions that appeared repeatedly.
 
-The goal of these changes was not to dictate how the agent should solve the task, but to remove avoidable execution and representation burdens so it could focus on decisions that actually required scientific reasoning.
+The harness still did not choose which probes to generate or which recurring features to trust. Its role was to expose evidence that was closer to what the task actually asks about, while leaving the scientific decisions to the model.
 
 <IpdHarnessFigure />
 
-There was a substantial improvement in Qwen's performance, but it also changed the kind of failure we were looking at. Once the agent could recover plausible ligand-side evidence more reliably, the remaining question was whether it knew how to generate useful probes and how much trust to place in the evidence they produced.
+The effect was much broader than the two newly solved tasks alone suggest. On the same 25 Qwen 3.5 9B tasks, point recovery increased from **10/75** to **30/75**, while full-task success went from **0/25** to **2/25**. Sixteen tasks improved, six were unchanged, and three declined.
+
+But the intervention also changed the kind of failure we were looking at. Once the agent could recover ligand-side evidence more reliably, the remaining problem was no longer just how to infer interactions from the receptor. It was whether the model could generate informative probes, combine evidence across them, and decide how much trust to place in noisy predictions.
 
 ### What is still going wrong?
 
-The improvement by itself does not mean that the probing strategy was particularly reliable. By allowing the model to generate synthetic probe molecules, the challenge shifted from understanding the pocket to choosing useful probes and making sense of the evidence they produced.
+The improvement does not mean that the probing strategy itself became reliable. Once the model could generate probe molecules, the challenge shifted from extracting interactions from the receptor to **choosing useful probes and deciding what to believe from the resulting poses.**
 
-The first problem is the probes themselves. They are generated entirely by the model after inspecting the pocket, but we do not yet know what actually drives these choices. A probe might reflect a targeted hypothesis about a particular interaction region, a generic molecule suggested by the model's chemical priors, or target-specific chemistry recalled from pre-training or post-training. In some trajectories, the probes were also highly similar to one another, meaning that several apparently independent observations could really be repeated measurements of almost the same hypothesis.
+The first problem is probe design. The model chooses its probes after inspecting the pocket, and some trajectories generated several molecules that were only minor variations of one another. In that case, apparently repeated evidence may really be several measurements of almost the same hypothesis rather than independent support for a conserved interaction.
 
-The second problem is deciding how much to trust the resulting evidence. Boltz returns a binding probability alongside each predicted pose, but the current harness does not use that confidence when aggregating pharmacophore features. A feature extracted from a weakly supported pose therefore contributes just as much evidence as one from a much more credible predicted binder. As the figure below shows, most probes had fairly low binding probabilities, and seven trajectories appeared to over-trust noisy probe features.
+The second problem is deciding how much to trust each probe. Boltz returns a binding probability alongside every predicted pose, but the redesigned harness currently aggregates pharmacophore features without weighting them by that probability. A feature extracted from a weakly supported pose therefore contributes just as much evidence as one from a much more credible predicted binder.
 
 <IpdProbeConfidence />
 
-As a result, if several weak poses happen to place the same feature in a similar region, the agent can easily mistake repeated model error for conserved ligand evidence.
+Most of the generated probes had relatively low binding probabilities. That does not make their poses automatically useless, and IPD itself does not impose a binding-probability threshold, but it does make simple recurrence a noisy signal. **If several weak poses place the same feature in roughly the same region, repeated model error can start to look like conserved ligand evidence.**
 
-We also observed basic search-control failures. Eighteen of the 25 Qwen trajectories submitted with unused Boltz budget, leaving 54 of 200 available calls unused. Additional probes using these spare calls could have helped resolve ambiguous hotspots. Even after gathering probe evidence, three trajectories submitted two predictions that could match only the same hidden interaction point. Because the evaluator uses one-to-one matching, only one prediction in each pair could receive credit.
+There were also simpler search-control failures. Some trajectories stopped while Boltz calls were still available, while others spent multiple predictions around effectively the same hotspot. Both waste scarce evidence or prediction budget even after the representation problem has been improved.
 
-At this point, further harness engineering becomes harder to distinguish from writing the scientific policy for the agent by hand. We could add confidence weighting, enforce probe diversity, push the model to use more of its Boltz budget, or prevent competing predictions around the same hotspot. But each additional rule makes more of the experimental strategy ours rather than the model's. Ideally, the model should be discovering new ways to solve the scientific problem, rather than us progressively encoding those methods into the harness.
+At this point, the obvious next fixes start to look less like interface design and more like writing the scientific strategy ourselves. We could weight evidence by probe confidence, enforce probe diversity, encourage the model to use more of its Boltz budget, or suppress competing predictions around the same hotspot. But every one of those choices tells the agent more about **how it should run the experiment**, rather than simply giving it a better representation of the experiment.
 
 ## Lead Optimization
 
