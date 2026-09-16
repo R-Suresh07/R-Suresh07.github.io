@@ -74,7 +74,7 @@ import FigureHeading from '../FigureHeading.astro';
       </div>
     </section>
   </div>
-  <figcaption><strong>We keep the scientific agent fixed and search over the executable harness around it.</strong> Claude Opus 5 acts as the meta-agent, proposing harness revisions that are evaluated by running Qwen 3.5 9B four times on each of 20 tasks. Each task family receives 11 harness evaluations, yielding 880 child-agent trajectories per family and 2,640 across the three experiments. The search objective is terminal task success only; no task-specific partial-credit reward is provided.</figcaption>
+  <figcaption><strong>We keep the scientific agent fixed and search over the executable harness around it.</strong> Claude Opus 5 acts as the meta-agent, proposing harness revisions that are evaluated by running four independent Qwen 3.5 9B rollouts on each of 20 tasks. Each task family receives 11 harness evaluations, yielding 880 child-agent trajectories per family and 2,640 across the three experiments. The search objective is terminal task success only; no task-specific partial-credit reward is provided.</figcaption>
 </figure>
 
 <style>

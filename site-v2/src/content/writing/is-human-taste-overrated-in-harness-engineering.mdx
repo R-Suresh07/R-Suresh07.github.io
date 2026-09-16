@@ -359,57 +359,63 @@ Manual harness engineering was therefore far more than mere implementation work.
 
 ## Can the harness engineer itself?
 
-There are already several ways to automate parts of harness engineering, including prompt optimizers such as GEPA. But our manual interventions touched much more than the prompt: tools, state representation, compaction, oracle wrappers, and submission logic all changed across the three tasks. We therefore wanted a method where the **entire executable harness** could be part of the search space.
+There are already several ways to automate parts of harness design, including prompt optimizers such as GEPA ([Agrawal et al., 2026](#agrawal-et-al-2026)). But our manual interventions changed much more than the prompt. Across the three tasks, we modified tools, state representation, context compaction, task-bound evaluators, and submission logic. We therefore wanted to test **automated harness engineering (AHE)** in a setting where the **entire executable harness** could be part of the search space.
 
-For this, we used **Meta-Harness**, which treats harness design itself as an iterative optimization problem.
+For this, we used **Meta-Harness** ([Lee et al., 2026](#lee-et-al-2026)), which treats harness design itself as an iterative optimization problem.
+
+The loop is straightforward. A meta-agent sees the harness implementations, execution traces, and evaluation scores from previous attempts, proposes a new executable harness, evaluates it with the same underlying agent model, stores the resulting code, traces, and score, and repeats.
 
 <MetaHarnessOverviewFigure />
 
-The loop is straightforward. A meta-agent sees the source code, execution traces, and evaluation scores from previous harnesses, proposes a new version, evaluates it on the task, stores the resulting traces and score, and repeats. Because the harness itself is executable code, the optimizer is free to change much more than instructions alone.
+We initialized the search from the same original harness used at the start of our manual experiments. The question was whether automated search could recover the kinds of improvements we had spent weeks finding by hand.
 
-We initialized this search from the same baseline harness used in our manual experiments and asked whether automated search could recover the kinds of improvements we had spent weeks finding by hand.
+We kept the same basic boundary around what counted as a valid harness intervention. The optimizer could reorganize public task information, change the tools and state exposed to the agent, and modify how the interaction loop was implemented. It could not expose hidden evaluator answers or directly insert known solutions into the environment. The downstream agent still had to produce a solution through interaction with the task.
 
-There is one boundary we kept fixed. The optimizer could redesign how public task information was represented and how the agent interacted with its environment, but it could not expose hidden evaluator answers or directly encode task-specific solutions. The scientific policy still had to belong to the child agent.
+There was another reason this comparison was useful. The manual phase was already partly model-assisted: Claude Opus 5 was used to help read trajectories, organize failure modes, and brainstorm possible harness changes. The human role was still to decide which hypotheses were worth pursuing, where the model–harness boundary should sit, and which interventions to implement.
 
-There was also a more personal reason I found this setup interesting. Throughout the manual phase, Claude Opus 5 had already been my main workhorse for reading trajectories, organizing failure modes, and brainstorming possible harness changes. I was still choosing which hypotheses to pursue, deciding where the model–harness boundary should sit, and implementing the final interventions, but a capable model was already involved in much of the analysis.
-
-Meta-Harness therefore made the comparison more direct. If essentially the same kind of model could inspect the traces, reason about what was going wrong, edit the harness itself, and evaluate the result, **how much was I actually contributing to the loop?** Was the human mainly providing taste and judgment that the model could not recover on its own, or was I just manually orchestrating a process that could already be automated?
+AHE makes that division of labor much sharper. If a model can inspect the same traces, modify the harness itself, run the experiment, and use the resulting score to iterate, **what is the human still contributing to the loop?** Is the important part the search itself, or the judgment required to choose the right representation, abstraction, and boundary between harness and scientific policy?
 
 ### How did we run the search?
 
-To make the comparison fair, we kept the downstream scientific agent fixed. Qwen 3.5 9B served as the model solving the SMDD tasks, while Claude Opus acted as the meta-agent optimizing the harness. This setup created a direct test against the human baseline: Opus had already been my primary tool for analyzing trajectories and brainstorming manual fixes. The question was whether the meta-agent still needed a human in the loop to translate diagnoses into working code.
+To make the comparison clean, we kept the downstream scientific agent fixed. **Qwen 3.5 9B** solved the SMDD tasks in every run, while **Claude Opus 5** acted as the meta-agent proposing changes to the harness around it. This isolates the object being optimized: the scientific agent stays the same, while the executable harness changes.
 
-For each task family, the automated search started from the same original harness rather than from our manually improved version. The meta-agent could inspect the harness source code, trajectories produced by previous candidates, and their evaluation results, then propose a new executable harness for the next round.
+For each task family, automated harness engineering (AHE) started from the same original harness used at the beginning of our manual experiments, rather than from the manually improved version. The meta-agent could inspect the current harness source code, trajectories produced by previous candidates, and their evaluation results, then propose a new executable harness for the next round.
 
-We placed very few restrictions on how it could improve that harness. Prompts were editable, but so were the tools themselves, how state was represented, what information tool calls returned, how context was managed, and the control logic around submission. In other words, the search space included essentially everything around the child model that we had spent the previous sections modifying by hand.
+We placed very few restrictions on what could change. Prompts were editable, but so were the tools themselves, the state exposed to the agent, tool outputs, context management, and the control logic around submission. In other words, the search space covered essentially the same parts of the system that we had spent the previous sections modifying by hand.
 
-What remained untouched was equally important. The child model was fixed, the underlying SMDD tasks and scientific oracles stayed constant, and the optimizer received no hidden answers or task-specific shortcuts. A candidate harness earned reward only by helping Qwen solve the task directly.
-
-We ran this search independently for each of the three task families. Each search used 20 optimization tasks, with four rollouts per task, giving 80 trajectories for every candidate harness. Starting from the base harness, Meta-Harness then proposed 10 additional iterations, so each task family required 11 harness evaluations × 80 trajectories = 880 trajectories. Across all three task families, the automated search therefore generated 2,640 child-agent trajectories.
-
-We deliberately kept the optimization signal simple: every Meta-Harness run was scored only by **terminal task success**. We did not construct task-specific reward rubrics or shape the objective using the failure modes we had discovered manually. That made the comparison cleaner—the automated optimizer received the same definition of success across tasks, rather than an additional layer of human engineering in the reward itself.
-
-This was a deliberately conservative choice for studying harness search, not necessarily the reward we would choose if the only goal were maximum benchmark performance.
+What stayed fixed was just as important. The child model, SMDD tasks, and underlying scientific evaluators did not change, and the optimizer received no hidden answers or known task-specific solutions. A candidate harness only earned reward by helping the same Qwen agent solve more tasks.
 
 <AutomatedHarnessSearchOverview />
 
+We ran the search independently for Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. Each harness was evaluated on **20 tasks with four rollouts per task**, giving **80 child-agent trajectories per harness.** Starting from the base harness, Meta-Harness proposed 10 additional iterations, so each task family used **11 harness evaluations × 80 trajectories = 880 trajectories.** Across the three searches, that produced **2,640 child-agent trajectories.**
+
+We deliberately kept the optimization signal simple: every harness was scored only by **terminal task success.** We did not add task-specific partial-credit rewards, failure-mode rubrics, or manually shaped intermediate objectives. That kept the comparison focused on the harness itself rather than giving the automated optimizer another layer of human-designed guidance through the reward.
+
+This was a conservative choice for studying harness search, not necessarily the reward we would use if the only goal were to maximize benchmark performance.
+
 ## Human taste vs automated search
 
-The automated optimizer started with the same raw ingredients as the human process (code, trajectories, error traces, and iterative attempts) while receiving none of our explicit diagnoses about what to fix.
+The automated optimizer started from the same original harness and had access to the same kinds of evidence we used manually: code, trajectories, evaluation results, and repeated attempts. What it did not receive were our diagnoses of what was wrong or which parts of the harness should change.
 
-So, **which harness worked better?**
+So did automated harness engineering recover the same improvements?
 
-**Manual engineering came out ahead overall, but not on every task.**
+**Not consistently. Manual V2 produced much larger gains on Lead Optimization and Interaction Point Discovery, while automated search found the strongest Scaffold Hopping harness.**
 
 <HumanVsAHEFigure />
 
-The largest advantage was in Lead Optimization. Manual V2 solved 33 of 68 tasks, compared with 13 under both the original harness and automated search. On the paired comparison, V2 uniquely solved 26 tasks while AHE uniquely solved six. The automated optimizer had therefore failed to produce a meaningful improvement over the starting harness, while the manual redesign recovered a large fraction of the benchmark.
+The clearest gap was in **Lead Optimization.** The original harness solved **13/68** tasks, and the best harness found by automated search also solved **13/68**. Manual V2 reached **33/68**. The automated optimizer therefore explored the harness space without recovering the state-management intervention that produced the large manual gain.
 
-Interaction Point Discovery showed the same direction, although the signal was better expressed through partial credit. The original harness recovered 10 of 75 hidden points, automated search recovered 12, and Manual V2 recovered 30. V2 improved the point count on 16 of the 25 paired tasks and regressed on only three. Complete solutions remained rare (two under V2 and none under AHE), so the stronger result here is not the terminal solve count, but the much broader recovery of correct interaction points.
+**Interaction Point Discovery** showed the same pattern more clearly at the point level. The original harness recovered **10/75** hidden interaction points, automated search recovered **12/75**, and Manual V2 recovered **30/75**. Complete solutions remained rare, but the manual redesign produced a much broader shift in partial recovery rather than improving only a small number of tasks.
 
-Scaffold Hopping was the exception. Automated harness search produced the strongest observed Scaffold Hopping result, reaching 5/52 compared with 2/52 for V1 and 1/52 for Manual V2. The absolute numbers are small, and the paired terminal difference is not statistically decisive. The direction remains revealing nonetheless, as this was the only task family where automated search found a harness that improved over both the starting point and our manual redesign.
+**Scaffold Hopping was the exception.** Automated search reached **5/52**, compared with **2/52** under V1 and **1/52** under Manual V2. The absolute numbers remain small, so this is not evidence that Scaffold Hopping is solved. But it is the one task family where automated search found an intervention that moved terminal performance beyond both the starting harness and our manual redesign.
 
-The more useful distinction was what kind of change helped. Our largest gains came from fixing representation and state, while Scaffold Hopping improved when automated search changed the search strategy itself.
+The interesting result is therefore not that one approach simply beat the other. **They were good at different kinds of harness change.**
+
+Our largest manual gains came when the main problem was the structure of the agent’s environment. In IPD, we changed **what evidence the model could observe.** In Lead Optimization, we changed **what state the environment remembered for it.** Automated search made only small gains on those tasks.
+
+Scaffold Hopping was different. By the time we had cleaned up the representation and exposed the relevant geometry, the remaining problem was increasingly about **how to search the chemistry itself.** That was also the one setting where automated harness search did better than our manual redesign.
+
+This split gave us a more useful question than “human or automated?”: **what kinds of harness decisions are easy to discover through optimization, and which ones still depend on choosing the right representation of the problem in the first place?**
 
 ### What did the automated optimizer actually learn?
 
@@ -516,6 +522,10 @@ We thank the broader SMDD-Bench team for building the benchmark and for discussi
 1. <span id="han-et-al-2026">Han, K., Zhang, R., Wei, K., Mahdavi, H., Mireshghallah, N., & Barati Farimani, A. (2026). “SMDD-Bench: Can LLMs Solve Real-World Small Molecule Drug Design Tasks?” *arXiv preprint arXiv:2605.21740*. [https://arxiv.org/abs/2605.21740](https://arxiv.org/abs/2605.21740).</span>
 
 2. <span id="teneggi-et-al-2026">Teneggi, J., Turzo, S. M. B. A., Marwah, T., Bietti, A., Renfrew, P. D., Mulligan, V. K., & Golkar, S. (2026). “Protein Design with Agent Rosetta: A Case Study for Specialized Scientific Agents.” *arXiv preprint arXiv:2603.15952*. [https://arxiv.org/abs/2603.15952](https://arxiv.org/abs/2603.15952).</span>
+
+3. <span id="agrawal-et-al-2026">Agrawal, L. A., Tan, S., Soylu, D., Ziems, N., Khare, R., Opsahl-Ong, K., Singhvi, A., Shandilya, H., Ryan, M. J., Jiang, M., Potts, C., Sen, K., Dimakis, A. G., Stoica, I., Klein, D., Zaharia, M., & Khattab, O. (2026). “GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning.” *arXiv preprint arXiv:2507.19457*. [https://arxiv.org/abs/2507.19457](https://arxiv.org/abs/2507.19457).</span>
+
+4. <span id="lee-et-al-2026">Lee, Y., Nair, R., Zhang, Q., Lee, K., Khattab, O., & Finn, C. (2026). “Meta-Harness: End-to-End Optimization of Model Harnesses.” *arXiv preprint arXiv:2603.28052*. [https://arxiv.org/abs/2603.28052](https://arxiv.org/abs/2603.28052).</span>
 
 ## Citation
 
