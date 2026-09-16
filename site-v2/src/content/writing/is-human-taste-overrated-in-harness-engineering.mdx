@@ -187,11 +187,11 @@ At this point, the obvious next fixes start to look less like interface design a
 
 ## Lead Optimization
 
-IPD showed how representation bottlenecks alone can limit harness performance. The model struggled largely because essential information was difficult to represent and reason over, and fixing that representation took us quite far. However, not every task failed for the same reason.
+IPD showed how much performance can depend on the representation exposed by the harness. But not every task failed for the same reason.
 
-Lead Optimization (LO) presented the opposite challenge. Here, the model frequently proposed reasonable chemistry on its own. The real difficulty was tracking state after proposing those molecules.
+Lead Optimization (LO) presents a different kind of problem. Instead of predicting a small set of 3D points, the agent runs a longer search over many related molecules, repeatedly proposing candidates, testing them, and deciding what to try next.
 
-In an LO task, the agent starts with a protein-bound reference molecule and modifies it to optimize specific properties while keeping others within target thresholds. The candidate must preserve target binding, satisfy hard chemical constraints, and maintain sufficient Tanimoto similarity to the reference. To guide this search, the agent uses RDKit for validity and similarity checks, ADMET-AI for property predictions like toxicity and permeability, and Boltz to evaluate binding pose and affinity. Because expensive ADMET and Boltz evaluations operate under strict budgets, the agent must carefully prioritize which candidates to test.
+In an LO task, the agent starts from a protein-bound reference molecule and modifies it to improve specific properties while keeping others within required ranges. A successful candidate must also preserve binding, satisfy hard chemical constraints, and remain sufficiently similar to the starting molecule. Here, similarity is measured using Tanimoto similarity, a fingerprint-based measure of how much two molecular structures overlap.
 
 {/* TODO: Insert animation of how an LO task is formed. */}
 
@@ -203,71 +203,71 @@ In an LO task, the agent starts with a protein-bound reference molecule and modi
   caption="How a Lead Optimization task is formed. The agent starts from a protein-bound reference molecule and must optimize target properties while preserving binding, satisfying hard constraints, and maintaining similarity to the reference."
 />
 
+The agent has several tools to guide this search. RDKit handles deterministic chemistry checks such as molecular validity and similarity, ADMET-AI predicts properties such as toxicity and permeability, and Boltz estimates whether a candidate is likely to maintain binding. Both ADMET and Boltz calls are limited, so the agent has to decide which candidates are worth spending those evaluations on.
+
 ### How well do current agents do?
 
-Current models handle Lead Optimization much better than Interaction Point Discovery. Generating valid molecules is rarely the main issue. The real challenge is improving target properties without breaking existing ones, all while maintaining strong binding throughout the search. Although a single pass or fail score flattens these complex trade-offs, it provides a clear baseline to see how much performance the harness can help recover.
+Current models handle Lead Optimization much better than Interaction Point Discovery. On the 68-task Lite subset, GPT-5.4 and Gemini 3.1 Pro each solve **37/68** tasks, with Claude Sonnet 4.6 close behind at **36/68**. This gives us something IPD did not: a substantial mix of successful and failed trajectories on the same task family.
 
 <LoBaselineFigure />
 
-The real difference occurs at the Boltz binding stage. GPT-5.4 and Gemini 3.1 Pro achieve an 89.7% pass rate, while Qwen 3.5 9B reaches only 54.4%. Claude offers a notable contrast, maintaining strong performance through pre-Boltz checks but losing final task completions due to a lower binding pass rate.
+A terminal pass or fail, however, compresses a fairly long optimization process into a single bit. A candidate can satisfy the structural and property constraints but lose binding, preserve binding while missing one property target, or come very close to passing everything without ever becoming the submitted molecule. Looking at the evaluator stages gives us some indication of where these runs diverge. For example, GPT-5.4 and Gemini 3.1 Pro pass the Boltz binding stage on **89.7%** of tasks, while Qwen 3.5 9B does so on **54.4%**. Claude also performs strongly on the earlier checks but loses more candidates at the binding stage.
 
-This suggests that proposing a plausible candidate is only part of the problem. The agent still has to carry the right molecule and its associated evidence through the rest of the optimization process.
-
-The search itself can be long and state-heavy. LO runs can stretch across dozens of turns, with some trajectories continuing for 75 turns or more. Over that time, an agent might propose multiple analogues, evaluate disjoint property subsets, discover marginal constraint violations, identify promising binding poses, and circle back to earlier candidates much later in the trajectory. Across these steps, it must continuously track which measurement belongs to which molecule, which properties remain unmeasured, which constraints are satisfied, and how much oracle budget remains.
+The search itself is long and state-heavy. A single trajectory can span dozens of turns while the agent proposes related analogues, evaluates different subsets of properties, discovers marginal constraint violations, tests binding, and later returns to candidates it considered much earlier. Across that process, it has to keep track of **which measurements belong to which molecule, which requirements are still untested, which candidates remain viable, and how much evaluation budget remains.**
 
 <LoCandidateStory />
 
-In the original harness, the model had to track all of this information entirely within its own context. The environment provided no centralized registry for explored candidates or their associated evidence. The trajectory above highlights how messy this tracking becomes. One edit can fix a constraint while exposing another, and the model must carry those changing measurements forward across many later turns. While we initially expected molecular design to be the primary hurdle, analyzing failed trajectories showed that state tracking was a major source of failure.
+In the original harness, the model had to track all of this information entirely within its own context. There was no centralized record linking each candidate to the measurements collected for it, the constraints it passed or failed, or the evaluations that were still missing. The trajectory above shows why this becomes difficult. **A single molecular edit can repair one requirement while creating a new bottleneck, and the agent has to carry that updated state forward across many later turns.**
+
+Looking across the failed trajectories, this became a recurring pattern. The models could often propose reasonable candidates, but struggled to reliably keep track of what had already been tested, which evidence belonged to which molecule, and which candidate was actually strongest by the end of the search. What initially looked like a molecular-design problem was therefore also a state-management problem.
 
 ### What are the agents getting wrong?
 
-One of the most common failures was surprisingly simple. The model would propose a promising molecule, test it correctly, discover that it failed a key requirement, and then submit that same molecule anyway. Even though the negative result was recorded earlier in the run, the agent failed to use that evidence when making its final decision.
+Across the failed trajectories, the same general problem appeared at several different points in the search: **the scientific state did not remain consistent over time.**
 
-Tracking individual candidates also degraded over longer trajectories. When testing multiple related analogues across disjoint property evaluations, the agent had no structured system to link measurements to specific structures. This led to cross-contamination of results between molecules, overlooked property gaps, and lost progress when circling back to previous designs.
+A model could test a promising molecule, correctly discover that it failed a requirement, and then submit that same molecule later. When several related candidates were explored in parallel, measurements from one could be carried over to another, or an earlier candidate could disappear from consideration entirely. Even the task specification itself could drift. A one-sided constraint might later be remembered as a two-sided interval, changing which molecules the model considered viable.
 
 <LoFailureMap />
 
-Agents also struggled to parse and maintain the optimization constraints. Because different tasks use directional bounds or tight tolerances around the starting molecule, models often mixed up the required direction of change. In several cases, the agent misread a one-directional target as a two-sided band or re-calculated the target threshold mid-search, resulting in contradictory goals within the same trajectory.
+The same issue showed up near the end of the search. A model might make a final structural edit and submit the new molecule without rechecking every requirement, or treat a single borderline Boltz result as stronger evidence than it really was. The chemistry could remain useful while the state surrounding it became inconsistent.
 
-Even when the search found a strong candidate, the final verification step frequently failed. A model would spend turns optimizing a molecule, introduce a minor last-minute edit, and submit the new structure without re-evaluating every constraint. Non-deterministic Boltz calls compounded the issue, leading agents to mistake a single borderline prediction for robust evidence.
+These failures have different surface forms, but they share the same underlying burden. In the original harness, **candidate identity, task constraints, measurements, remaining evidence, and final verification all lived implicitly across the model’s context and tool outputs.** As the trajectory grew longer, the model had to continually reconstruct the current state of the search for itself.
 
-What stood out across these failures was that chemistry was rarely the main bottleneck. The trajectories often contained useful candidates and sensible modifications. The true challenge was maintaining a coherent picture of the search over time, including what had been tried, which tests each molecule had passed, how reliable those measurements were, and what still required validation before submission.
+That suggested a different role for the harness. Rather than telling the model which molecules to design, we could move the parts of the search that are deterministic (candidate identity, constraint bookkeeping, evidence provenance, and submission checks) into the environment, while leaving molecular design and experimental choices to the model.
 
 ### Fixing the state
 
-The failures pointed towards a fairly simple division of responsibility. We still wanted the model to decide which molecules to make, which experiments were worth running, and what to do with the results. But there was little reason for it to also remember every threshold, track which measurement belonged to which analogue, or reconstruct the evidence for its finalist from dozens of earlier turns.
+The failures suggested a fairly simple division of responsibility. We still wanted the model to decide which molecules to make, which experiments were worth running, and how to respond to the results. But there was little reason for it to also reconstruct every threshold, remember which measurement belonged to which analogue, or piece together the evidence for a finalist from dozens of earlier turns.
 
-So we started by moving this state out of the trajectory and into the harness directly.
+So we moved that state out of the trajectory and into the harness.
 
-First, the harness locked in the task requirements as an immutable specification with clear thresholds and optimization goals. It then assigned every unique, canonicalized molecule a persistent ID and stored its measurements in a central ledger. Routine validity checks were handled natively, constraint margins were calculated automatically, and external oracle calls were tied to the specific candidate they evaluated.
+The task requirements were compiled once into an immutable specification with explicit thresholds and optimization goals. Every unique molecule was assigned a persistent candidate ID, and its measurements were attached to that candidate in a central ledger. Deterministic checks such as molecular validity and constraint margins were computed by the harness, while ADMET and Boltz results were recorded directly against the exact molecule they evaluated.
 
 <LoStateHarnessFigure />
 
-Long trajectories created a second problem. Even with the important state stored explicitly, the conversational history itself could grow large enough that earlier reasoning and failed approaches became difficult to recover. Inspired by Agent Rosetta, once the context exceeded roughly 60K tokens, we asked the same model to compress the trajectory into a summary of what had been tried, what had been learned, and what it should consider doing next. We kept the two most recent actions verbatim so the local context was not lost, while the candidate ledger remained untouched and persisted in full.
+Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="7">Agent Rosetta keeps long protein-design trajectories manageable by maintaining a compact summary of earlier actions and their effects on key design metrics, while keeping only the two most recent interaction steps in the model’s active context. We borrow the same general idea of separating long-term trajectory information from the recent local context, but keep our structured candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
 
-This meant we could aggressively compact the model’s conversational history without compressing the scientific record itself. Older reasoning could be summarized, but candidate identities, measurements, failed gates, and remaining evidence stayed exact. This was particularly useful on the longer-running tasks, where the agent could otherwise spend much of its context repeatedly reconstructing decisions it had already made.
+This distinction mattered. **We could compress the model’s memory of the search without compressing the scientific record itself.** Older reasoning could be summarized, but candidate identities, measurements, failed constraints, and missing evidence remained exact.
 
-Importantly, the harness did not suggest which molecule to test next or otherwise influence the scientific search. It simply made the current state explicit. At any point, the agent could inspect a candidate together with its measurements, unmet constraints, and remaining budget, while older conversational history could be compacted without losing that authoritative state.
+Submission became stateful as well. Instead of asking the model to write an arbitrary molecule to `solution.smi`, the redesigned harness required it to submit a registered candidate directly. A normal submission was accepted only when that exact molecule had complete passing evidence. An incomplete candidate could still be forced through as a fallback, but doing so became an explicit choice rather than an accidental mismatch between what had been tested and what was submitted.
 
-This also changed how final submissions worked. Under the original setup, the molecule written to the `solution.smi` file could differ from the one actually tested, or carry a known failing score from an earlier turn. The new harness required submissions to reference a registered candidate directly and accepted a normal submission only when that exact structure had complete passing evidence. The agent could still force an incomplete submission as a fallback, but that became a deliberate choice rather than an accidental state-tracking error.
-
-The intervention did not change how the model searched. It simply made the evidence it had already gathered much harder to lose, misattribute, or misread.
+The harness still did not choose which molecule to propose, which candidate deserved an expensive evaluation, or what chemical edit to try next. **It made the facts of the search durable while leaving the scientific decisions to the model.**
 
 ### Did better state management help?
 
-For Qwen 3.5 9B, the impact was substantial. Across the benchmark of 68 Lead Optimization tasks, fully passing solutions rose from 13 to 33, increasing the overall success rate from 19.1% to 48.5%.
+For Qwen 3.5 9B, the change was substantial. On the same 68-task Lead Optimization Lite subset, successful tasks increased from **13/68** to **33/68**, raising the pass rate from **19.1%** to **48.5%**.
 
-What makes this result more interesting is that V2 did not get there by submitting more often. The original harness produced an answer on 66 of the 68 tasks, but only 13 of those submissions passed every requirement. Under V2, the agent submitted on just 48 tasks. Of those, 33 were normal submissions with complete passing evidence, while 9 were forced submissions with known failures and another 6 were missing required evidence. The remaining runs reached the turn limit before submitting.
-
-The harness made the agent considerably more selective. Among submitted answers, the passing rate rose from 19.7% to 68.8%. Because the original harness did not categorize incomplete or forced attempts prior to submission, the cleaner evaluation remains the task-level outcome, rising from 13/68 to 33/68 for an improvement of 29.4 percentage points.
-
-The gain also did not come from simply letting the model reason for longer. Across the full 68-task run, V2 used 12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls. Boltz usage moved in the opposite direction, increasing by 51%. With cheap constraints and candidate state handled explicitly, the model spent fewer turns and tokens overall while making substantially more use of Boltz, shifting more of its oracle budget towards checking whether promising candidates actually bound.
+What makes the result more interesting is that V2 did not get there by submitting more often. Under the original harness, Qwen produced a terminal submission on 66 of 68 tasks, but only 13 passed every requirement. Under V2, it submitted on just 48 tasks: **33 were verified successes, 9 were explicit forced submissions with a known failed requirement, and 6 were forced with required evidence still missing.** The remaining 20 trajectories reached the turn limit without submitting.
 
 <LoHarnessOutcomes />
 
-There was still a clear limit. Twenty V2 trajectories reached the turn limit without submitting, compared to only two under V1. While explicit state management removed many avoidable bookkeeping errors, it could not guide the agent out of an unproductive search path or suggest better chemical modifications. These remaining roadblocks pointed directly to limitations in the search policy itself.
+So the redesigned harness made the agent much more selective. Success among submitted candidates increased from **19.7%** to **68.8%**, while overall task success improved by **29.4 percentage points**. The task-level result is the cleaner comparison, since the original harness did not distinguish forced or incomplete submissions before accepting them.
 
-Lead Optimization showed that a large fraction of failures could be recovered by making the agent’s state explicit and reliable. The next question was whether the same approach would help when the bottleneck was less about remembering the search and more about reasoning over the molecule itself.
+The gain also did not come from simply giving the model more room to reason. Across the 68 tasks, V2 used **12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls**, while Boltz usage increased by **51%**. With cheap checks and candidate state handled explicitly, the model spent less effort reconstructing the search and more of its expensive evaluation budget testing whether promising candidates actually maintained binding.
+
+There was still a clear limit. **Twenty V2 trajectories reached the turn limit without submitting, compared with only two under V1.** Making the search state reliable could prevent many avoidable mistakes, but it could not tell the model how to escape an unproductive chemical search or which modification to try next.
+
+Lead Optimization produced a different dynamic than IPD. In IPD, expanding the evidence the model could observe yielded the largest gain. Here, much of the necessary evidence already existed, and the larger gain came from keeping that data **persistent, candidate-specific, and hard to lose.** The next task explores what happens when neither intervention proves sufficient.
 
 ## Scaffold Hopping
 
@@ -305,7 +305,7 @@ But binding strongly is not the same as binding in the same way. Verifying a sca
 
 We therefore redesigned the interface around making this structural evidence directly accessible. As in Lead Optimization, every proposed molecule was canonicalized, registered under a persistent candidate ID, and passed through deterministic novelty checks before spending an expensive Boltz call. The protein and pocket configuration were also bound directly to the task.
 
-The more important change came after Boltz. In the original harness, the response returned a binding probability together with the directory containing the generated structures. In V2, each result was attached directly to the candidate and returned the predicted pose files explicitly.<Sidenote number="5" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking whether a molecule appears to bind to inspecting how it binds.
+The more important change came after Boltz. In the original harness, the response returned a binding probability together with the directory containing the generated structures. In V2, each result was attached directly to the candidate and returned the predicted pose files explicitly.<Sidenote number="8" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking whether a molecule appears to bind to inspecting how it binds.
 
 The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts needed to survive. Deciding whether a candidate preserved the important interactions, how to modify it when it did not, and whether another experiment was worthwhile remained part of the model's scientific reasoning. We also removed irrelevant tools and tied final submission to the same registered candidate state.
 
@@ -508,6 +508,8 @@ We thank the broader SMDD-Bench team for building the benchmark and for discussi
 ## References
 
 1. <span id="han-et-al-2026">Han, K., Zhang, R., Wei, K., Mahdavi, H., Mireshghallah, N., & Barati Farimani, A. (2026). “SMDD-Bench: Can LLMs Solve Real-World Small Molecule Drug Design Tasks?” *arXiv preprint arXiv:2605.21740*. [https://arxiv.org/abs/2605.21740](https://arxiv.org/abs/2605.21740).</span>
+
+2. <span id="teneggi-et-al-2026">Teneggi, J., Turzo, S. M. B. A., Marwah, T., Bietti, A., Renfrew, P. D., Mulligan, V. K., & Golkar, S. (2026). “Protein Design with Agent Rosetta: A Case Study for Specialized Scientific Agents.” *arXiv preprint arXiv:2603.15952*. [https://arxiv.org/abs/2603.15952](https://arxiv.org/abs/2603.15952).</span>
 
 ## Citation
 

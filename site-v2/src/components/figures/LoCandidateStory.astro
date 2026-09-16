@@ -220,7 +220,7 @@ const initialMeasurementStage = stages[1];
             </article>
 
             {index !== 0 && <article class="result-card">
-              <span class="section-label">{index === 0 ? 'Task requirement' : 'Oracle result'}</span>
+              <span class="section-label">{index === 0 ? 'Task requirement' : 'Evaluation result'}</span>
               <dl>
                 {stage.results.map(result => (
                   <div class:list={[result.state, { 'near-miss': 'nearMiss' in result && result.nearMiss }]}>
@@ -292,7 +292,7 @@ const initialMeasurementStage = stages[1];
 
     <div class="annotation">The model repairs one requirement, reads the new evidence, and shifts to the next bottleneck.</div>
     <figcaption class="editorial-figure-caption">
-      <span class="caption-lead">Successful Lead Optimization is a closed-loop process of finding and repairing the current limiting constraint.</span> In this structure–activity relationship (SAR)<Sidenote number="5"><b><a href="https://en.wikipedia.org/wiki/Structure%E2%80%93activity_relationship">Structure–activity relationship (SAR)</a></b> describes how changes to a molecule’s chemical structure affect its measured or predicted properties.</Sidenote> sequence for Cathepsin K<Sidenote number="6"><b><a href="https://en.wikipedia.org/wiki/Cathepsin_K">Cathepsin K</a></b> is the protein target for this Lead Optimization task. The agent is modifying a starting molecule while trying to satisfy the task’s property and binding requirements.</Sidenote>, replacing the reference nitrile with dimethylamino reduced predicted mutagenicity (<b>Ames</b>) but disrupted binding. A hydroxymethyl analogue restored binding but narrowly missed the <b>blood–brain barrier (BBB) permeability</b> window. One-carbon homologation crossed the BBB boundary while retaining the earlier gains, producing a candidate that passed every requirement.
+      <span class="caption-lead">This successful trajectory repeatedly identifies and repairs the current bottleneck.</span> In this structure–activity relationship (SAR)<Sidenote number="5">Structure–activity relationship (SAR) describes how changes to a molecule’s chemical structure affect its measured or predicted properties.</Sidenote> sequence for Cathepsin K<Sidenote number="6">Cathepsin K is the protein target in this example.</Sidenote>, replacing the reference nitrile with dimethylamino reduced predicted mutagenicity (<b>Ames</b>) but disrupted binding. A hydroxymethyl analogue restored binding but narrowly missed the <b>blood–brain barrier (BBB) permeability</b> window. One-carbon homologation crossed the BBB boundary while retaining the earlier gains, producing a candidate that passed every requirement.
     </figcaption>
   </figure>
   <script is:inline type="application/json" class="stage-data" set:html={JSON.stringify(stages.map(({ image, ...stage }) => stage))} />
