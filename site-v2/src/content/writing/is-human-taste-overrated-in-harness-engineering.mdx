@@ -57,7 +57,7 @@ This means an agent system contains two decision procedures rather than one. The
   emphasizedCaption
 />
 
-The asymmetry is that these two procedures are optimized very differently. The model’s policy is learned through training, while the harness around it is still commonly designed by hand. A developer decides which tools to expose, what state deserves a durable representation, how outputs should be structured, when context should be compacted, and what conditions should block an action or submission.
+The asymmetry is that these two procedures are optimized very differently. The model’s **policy, its learned strategy for deciding what to do next,** is shaped through training, while the harness around it is still commonly designed by hand. A developer decides which tools to expose, what state deserves a durable representation, how outputs should be structured, when context should be compacted, and what conditions should block an action or submission.
 
 Those choices rely heavily on **human taste**. Usually, we run an agent, inspect where it failed, form a hypothesis about whether the problem came from the model or its environment, modify the harness, and run everything again. The final fix can be a few lines of code. Figuring out which few lines to change can take days.
 
@@ -73,7 +73,7 @@ We focus on three SMDD-Bench tasks that expose different kinds of harness depend
 
 SMDD-Bench contains 502 instances across five small-molecule design tasks. Each combines chemical and biological reasoning with specialized tools, and several also require reasoning over the 3D geometry of a protein binding pocket.
 
-We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. They sit at very different points on the current capability curve. Lead Optimization is comparatively tractable, with the best reported model solving 57.6% of tasks, while the best reported pass rates for Scaffold Hopping and Interaction Point Discovery are only 3.8% and 4.0%, respectively.<Sidenote number="2" align="paragraph">These are the best reported pass rates in the original SMDD-Bench evaluation: GPT-5.4 for Lead Optimization, GPT-5.4 / Claude Sonnet 4.6 / DeepSeek V3.2 tied for Scaffold Hopping, and Gemini 3.1 Pro for Interaction Point Discovery.</Sidenote> This gives us one task where agents already succeed reasonably often and two where performance remains close to the floor.
+We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. They sit at very different points on the current capability curve. Lead Optimization is comparatively tractable, with the best reported model solving 57.6% of tasks, while the best reported pass rates for Scaffold Hopping and Interaction Point Discovery are only 3.8% and 4.0%, respectively.<Sidenote number="2" align="paragraph">These are the best reported pass rates in the original SMDD-Bench evaluation: GPT-5.4 for Lead Optimization, GPT-5.4 / Claude Sonnet 4.6 / DeepSeek V3.2 tied for Scaffold Hopping, and Gemini 3.1 Pro for Interaction Point Discovery. Our Lead Optimization experiments below use the 68-task Lite subset.</Sidenote> This gives us one task where agents already succeed reasonably often and two where performance remains close to the floor.
 
 <Figure
   src={smddBenchOverview}
@@ -91,7 +91,7 @@ We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping
 
 The goal of Interaction Point Discovery (IPD) is to identify conserved interaction hotspots inside a protein binding pocket: regions where different molecules repeatedly make the same kinds of interactions when binding to the protein. These hotspots can then guide the design and optimization of new molecules.
 
-The task contains a deliberate information asymmetry. **The agent receives a single protein receptor and the location of its binding pocket, but the hidden answer is derived from interactions recurring across many different bound ligands.** The agent must predict three ligand-side interaction points, specifying both their 3D coordinates and their **pharmacophore type** (the kind of chemical interaction the ligand feature can make, such as a hydrogen-bond donor, acceptor, or hydrophobic interaction).
+The task contains a deliberate information asymmetry. **The agent receives a single protein receptor and the location of its binding pocket, but the hidden answer is derived from interactions recurring across many different bound ligands, the molecules that bind to the protein.** The agent must predict three ligand-side interaction points, specifying both their 3D coordinates and their **pharmacophore type** (the kind of chemical interaction the ligand feature can make, such as a hydrogen-bond donor, acceptor, or hydrophobic interaction).
 
 <InteractionPointExplorer
   initialTaskId="smdd_002_Q9Y6K1_0"
@@ -152,17 +152,17 @@ Even when agents found sensible regions of the pocket, they could still waste th
   caption="Precision with only three guesses. Each prediction needs a compatible interaction type and a location within 2.5 Å of a hidden point; repeated guesses around one hotspot count only once."
 />
 
-There was also a simpler interface problem. The original harness exposed the same generic drug-design tools across tasks, even though IPD only required the agent to reason about three 3D points and submit them in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness required the agent to manually construct `solution.csv` and submit its path. This occasionally failed for reasons unrelated to the scientific prediction itself. In `smdd_002_Q92769_0`, for example, the model produced three intended points but separated the values with spaces rather than commas, leaving the evaluator unable to parse the file.</Sidenote> This added tool-selection, file-writing, and formatting work that was separate from the scientific problem itself.
+There was also a simpler interface problem. The original harness exposed the same generic drug-design tools across tasks, even though the required IPD output was only three 3D points in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness required the agent to manually construct `solution.csv` and submit its path. This occasionally failed for reasons unrelated to the scientific prediction itself. In `smdd_002_Q92769_0`, for example, the model produced three intended points but separated the values with spaces rather than commas, leaving the evaluator unable to parse the file.</Sidenote> This added tool-selection, file-writing, and formatting work that was separate from the scientific problem itself.
 
 The important distinction is that these failures sit at different levels. **Inferring conservation from a single receptor is part of the scientific challenge. Confusing receptor atoms with ligand-side points, duplicating the same hotspot, or losing an otherwise valid answer to file formatting are not.** That gave us a natural place to start. 
 
-### Fixing the representations
+### Fixing the representation
 
 The first set of failures gave us a clear place to start. We refer to the original SMDD-Bench interface as V1, and the redesigned task-specific interface below as V2. We made it explicit that the model had to predict **ligand-side interaction points in the pocket**, rather than receptor atoms themselves. We also removed the tools that were irrelevant to IPD<Sidenote number="4" align="paragraph">The original harness exposed the same generic drug-design interface across tasks, including ADMET property prediction and file-based submission. Most of these tools were irrelevant to IPD and added execution choices unrelated to predicting three interaction points.</Sidenote> and replaced manual CSV construction with a dedicated submission interface that accepts the three predicted points directly.
 
 That removed some avoidable execution burden, but it did not solve the central problem we saw in the trajectories. Even when the model identified chemically sensible regions of the pocket, it still had little evidence for deciding which of those interactions would actually recur across different bound ligands.
 
-So we changed what the agent could observe. Instead of asking it to infer conservation entirely from a single receptor structure, we gave it a way to run small computational experiments. The agent could design **probe molecules**, use Boltz to predict their bound poses, and inspect the ligand-side pharmacophore features produced by each probe. By comparing several probes, it could build a small computational ligand ensemble of its own and look for interaction regions that appeared repeatedly.
+So we changed what the agent could observe. Instead of asking it to infer conservation entirely from a single receptor structure, we gave it a way to run small computational experiments. The agent could design **probe molecules**, use Boltz to predict their **bound poses, the predicted 3D position and orientation of each molecule inside the pocket**, and inspect the ligand-side pharmacophore features produced by each probe. By comparing several probes, it could build a small computational ligand ensemble of its own and look for interaction regions that appeared repeatedly.
 
 The harness still did not choose which probes to generate or which recurring features to trust. Its role was to expose evidence that was closer to what the task actually asks about, while leaving the scientific decisions to the model.
 
@@ -207,6 +207,8 @@ In an LO task, the agent starts from a protein-bound reference molecule and modi
 />
 
 The agent has several tools to guide this search. RDKit handles deterministic chemistry checks such as molecular validity and similarity, ADMET-AI predicts properties such as toxicity and permeability, and Boltz estimates whether a candidate is likely to maintain binding. Both ADMET and Boltz calls are limited, so the agent has to decide which candidates are worth spending those evaluations on.
+
+The evaluator checks several requirements, or **gates**, each of which a candidate must pass.
 
 ### How well do current agents perform?
 
@@ -274,7 +276,7 @@ Lead Optimization produced a different dynamic than IPD. In IPD, expanding the e
 
 ## Scaffold Hopping
 
-Scaffold Hopping asks the agent to do something almost opposite to Lead Optimization. Instead of staying close to the reference molecule, the new candidate must be **structurally different enough to count as a new scaffold while preserving the way the original molecule interacts with the protein pocket.**
+Scaffold Hopping asks the agent to do something almost opposite to Lead Optimization. Instead of staying close to the reference molecule, the new candidate must be structurally different enough to count as a new **scaffold, the core molecular framework around which the rest of the molecule is built,** while preserving the way the original molecule interacts with the protein pocket.
 
 We refer to these two requirements as **novelty** and **interaction preservation**. In simple terms, novelty asks whether the molecule has changed enough to count as a genuinely different scaffold, while interaction preservation asks whether the new molecule still makes the same important contacts with the protein in roughly the same places.
 
@@ -366,7 +368,7 @@ Manual harness engineering was therefore far more than mere implementation work.
 
 ## Can the Harness Engineer Itself?
 
-There are already several ways to automate parts of harness design, including prompt optimizers such as GEPA ([Agrawal et al., 2026](#agrawal-et-al-2026)). But our manual interventions changed much more than the prompt. Across the three tasks, we modified tools, state representation, context compaction, task-bound evaluators, and submission logic. We therefore wanted to test **automated harness engineering (AHE)** in a setting where the **entire executable harness** could be part of the search space.
+There are already several ways to automate parts of harness design, including prompt optimizers such as GEPA ([Agrawal et al., 2026](#agrawal-et-al-2026)). But our manual interventions changed much more than the prompt. Across the three tasks, we modified tools, state representation, context compaction, evaluators configured directly from each task, and submission logic. We therefore wanted to test **automated harness engineering (AHE)** in a setting where the **entire executable harness** could be part of the search space.
 
 For this, we used **Meta-Harness** ([Lee et al., 2026](#lee-et-al-2026)), which treats harness design itself as an iterative optimization problem.
 
@@ -396,13 +398,13 @@ What stayed fixed was just as important. The child model, SMDD tasks, and underl
 
 We ran the search independently for Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. Each harness was evaluated on **20 tasks with four rollouts per task**, giving **80 child-agent trajectories per harness.** Starting from the base harness, Meta-Harness proposed 10 additional iterations, so each task family used **11 harness evaluations × 80 trajectories = 880 trajectories.** Across the three searches, that produced **2,640 child-agent trajectories.**
 
-We deliberately kept the optimization signal simple: every harness was scored only by **terminal task success.** We did not add task-specific partial-credit rewards, failure-mode rubrics, or manually shaped intermediate objectives. That kept the comparison focused on the harness itself rather than giving the automated optimizer another layer of human-designed guidance through the reward.
+We deliberately kept the optimization signal simple: every harness was scored only by **terminal task success, meaning whether the complete task passed all required checks.** We did not add task-specific partial-credit rewards, failure-mode rubrics, or manually shaped intermediate objectives. That kept the comparison focused on the harness itself rather than giving the automated optimizer another layer of human-designed guidance through the reward.
 
 This was a conservative choice for studying harness search, not necessarily the reward we would use if the only goal were to maximize benchmark performance.
 
 ## Human Taste vs Automated Search
 
-The automated optimizer started from the same original harness and had access to the same kinds of evidence we used manually: code, trajectories, evaluation results, and repeated attempts. What it did not receive were our diagnoses of what was wrong or which parts of the harness should change.
+Automated harness engineering started from the same original harness and used the same raw materials as the manual process: code, trajectories, evaluation results, and repeated runs. The optimizer did not receive our diagnoses of what was wrong or which parts of the harness should change.
 
 So did automated harness engineering recover the same improvements?
 
@@ -462,15 +464,15 @@ Manual V2 changed something more fundamental. Instead of asking Qwen to infer co
 
 That distinction showed up in the final evaluation: the selected automated harness recovered **12/75** hidden interaction points, while Manual V2 recovered **30/75**.
 
-**Scaffold Hopping.** Here, the pattern reversed. Both approaches recognized the same underlying difficulty: the original harness made a strong binding score much easier to use than the structural evidence needed to preserve the reference interaction pattern. Manual V2 responded by making the deterministic parts of the task exact and auditable: candidate identity, novelty checks, task-bound Boltz execution, pose access, and submission state.
+**Scaffold Hopping.** Here, the pattern reversed. Both approaches recognized the same underlying difficulty: the original harness made a strong binding score much easier to use than the structural evidence needed to preserve the reference interaction pattern. Manual V2 responded by making the deterministic parts of the task exact and auditable: candidate identity, novelty checks, Boltz execution configured directly from the task, pose access, and submission state.
 
 AHE moved in a different direction. Across iterations, it became increasingly conservative about _how_ Qwen should modify the molecule. It encouraged preservation of anchors and linker geometry, pushed the model away from overly aggressive scaffold changes, and brought pose inspection back into the decision process.
 
 <ScaffoldAheVsHumanFigure />
 
-**Because a successful scaffold hop needs both novelty and interaction preservation, neither objective is useful on its own.** The resulting AHE harness occupied a different operating point: it sacrificed some reliability on the novelty checks in exchange for preserving the reference interaction pattern more often.
+**Because a successful scaffold hop needs both novelty and interaction preservation, neither objective is useful on its own.** The selected AHE harness traded some novelty reliability for a search policy that preserved interactions more often.
 
-This is the important difference from Lead Optimization and IPD. Here, the automated optimizer did not win by making the task representation cleaner. It won by **changing the scientific strategy Qwen followed inside that representation.**
+This is the important difference from Lead Optimization and IPD. The stronger AHE result did not come from making the task representation cleaner. It came from **changing the scientific strategy Qwen followed inside that representation.**
 
 Manual V2 was asking: **how do we expose the task faithfully without deciding the chemistry for the model?** AHE was rewarded for a different question: **what harness behavior makes Qwen solve more tasks?**
 
