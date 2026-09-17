@@ -276,7 +276,9 @@ Lead Optimization produced a different dynamic than IPD. In IPD, expanding the e
 
 Scaffold Hopping asks the agent to do something almost opposite to Lead Optimization. Instead of staying close to the reference molecule, the new candidate must be **structurally different enough to count as a new scaffold while preserving the way the original molecule interacts with the protein pocket.**
 
-Those two goals pull in opposite directions. Moving farther away in chemical space makes it easier to satisfy the novelty requirement, but also makes it easier to disrupt the interactions and geometry that supported binding in the first place.
+We refer to these two requirements as **novelty** and **interaction preservation**. In simple terms, novelty asks whether the molecule has changed enough to count as a genuinely different scaffold, while interaction preservation asks whether the new molecule still makes the same important contacts with the protein in roughly the same places.
+
+Those two goals pull in opposite directions. Moving farther away in chemical space makes it easier to satisfy novelty, but also makes it easier to disrupt the interactions and geometry that supported binding in the first place.
 
 <LoVsScaffoldHopFigure />
 
@@ -299,6 +301,8 @@ That leaves an important question open: **are agents failing because they cannot
 The terminal scores make Scaffold Hopping look uniformly hopeless, but the individual evaluation checks reveal a much clearer pattern.
 
 Generating a structurally distinct molecule is usually not the bottleneck. Models regularly clear the Tanimoto and scaffold-novelty thresholds, and several also propose candidates with high predicted binding probability.
+
+**A molecule can therefore have a high predicted binding probability without preserving the interaction pattern of the reference molecule.** Binding asks whether the molecule is likely to bind at all; interaction preservation asks whether it binds in the same way.
 
 The consistent failure is preserving the **reference interaction pattern inside the pocket.** No model clears this requirement on more than 3 of the 52 tasks. GPT-5.4 passes the binding-probability threshold on **46/52** tasks, yet preserves the required pocket interactions on only **3/52**. Claude is even more revealing: it satisfies the scaffold-novelty requirements on all 52 tasks and clears binding on 48, but preserves the reference interaction pattern on just 2.
 
@@ -464,7 +468,7 @@ AHE moved in a different direction. Across iterations, it became increasingly co
 
 <ScaffoldAheVsHumanFigure />
 
-The resulting harness occupied a different operating point. Manual V2 was extremely reliable at enforcing the novelty requirements it could observe directly, but that did not translate into preserving the hidden interaction pattern. AHE was willing to sacrifice some of that novelty reliability in exchange for a search policy that preserved interactions more often.
+**Because a successful scaffold hop needs both novelty and interaction preservation, neither objective is useful on its own.** The resulting AHE harness occupied a different operating point: it sacrificed some reliability on the novelty checks in exchange for preserving the reference interaction pattern more often.
 
 This is the important difference from Lead Optimization and IPD. Here, the automated optimizer did not win by making the task representation cleaner. It won by **changing the scientific strategy Qwen followed inside that representation.**
 
