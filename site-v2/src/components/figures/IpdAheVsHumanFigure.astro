@@ -13,6 +13,53 @@ const parseCsv = (source: string) => {
   });
 };
 
+const harnessChanges = [
+  {
+    title: 'Base harness',
+    explanation: 'The model received the receptor structure and pocket location, but no IPD-specific search procedure. It had to devise its own method for locating and labeling the three ligand-side interaction points.',
+  },
+  {
+    title: 'Map the cavity and score hotspots',
+    explanation: 'The harness maps the ligand-accessible cavity, scores locations for possible ligand interactions, and groups nearby high-scoring locations into hotspots. This turns an open-ended 3D search into a staged geometric workflow.',
+  },
+  {
+    title: 'Simplify workflow and score points in bulk',
+    explanation: 'The harness scores all cavity locations together using receptor-contact geometry and pocket burial. The shorter workflow is intended to reduce computation overhead and leave more time for comparing candidates.',
+  },
+  {
+    title: 'Score complete three-point sets',
+    explanation: 'Instead of selecting the best points one at a time, the harness evaluates complete three-point combinations. It favors sets whose points are well separated, remain inside the cavity, and form a compact arrangement near the pocket center.',
+  },
+  {
+    title: 'Add structure probes and loosen geometry rules',
+    explanation: 'The harness can test its geometric hotspots by predicting where small generic fragments might bind. It also allows points and the set center to lie farther from the supplied pocket center.',
+  },
+  {
+    title: 'Anchor the search on hydrogen-bond sites',
+    explanation: 'The harness constructs hydrogen-bond points directly from the position and direction of receptor donor or acceptor groups. It keeps only anchors that lie in accessible, sufficiently buried pocket space.',
+  },
+  {
+    title: 'Search low-energy interaction sites',
+    explanation: 'For hydrophobic and aromatic points, the harness searches for locations where a generic carbon probe would interact favorably with the pocket. Local low-energy regions become candidate hotspots.',
+  },
+  {
+    title: 'Spread points across the cavity',
+    explanation: 'The harness estimates the cavity’s main axis, divides that axis into sections, and selects a strong candidate from each section. This discourages all three predictions from clustering in one local hotspot.',
+  },
+  {
+    title: 'Use sub-pocket centers with a cross-check',
+    explanation: 'The harness groups high-scoring hydrophobic locations into sub-pockets and uses each group’s center as a candidate. It gives greater confidence to sites found by both contact-based scoring and the independent energy calculation.',
+  },
+  {
+    title: 'Remove the cross-check',
+    explanation: 'The harness stops requiring agreement between contact-based and energy-based scoring. This leaves more candidate sub-pockets available, but removes the independent confirmation used in Iteration 8.',
+  },
+  {
+    title: 'Return to bulk grid scoring',
+    explanation: 'The harness restores Iteration 2’s simpler recipe: score every cavity-grid location in bulk, cluster the strongest locations, and choose the final points from those clusters. It no longer uses the later precise-anchor or sub-pocket procedures.',
+  },
+] as const;
+
 const search = parseCsv(searchCsv).map(row => ({
   iteration: Number(row.display_index),
   harnessNumber: Number(row.harness_number),
@@ -59,7 +106,7 @@ const reachedTwo = pointMatrix.filter(task => Math.max(...task.values) >= 2).len
 const reachedThree = pointMatrix.filter(task => Math.max(...task.values) >= 3).length;
 const correlation = pearson(search.map(point => point.terminal), search.map(point => point.matchedPoints));
 
-const dataMismatch = search.length !== 11 || pointMatrix.length !== 20 || terminalMatrix.length !== 20
+const dataMismatch = search.length !== 11 || harnessChanges.length !== search.length || pointMatrix.length !== 20 || terminalMatrix.length !== 20
   || search.some(point => point.totalTrajectories !== 80 || point.possiblePoints !== 240 || point.bestOfFourPossible !== 60 || point.totalTasks !== 20)
   || search.some(point => pointMatrix.reduce((sum, task) => sum + task.values[point.iteration], 0) !== point.bestOfFour)
   || search.some(point => pointMatrix.filter(task => task.values[point.iteration] >= 1).length !== point.tasksAtOne)
@@ -150,7 +197,16 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
       <button class="drawer-backdrop" type="button" hidden aria-label="Close iteration details"></button>
       <aside id="fig-24-inspector" class="inspector" hidden aria-live="polite" aria-label="Selected harness evaluation details">
         <header>
-          <div><small data-inspector-kicker>ITERATION {selected.iteration} · HARNESS {selected.harnessNumber}</small><strong data-inspector-title>{selected.annotation}</strong></div>
+          <div class="inspector-heading">
+            <small data-inspector-kicker>ITERATION {selected.iteration} · HARNESS {selected.harnessNumber}</small>
+            <div class="inspector-title-row">
+              <strong data-inspector-title>{harnessChanges[selected.iteration].title}</strong>
+              <span class="change-help">
+                <button class="change-help-trigger" type="button" aria-label="Explain this harness change" aria-expanded="false" aria-describedby="fig-24-change-help">?</button>
+                <span id="fig-24-change-help" class="change-help-tooltip" role="tooltip" data-inspector-explanation>{harnessChanges[selected.iteration].explanation}</span>
+              </span>
+            </div>
+          </div>
           <button class="drawer-close" type="button" aria-label="Close iteration details">×</button>
         </header>
         <div class="primary-metrics">
@@ -187,7 +243,7 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
     </details>
     <figcaption><strong>A terminal-only reward discarded most of the partial-progress signal generated during search.</strong> AHE selected iteration 2 because it was the first harness to achieve 2/80 complete successes. Iteration 7 recovered substantially more individual interaction points, 43/240 versus 33/240, but produced only 1/80 complete successes and was therefore ranked lower by the optimization objective. Across the search, terminal reward and partial recovery were only weakly correlated (Pearson <em>r</em> = {correlation.toFixed(2)}).</figcaption>
   </figure>
-  <script is:inline type="application/json" class="ipd-search-data" set:html={JSON.stringify({ search })} />
+  <script is:inline type="application/json" class="ipd-search-data" set:html={JSON.stringify({ search, harnessChanges })} />
 </ipd-reward-gap>
 
 <script>
@@ -203,21 +259,30 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
       const drawer = this.querySelector<HTMLElement>('.inspector')!;
       const backdrop = this.querySelector<HTMLButtonElement>('.drawer-backdrop')!;
       const close = this.querySelector<HTMLButtonElement>('.drawer-close')!;
+      const help = this.querySelector<HTMLElement>('.change-help')!;
+      const helpTrigger = this.querySelector<HTMLButtonElement>('.change-help-trigger')!;
       const fields = {
         kicker: this.querySelector<HTMLElement>('[data-inspector-kicker]')!,
         title: this.querySelector<HTMLElement>('[data-inspector-title]')!,
+        explanation: this.querySelector<HTMLElement>('[data-inspector-explanation]')!,
         terminal: this.querySelector<HTMLElement>('[data-terminal]')!,
         points: this.querySelector<HTMLElement>('[data-points]')!,
         three: this.querySelector<HTMLElement>('[data-three]')!,
         selected: this.querySelector<HTMLElement>('[data-selected]')!,
       };
       let activeTrigger: SVGGElement | null = null;
+      const setHelpOpen = (open: boolean) => {
+        help.classList.toggle('open', open);
+        helpTrigger.setAttribute('aria-expanded', String(open));
+      };
       const openDrawer = (iteration: number, trigger: SVGGElement) => {
         const point = payload.search[iteration]; this.dataset.activeIteration = String(iteration);
         activeTrigger = trigger;
         evaluations.forEach(node => { const active = Number(node.dataset.point) === iteration; node.classList.toggle('active', active); node.setAttribute('aria-expanded', String(active)); });
         fields.kicker.textContent = `${iteration === 0 ? 'BASE' : `ITERATION ${iteration}`} · HARNESS ${point.harnessNumber}`;
-        fields.title.textContent = point.annotation;
+        fields.title.textContent = payload.harnessChanges[iteration].title;
+        fields.explanation.textContent = payload.harnessChanges[iteration].explanation;
+        setHelpOpen(false);
         fields.terminal.textContent = `${point.terminal} / ${point.totalTrajectories}`;
         fields.points.textContent = `${point.matchedPoints} / ${point.possiblePoints}`;
         fields.three.textContent = `${point.tasksAtThree} / ${point.totalTasks}`;
@@ -229,6 +294,7 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
         drawer.hidden = false; backdrop.hidden = false; shell.classList.add('drawer-open'); close.focus();
       };
       const closeDrawer = () => {
+        setHelpOpen(false);
         drawer.hidden = true; backdrop.hidden = true; shell.classList.remove('drawer-open');
         evaluations.forEach(node => { node.classList.remove('active'); node.setAttribute('aria-expanded', 'false'); });
         activeTrigger?.focus(); activeTrigger = null;
@@ -241,8 +307,21 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
           event.preventDefault(); const siblings = [...evaluation.closest('.plot-panel')!.querySelectorAll<SVGGElement>('[data-point]')]; const current = siblings.indexOf(evaluation); siblings[(current + (event.key === 'ArrowRight' ? 1 : -1) + siblings.length) % siblings.length].focus();
         }, { signal });
       });
+      helpTrigger.addEventListener('focus', () => setHelpOpen(true), { signal });
+      helpTrigger.addEventListener('blur', () => setHelpOpen(false), { signal });
+      helpTrigger.addEventListener('click', event => {
+        event.stopPropagation();
+        setHelpOpen(true);
+      }, { signal });
+      this.addEventListener('click', event => {
+        if (!help.contains(event.target as Node)) setHelpOpen(false);
+      }, { signal });
       close.addEventListener('click', closeDrawer, { signal }); backdrop.addEventListener('click', closeDrawer, { signal });
-      this.addEventListener('keydown', event => { if (event.key === 'Escape' && !drawer.hidden) closeDrawer(); }, { signal });
+      this.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (help.classList.contains('open')) { setHelpOpen(false); helpTrigger.focus(); return; }
+        if (!drawer.hidden) closeDrawer();
+      }, { signal });
       this.cleanup = () => controller.abort();
     }
     disconnectedCallback() { this.cleanup?.(); }
@@ -256,7 +335,7 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
   figure{margin:0}.figure-layout{display:grid;grid-template-columns:minmax(0,1fr) 276px;gap:24px;align-items:stretch}.chart-column{min-width:0}.chart-key{display:flex;align-items:center;flex-wrap:wrap;gap:8px 17px;min-height:24px;margin-bottom:4px;color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.chart-key span{display:flex;align-items:center;gap:6px}.chart-key i{display:block;width:18px}.raw-key{border-top:2px solid var(--coral)}.best-key{border-top:1.5px dashed color-mix(in srgb,var(--coral) 68%,var(--color-ink))}.chart-key em{margin-left:auto;font-style:normal}.chart-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--color-line) transparent}.plot-panel{min-width:760px}.partial-panel{border-top:1px solid var(--color-line)}.search-chart{display:block;width:100%;min-width:760px;height:auto;overflow:visible}.correlation-note{box-sizing:border-box;min-width:760px;margin:0;padding:7px 70px 8px;color:var(--color-ink-soft);font:9px/1.4 var(--font-mono);text-align:right}.correlation-note em{font-family:var(--font-serif)}
   .panel-kicker{fill:var(--graphite);font:700 9px var(--font-mono);letter-spacing:.08em}.panel-kicker.coral{fill:var(--coral)}.panel-title{fill:var(--color-ink);font:600 11px var(--font-mono)}.diagnostic-label{fill:var(--color-ink-soft);font:8px var(--font-mono);letter-spacing:.045em}.lower-panel-labels rect{fill:var(--color-paper);stroke:none}.grid line{stroke:var(--color-line);stroke-width:1}.grid text,.x-axis text{fill:var(--color-ink-soft);font:9px var(--font-mono)}.terminal-raw,.terminal-best,.point-raw{fill:none;vector-effect:non-scaling-stroke}.terminal-raw{stroke:color-mix(in srgb,var(--coral) 62%,transparent);stroke-width:1.4}.terminal-best{stroke:color-mix(in srgb,var(--coral) 72%,var(--color-ink));stroke-width:2;stroke-dasharray:6 4}.point-raw{stroke:var(--graphite);stroke-width:1.8}.milestone-guides rect{stroke:none}.selected-band{fill:color-mix(in srgb,var(--coral) 9%,transparent)}.peak-band{fill:color-mix(in srgb,var(--teal) 8%,transparent)}.milestone-guides line{vector-effect:non-scaling-stroke;stroke-width:1.3;stroke-dasharray:3 4}.selected-guide{stroke:color-mix(in srgb,var(--coral) 78%,transparent)}.peak-guide{stroke:color-mix(in srgb,var(--teal) 68%,transparent)}.milestone-guides text{font:700 8px var(--font-mono);text-transform:uppercase}.selected-annotation text{fill:var(--coral)}.peak-annotation text{fill:var(--teal)}
   .correlation line{stroke:var(--color-line)}.correlation rect{fill:var(--color-paper)}.correlation text{fill:var(--color-ink-soft);font:9px var(--font-mono)}.evaluation{cursor:pointer;outline:none}.hit-area{fill:transparent}.terminal-dot,.point-dot{fill:var(--color-paper);stroke-width:2;opacity:.44;vector-effect:non-scaling-stroke;transition:r .15s,fill .15s,opacity .15s}.terminal-dot{stroke:var(--coral)}.point-dot{stroke:var(--graphite)}.evaluation.selected .terminal-dot,.evaluation.selected .point-dot,.evaluation.partial-peak .terminal-dot,.evaluation.partial-peak .point-dot,.evaluation:hover .terminal-dot,.evaluation:hover .point-dot,.evaluation:focus .terminal-dot,.evaluation:focus .point-dot,.evaluation.active .terminal-dot,.evaluation.active .point-dot{opacity:1}.evaluation:hover .terminal-dot,.evaluation:focus .terminal-dot,.evaluation.active .terminal-dot{r:7.5px;fill:var(--coral)}.evaluation:hover .point-dot,.evaluation:focus .point-dot,.evaluation.active .point-dot{r:7.5px;fill:var(--graphite)}.evaluation.partial-peak .point-dot{fill:var(--teal);stroke:var(--color-paper);stroke-width:3}.evaluation:focus-visible .hit-area{stroke:var(--coral);stroke-width:1}.evaluation.selected .terminal-dot{fill:var(--coral);stroke:var(--color-paper);stroke-width:3}.x-axis line{stroke:var(--color-line)}.x-axis .axis-title{font-size:8px;letter-spacing:.05em;text-transform:uppercase}
-  .inspector{display:flex;flex-direction:column;min-width:0;border:1px solid var(--color-line);background:color-mix(in srgb,var(--color-paper-raised) 62%,var(--color-paper))}.inspector>header{min-height:88px;padding:14px 15px 12px;border-bottom:1px solid var(--color-line)}.inspector>header small{display:block;color:var(--coral);font:700 9px/1.35 var(--font-mono);letter-spacing:.06em}.inspector>header strong{display:block;margin-top:6px;font:500 18px/1.25 var(--font-serif)}.inspector>header span{display:inline-block;margin-top:8px;padding:2px 6px;background:var(--coral-soft);color:var(--coral);font:700 8px/1.35 var(--font-mono);text-transform:uppercase}.primary-metrics{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--color-line)}.primary-metrics>div{padding:12px}.primary-metrics>div+div{border-left:1px solid var(--color-line)}.primary-metrics span,.primary-metrics small{display:block;color:var(--color-ink-soft);font:8px/1.35 var(--font-mono)}.primary-metrics strong{display:block;margin:5px 0 3px;font:600 17px/1.1 var(--font-mono)}.primary-metrics>div:first-child strong{color:var(--coral)}.primary-metrics>div:last-child strong{color:var(--graphite)}.inspector dl{margin:0}.inspector dl div{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;border-bottom:1px solid var(--color-line)}.inspector dt{color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.inspector dd{margin:0;font:600 9px/1.35 var(--font-mono);text-align:right}.inspector-note{margin:auto 0 0;padding:13px 14px;color:var(--color-ink-soft);font:10px/1.55 var(--font-sans)}[hidden]{display:none!important}
+  .inspector{display:flex;flex-direction:column;min-width:0;border:1px solid var(--color-line);background:color-mix(in srgb,var(--color-paper-raised) 62%,var(--color-paper))}.inspector>header{min-height:88px;padding:14px 15px 12px;border-bottom:1px solid var(--color-line)}.inspector-heading{min-width:0;flex:1}.inspector>header small{display:block;color:var(--coral);font:700 9px/1.35 var(--font-mono);letter-spacing:.06em}.inspector-title-row{display:flex;align-items:flex-start;gap:7px}.inspector>header .inspector-title-row>strong{display:block;min-width:0;margin-top:6px;font:500 18px/1.25 var(--font-serif)}.change-help{display:inline-flex;flex:0 0 auto;margin-top:8px}.change-help-trigger{display:grid;width:18px;height:18px;padding:0;border:1px solid color-mix(in srgb,var(--color-ink-soft) 70%,transparent);border-radius:50%;background:var(--color-paper-raised);color:var(--color-ink-soft);font:700 11px/1 var(--font-sans);place-items:center;cursor:help}.change-help-trigger:hover,.change-help-trigger:focus-visible,.change-help.open .change-help-trigger{border-color:var(--teal);color:var(--teal);outline:none}.change-help-tooltip{position:absolute;z-index:12;top:100%;right:15px;left:15px;box-sizing:border-box;padding:10px 11px;border:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:0 8px 24px #00000018;color:var(--color-ink);font:11px/1.5 var(--font-sans);text-transform:none;letter-spacing:0;opacity:0;visibility:hidden;transform:translateY(-3px);pointer-events:none;transition:opacity .12s,transform .12s,visibility .12s}.change-help:hover .change-help-tooltip,.change-help.open .change-help-tooltip{opacity:1;visibility:visible;transform:translateY(0)}.primary-metrics{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--color-line)}.primary-metrics>div{padding:12px}.primary-metrics>div+div{border-left:1px solid var(--color-line)}.primary-metrics span,.primary-metrics small{display:block;color:var(--color-ink-soft);font:8px/1.35 var(--font-mono)}.primary-metrics strong{display:block;margin:5px 0 3px;font:600 17px/1.1 var(--font-mono)}.primary-metrics>div:first-child strong{color:var(--coral)}.primary-metrics>div:last-child strong{color:var(--graphite)}.inspector dl{margin:0}.inspector dl div{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;border-bottom:1px solid var(--color-line)}.inspector dt{color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.inspector dd{margin:0;font:600 9px/1.35 var(--font-mono);text-align:right}.inspector-note{margin:auto 0 0;padding:13px 14px;color:var(--color-ink-soft);font:10px/1.55 var(--font-sans)}[hidden]{display:none!important}
   .matrix-section{margin-top:22px;padding-top:15px;border-top:1px solid var(--color-line)}.matrix-section>header{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:10px}.matrix-section header small,.matrix-section header strong{display:block}.matrix-section header small{color:var(--color-ink-soft);font:700 8px/1.3 var(--font-mono);letter-spacing:.065em}.matrix-section header strong{margin-top:3px;font:500 16px/1.3 var(--font-serif)}.matrix-legend{display:flex;align-items:center;gap:3px;color:var(--color-ink-soft);font:8px/1.3 var(--font-mono)}.matrix-legend i{width:12px;height:10px}.matrix-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--color-line) transparent}.matrix{display:grid;grid-template-columns:74px repeat(var(--matrix-columns),minmax(34px,1fr));gap:3px;min-width:640px}.corner,.column-label,.task-label{font:8px/11px var(--font-mono)}.corner,.column-label{padding-bottom:3px;color:var(--color-ink-soft);text-align:center}.corner{text-align:left}.column-label.active{color:var(--coral);font-weight:700}.task-label{overflow:hidden;padding-right:8px;color:var(--color-ink-soft);text-overflow:ellipsis;white-space:nowrap}.matrix-cell{display:block;height:11px;background:color-mix(in srgb,var(--graphite) 7%,var(--color-paper));outline:1px solid transparent;outline-offset:1px}.level-1{background:color-mix(in srgb,var(--graphite) 25%,var(--color-paper))}.level-2{background:color-mix(in srgb,var(--graphite) 56%,var(--color-paper))}.level-3{background:var(--graphite)}.matrix-cell.active{outline-color:color-mix(in srgb,var(--coral) 62%,transparent)}.matrix-summary{margin:11px 0 0;color:var(--color-ink-soft);font:10px/1.5 var(--font-mono);text-align:center}.matrix-summary strong{color:var(--graphite)}.matrix-summary span{margin:0 5px;color:var(--color-line)}
   .inspector>header{min-height:68px}.primary-metrics{display:block}.primary-metrics>div{padding:12px 14px}.primary-metrics>div+div{border-top:1px solid var(--color-line);border-left:0}.primary-metrics span{font-weight:700;text-transform:uppercase;letter-spacing:.05em}.primary-metrics strong{font-size:20px}.inspector dl div{display:block;padding:11px 14px}.inspector dt{margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}.inspector dd{text-align:left;font-size:10px}
   .matrix-section{margin-top:18px;padding-top:12px}.matrix-section>header{margin-bottom:8px}.matrix-section header strong{margin:0;font-size:15px}.matrix-section header small{margin-top:3px;font-weight:400;text-transform:none;letter-spacing:0}.matrix{gap:2px}.corner,.column-label,.task-label{font-size:7px;line-height:8px}.matrix-cell{height:8px;opacity:.7}.matrix-cell.ahe-selected,.matrix-cell.active{opacity:1;outline-width:1.5px}.matrix-cell.ahe-selected{outline-color:var(--coral)}.matrix-cell.active{outline-color:var(--teal)}.matrix-cell.ahe-selected.active{outline-color:var(--coral)}.column-label.ahe-selected{color:var(--coral);font-weight:700}.column-label.active{color:var(--teal);font-weight:700}.column-label.ahe-selected.active{color:var(--coral)}.matrix-summary{margin-top:9px}

@@ -1,161 +1,348 @@
 ---
 import FigureHeading from '../FigureHeading.astro';
+import searchCsv from '../../content/writing/data/scaffold_ahe_tradeoff_search.csv?raw';
+import endpointCsv from '../../content/writing/data/scaffold_matched_endpoint_summary.csv?raw';
 
-const aheSteps = [
-  { key:'ahe-2', iteration:'ITER. 2', title:'Executable search', lines:['task-bound candidate tools','batched cheap screening','candidate memory'], note:'Build a usable scaffold-hopping workflow.' },
-  { key:'ahe-5', iteration:'ITER. 5', title:'Conservative hops', lines:['preserve anchors + linker geometry','change the core','submit only oracle-tested candidates'], note:'Move away from extreme novelty without giving up the scaffold change.' },
-  { key:'ahe-8', iteration:'ITER. 8', title:'Rebalance evidence', lines:['recheck exact submitted chemistry','inspect predicted poses','reject high-binding but overly similar candidates'], note:'Keep the hop genuine while preserving more interaction evidence.', selected:true },
-];
+const parseCsv = (source: string) => {
+  const [headerLine, ...lines] = source.trim().split(/\r?\n/);
+  const headers = headerLine.split(',');
+  return lines.filter(Boolean).map(line => {
+    const values = line.split(',');
+    return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? '']));
+  });
+};
 
-const humanSteps = [
-  { key:'human-novelty', title:'Make novelty exact', lines:['canonical candidate IDs','evaluator-matched Tanimoto + MCS','failed preflight blocks Boltz'], note:'“Different scaffold” becomes deterministic.' },
-  { key:'human-geometry', title:'Expose geometry', lines:['task-bound Boltz','explicit CIF pose paths','candidate-linked pose evidence'], note:'Binding geometry becomes much harder to overlook.' },
-  { key:'human-submit', title:'Enforce public gates', lines:['exact canonical output','novelty + binding enforced','interaction evidence remains non-blocking'], note:'Safe for exposed gates, not for the hidden interaction gate.' },
-];
+const harnessChanges = [
+  { title: 'Base harness', description: 'The model had general chemistry tools but no dedicated scaffold-hopping workflow. It had to remember candidates, manage the search, check requirements, and decide when to submit entirely within its trajectory.', bullets: ['no scaffold-hopping workflow', 'state held inside the trajectory', 'model managed checks and submission'] },
+  { title: 'Add a gate-led, cheap-first workflow', description: 'The harness first checks inexpensive novelty and molecular-property requirements across a batch of designs, then sends only promising candidates to the costly binding predictor. It also tracks candidates, results, and remaining oracle budget.', bullets: ['screen inexpensive gates first', 'send promising candidates to binding', 'track candidates, results, and budget'] },
+  { title: 'Add pose and interaction verification', description: 'After each binding prediction, the harness compares the candidate’s predicted protein contacts with those of the reference ligand. Candidates are judged on preserving the original interaction pattern, not binding probability alone.', bullets: ['compare predicted protein contacts', 'use the reference ligand as the target', 'check interactions, not binding alone'] },
+  { title: 'Favor conservative core replacements', description: 'The harness changes the molecule’s central ring system while keeping its interaction anchors, substituents, and linker lengths largely unchanged. This seeks a genuinely different scaffold without unnecessarily changing the molecule’s shape or binding geometry.', bullets: ['replace the central ring system', 'retain interaction anchors and substituents', 'preserve linker lengths and geometry'] },
+  { title: 'Require measured finalists and safety margins', description: 'Only candidates actually evaluated by the binding predictor can be submitted. The harness also asks for novelty and binding results comfortably beyond their thresholds, rather than accepting borderline values.', bullets: ['submit only measured candidates', 'require novelty safety margins', 'avoid borderline binding results'] },
+  { title: 'Stress-test the novelty checks', description: 'The harness calculates scaffold and fingerprint similarity in several slightly different ways and uses the least favorable result. Candidates close to a novelty threshold are rejected before submission.', bullets: ['calculate novelty several ways', 'use the least favorable result', 'reject threshold-adjacent candidates'] },
+  { title: 'Diversify core edits and use the oracle budget', description: 'Consecutive binding predictions must test meaningfully different core replacements instead of small variations of one idea. The expensive multi-version novelty check is removed so more effort can go toward exploring distinct candidates.', bullets: ['test meaningfully different cores', 'remove the multi-version novelty check', 'spend more budget on distinct candidates'] },
+  { title: 'Recheck exact novelty and every predicted pose', description: 'The harness rejects superficial edits that leave the original scaffold largely intact, rechecks novelty on the exact submitted molecule, and examines the predicted pose after every binding call. This produced the selected AHE operating point.', bullets: ['reject superficial scaffold edits', 'recheck novelty on the submitted molecule', 'inspect every predicted binding pose'] },
+  { title: 'Submit a measured candidate early', description: 'As soon as one candidate has a binding measurement, the harness submits it to protect against ending with no answer. The search may continue afterward and replace it with a better candidate.', bullets: ['submit after the first binding measurement', 'protect against ending without an answer', 'continue searching for a replacement'] },
+  { title: 'Keep improving after the first submission', description: 'The first submission is treated as a safety checkpoint rather than the end of the search. Remaining binding calls are spent testing different core designs, with resubmission whenever a better candidate is found.', bullets: ['treat submission as a checkpoint', 'keep testing different core designs', 'resubmit when a better candidate appears'] },
+  { title: 'Set a turn-55 submission deadline', description: 'The harness relaxes the immediate-submission rule and allows more early exploration, but requires an answer by turn 55. After that checkpoint, it can continue improving and resubmit stronger candidates.', bullets: ['allow more early exploration', 'require an answer by turn 55', 'continue improving after the deadline'] },
+] as const;
 
+const endpointDetails: Record<string, { interpretation: string; status: string }> = {
+  v1: { interpretation: 'V1 kept novelty reliability high, but preserved the reference interaction pattern on only 3 of 39 evaluable submissions.', status: 'Baseline harness' },
+  ahe: { interpretation: 'Selected AHE accepted lower novelty reliability, preserved interactions most often, and achieved the strongest matched terminal result.', status: 'Best observed endpoint result' },
+  v2: { interpretation: 'Human V2 made novelty deterministic, but preserved the reference interaction pattern on only 1 of 50 evaluable submissions.', status: 'Manual V2 endpoint' },
+};
+
+const search = parseCsv(searchCsv).map(row => ({
+  iteration: Number(row.display_index), harnessNumber: Number(row.harness_number), selected: row.selected.toLowerCase() === 'true',
+  evaluable: Number(row.evaluable_trajectories), noveltyPasses: Number(row.both_novelty_passes),
+  novelty: Number(row.novel_scaffold_rate_percent), interactionPasses: Number(row.interaction_passes),
+  interaction: Number(row.interaction_preservation_rate_percent), bindingPasses: Number(row.binding_passes),
+  binding: Number(row.binding_pass_rate_percent), terminal: Number(row.terminal_successes),
+  totalTrajectories: Number(row.total_trajectories), tasksSolved: Number(row.tasks_solved_at_least_once), totalTasks: Number(row.total_tasks), annotation: row.annotation,
+}));
+
+const endpoints = parseCsv(endpointCsv).map(row => ({
+  key: row.variant, label: row.variant_label, totalTasks: Number(row.total_tasks),
+  evaluable: Number(row.evaluable_trajectories), noveltyPasses: Number(row.both_novelty_passes),
+  novelty: Number(row.novel_scaffold_rate_percent), interactionPasses: Number(row.interaction_passes),
+  interaction: Number(row.interaction_preservation_rate_percent), bindingPasses: Number(row.binding_passes),
+  binding: Number(row.binding_pass_rate_percent), solved: Number(row.terminal_successes),
+}));
+
+const base = search[0];
+const selected = search.find(point => point.selected)!;
+const iterationFour = search.find(point => point.iteration === 4)!;
+const human = endpoints.find(point => point.key === 'v2')!;
+const selectedEndpoint = endpoints.find(point => point.key === 'ahe')!;
+const v1Endpoint = endpoints.find(point => point.key === 'v1')!;
+const interactionPeak = search.reduce((best, point) => point.interaction > best.interaction ? point : best, search[0]);
+const terminalPeak = Math.max(...search.map(point => point.terminal));
+
+const mismatch = search.length !== 11 || harnessChanges.length !== search.length || endpoints.length !== 3
+  || search.some(point => point.totalTrajectories !== 80 || point.totalTasks !== 20)
+  || base.iteration !== 0 || base.noveltyPasses !== 66 || base.evaluable !== 70 || base.interactionPasses !== 0 || base.terminal !== 0
+  || selected.iteration !== 7 || selected.noveltyPasses !== 51 || selected.evaluable !== 70 || selected.interactionPasses !== 11 || selected.terminal !== 9
+  || iterationFour.terminal !== 9 || interactionPeak.iteration !== 7 || terminalPeak !== 9
+  || selectedEndpoint.noveltyPasses !== 29 || selectedEndpoint.evaluable !== 45 || selectedEndpoint.interactionPasses !== 8 || selectedEndpoint.solved !== 5
+  || human.noveltyPasses !== 50 || human.evaluable !== 50 || human.interactionPasses !== 1 || human.solved !== 1
+  || v1Endpoint.noveltyPasses !== 36 || v1Endpoint.evaluable !== 39 || v1Endpoint.interactionPasses !== 3 || v1Endpoint.solved !== 2;
+if (mismatch) throw new Error('FIG. 25: Scaffold Hopping trade-off data no longer matches its validated totals.');
+
+const domain = { xMin: 60, xMax: 100, yMin: 0, yMax: 20 };
+const plot = { left: 94, right: 1082, top: 38, bottom: 392 };
+const sx = (value: number) => plot.left + (value - domain.xMin) / (domain.xMax - domain.xMin) * (plot.right - plot.left);
+const sy = (value: number) => plot.bottom - (value - domain.yMin) / (domain.yMax - domain.yMin) * (plot.bottom - plot.top);
+const searchPath = search.map((point, index) => `${index ? 'L' : 'M'} ${sx(point.novelty)} ${sy(point.interaction)}`).join(' ');
+const endpointStyles: Record<string, { className: string; shape: 'circle' | 'square' | 'diamond'; dx: number; dy: number; anchor?: 'start' | 'end' }> = {
+  v1: { className: 'v1', shape: 'circle', dx: -13, dy: -14, anchor: 'end' },
+  ahe: { className: 'ahe', shape: 'square', dx: 14, dy: -15 },
+  v2: { className: 'v2', shape: 'diamond', dx: -13, dy: -14, anchor: 'end' },
+};
+const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: 'start' | 'end' }> = {
+  1: { dx: 10, dy: 16 },
+  2: { dx: 11, dy: -10 },
+  3: { dx: 10, dy: 17 },
+  4: { dx: -11, dy: -10, anchor: 'end' },
+  5: { dx: -11, dy: 18, anchor: 'end' },
+  6: { dx: -12, dy: -10, anchor: 'end' },
+  8: { dx: 11, dy: 17 },
+  9: { dx: 11, dy: 17 },
+  10: { dx: -11, dy: 18, anchor: 'end' },
+};
 ---
 
-<scaffold-harness-comparison>
-  <figure class="scaffold-figure" aria-label="Automated and human Scaffold Hopping harness redesigns from the same base harness">
-    <FigureHeading label="FIG. 25" title="Same binding task, different optimization pressure" subtitle="Scaffold Hopping · both approaches start from the same base harness" />
+<scaffold-tradeoff-figure data-view="search">
+  <figure aria-label="Scaffold Hopping novelty and interaction-preservation trade-off during automated harness search and at matched endpoints">
+    <FigureHeading label="FIG. 25" title="AHE traded novelty reliability for interaction preservation" subtitle="Scaffold Hopping · 20 tasks · 4 rollouts per harness" />
 
-    <div class="figure-shell">
-      <p class="interaction-hint">select a milestone to inspect the harness</p>
-      <div class="forked-timeline">
-        <button class="origin-node node-trigger" type="button" data-node="base" aria-expanded="false" aria-controls="fig-25-drawer">
-          <small>BASE HARNESS</small><strong>Binding mode is difficult to inspect</strong>
-          <span>binding probability returned directly</span><span>candidate poses awkward to inspect</span>
-          <span>interaction preservation not scored</span><span>novelty can pass while the reference pattern is lost</span>
-          <b>Qwen can tell whether a molecule may bind more easily than whether it binds in the same way.</b><em>inspect ↗</em>
-        </button>
-
-        <div class="lanes">
-          <section class="lane automated" aria-labelledby="sh-ahe-title">
-            <header><strong id="sh-ahe-title">AUTOMATED SEARCH</strong><span>TERMINAL REWARD PUSHES THE POLICY TOWARD BALANCE</span></header>
-            <div class="lane-track">
-              {aheSteps.map(step => (
-                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-25-drawer">
-                  <i aria-hidden="true"></i><small>{step.iteration}</small><strong>{step.title}</strong>
-                  {step.lines.map(line => <span>{line}</span>)}<b>{step.note}</b>
-                  {step.selected && <mark>selected AHE harness</mark>}<em>inspect ↗</em>
-                </button>
-              ))}
-              <div class="endpoint-summary"><small>AHE</small><strong>Balanced search policy</strong>
-                <span>novelty passage less consistent than V2</span><span>higher evaluator interaction similarity</span><span>stronger terminal result</span>
-                <b>interaction gate 8 / 45 · solved 5 / 52</b>
-              </div>
-            </div>
-          </section>
-
-          <section class="lane human" aria-labelledby="sh-human-title">
-            <header><strong id="sh-human-title">HUMAN V2</strong><span>NOVELTY BECOMES EXACT, BUT INTERACTION REMAINS HIDDEN</span></header>
-            <div class="lane-track">
-              {humanSteps.map(step => (
-                <button class="milestone node-trigger" type="button" data-node={step.key} aria-expanded="false" aria-controls="fig-25-drawer">
-                  <i aria-hidden="true"></i><small>HARNESS CHANGE</small><strong>{step.title}</strong>
-                  {step.lines.map(line => <span>{line}</span>)}<b>{step.note}</b><em>inspect ↗</em>
-                </button>
-              ))}
-              <div class="endpoint-summary"><small>HUMAN V2</small><strong>Auditable public gates</strong>
-                <span>both novelty gates 50 / 50</span><span>interaction gate 1 / 50</span><span>solved 1 / 52</span>
-              </div>
-            </div>
-          </section>
-        </div>
+    <div class="view-controls">
+      <span>VIEW</span>
+      <div role="tablist" aria-label="Choose Scaffold Hopping evidence view">
+        <button type="button" role="tab" id="fig-25-search-tab" aria-selected="true" aria-controls="fig-25-search">AHE search</button>
+        <button type="button" role="tab" id="fig-25-endpoint-tab" aria-selected="false" aria-controls="fig-25-endpoints" tabindex="-1">Matched endpoints</button>
       </div>
+    </div>
+    <p class="view-note">Search and endpoint results are shown separately because they use different evaluation sets.</p>
 
-      <button class="drawer-backdrop" type="button" hidden aria-label="Close milestone details"></button>
-      <aside id="fig-25-drawer" class="drawer" hidden aria-label="Scaffold Hopping milestone details">
-        <header><div><small class="drawer-kicker"></small><h2 class="drawer-title"></h2></div><button class="drawer-close" type="button" aria-label="Close milestone details">×</button></header>
-        <div class="drawer-content"></div>
-      </aside>
+    <section class="view-summary search-summary" aria-label="Base to selected AHE comparison">
+      <header><span>BASE</span><b aria-hidden="true">→</b><span>SELECTED AHE</span></header>
+      <div class="summary-metrics">
+        <div><small>Novelty reliability</small><strong>{base.novelty.toFixed(1)}% <i>→</i> {selected.novelty.toFixed(1)}%</strong></div>
+        <div><small>Interaction preservation</small><strong>{base.interaction.toFixed(1)}% <i>→</i> {selected.interaction.toFixed(1)}%</strong></div>
+        <div><small>Terminal success</small><strong>{base.terminal} <i>→</i> {selected.terminal} / 80</strong></div>
+      </div>
+      <p>The search gave up some novelty reliability to recover the interaction pattern.</p>
+    </section>
+
+    <section class="view-summary endpoint-summary" aria-label="Matched 52-task endpoint comparison" hidden>
+      <header><span>MATCHED 52-TASK ENDPOINT</span></header>
+      <div class="summary-metrics endpoint-metrics">
+        <div><small>V1</small><strong>{v1Endpoint.solved} / 52</strong></div>
+        <div><small>Selected AHE</small><strong>{selectedEndpoint.solved} / 52</strong></div>
+        <div><small>Human V2</small><strong>{human.solved} / 52</strong></div>
+      </div>
+      <p>The automated harness preserved interactions more often, but passed the novelty gates less reliably.</p>
+    </section>
+
+    <div class="chart-shell">
+    <section id="fig-25-search" class="chart-view" role="tabpanel" aria-labelledby="fig-25-search-tab">
+      <header><strong>AHE search trajectory</strong><small>Each point is one harness variant evaluated during search. Click a point to inspect what that harness changed and how it performed.</small></header>
+      <div class="svg-scroll" tabindex="0" role="region" aria-label="Novelty versus interaction-preservation rate across eleven harness evaluations">
+        <svg viewBox="0 0 1160 470" role="img" aria-label="AHE search moved from high novelty with no interaction preservation toward lower novelty with better interaction preservation">
+          <defs><marker id="fig-25-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs>
+          <g class="grid" aria-hidden="true">
+            {[0, 5, 10, 15, 20].map(tick => <g><line x1={plot.left} x2={plot.right} y1={sy(tick)} y2={sy(tick)} /><text x={plot.left - 13} y={sy(tick) + 4} text-anchor="end">{tick}</text></g>)}
+            {[60, 70, 80, 90, 100].map(tick => <g><line x1={sx(tick)} x2={sx(tick)} y1={plot.top} y2={plot.bottom} /><text x={sx(tick)} y={plot.bottom + 22} text-anchor="middle">{tick}</text></g>)}
+          </g>
+          <path class="trajectory" d={searchPath} />
+          <path class="tradeoff-arrow" d={`M ${sx(base.novelty) - 8} ${sy(base.interaction) - 8} Q ${sx(82)} ${sy(11)} ${sx(selected.novelty) + 8} ${sy(selected.interaction) + 7}`} marker-end="url(#fig-25-arrow)" />
+          <g class="search-points">
+            {search.map(point => <g class:list={['search-point', 'interactive-point', { base: point.iteration === 0, selected: point.selected, 'terminal-peak': point.iteration === 4 }]} data-kind="search" data-index={point.iteration} tabindex="0" role="button" aria-expanded="false" aria-controls="fig-25-inspector" aria-label={`${point.iteration === 0 ? 'Base' : `Iteration ${point.iteration}`}: ${point.novelty.toFixed(1)} percent novelty, ${point.interaction.toFixed(1)} percent interaction preservation, ${point.terminal} of 80 terminal successes`}>
+              <title>{point.iteration === 0 ? 'Base' : `Iteration ${point.iteration}`} · {point.annotation} · novelty {point.noveltyPasses}/{point.evaluable} · interaction {point.interactionPasses}/{point.evaluable} · binding {point.bindingPasses}/{point.evaluable} · terminal {point.terminal}/80</title>
+              <circle class="hit-area" cx={sx(point.novelty)} cy={sy(point.interaction)} r="17" />
+              <circle cx={sx(point.novelty)} cy={sy(point.interaction)} r={point.selected ? 10 : point.iteration === 0 ? 7 : 5.5} />
+              {point.iteration === 0 && <text x={sx(point.novelty) + 16} y={sy(point.interaction) - 29}><tspan x={sx(point.novelty) + 16}>BASE</tspan><tspan x={sx(point.novelty) + 16} dy="15">0 / 80 SOLVED</tspan></text>}
+              {point.iteration === 7 && <text x={sx(point.novelty) + 15} y={sy(point.interaction) - 23}><tspan x={sx(point.novelty) + 15}>SELECTED · ITER. 7</tspan><tspan x={sx(point.novelty) + 15} dy="15">9 / 80 SOLVED</tspan></text>}
+              {iterationLabelOffsets[point.iteration] && <text class="iteration-number" x={sx(point.novelty) + iterationLabelOffsets[point.iteration].dx} y={sy(point.interaction) + iterationLabelOffsets[point.iteration].dy} text-anchor={iterationLabelOffsets[point.iteration].anchor ?? 'start'}>{point.iteration}</text>}
+            </g>)}
+          </g>
+          <g class="axes" aria-hidden="true">
+            <line x1={plot.left} x2={plot.right} y1={plot.bottom} y2={plot.bottom} /><line x1={plot.left} x2={plot.left} y1={plot.top} y2={plot.bottom} />
+            <text class="axis-label" x={(plot.left + plot.right) / 2} y="455" text-anchor="middle">novelty reliability · % of evaluable trajectories · higher →</text>
+            <text class="axis-label" x="20" y={(plot.top + plot.bottom) / 2} text-anchor="middle" transform={`rotate(-90 20 ${(plot.top + plot.bottom) / 2})`}>interaction preservation · % of evaluable trajectories · higher →</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section id="fig-25-endpoints" class="chart-view" role="tabpanel" aria-labelledby="fig-25-endpoint-tab" hidden>
+      <header><strong>Matched 52-task endpoint comparison</strong><small>One rollout per task for V1, selected AHE, and Human V2.</small></header>
+      <div class="svg-scroll" tabindex="0" role="region" aria-label="Matched endpoint novelty and interaction-preservation rates">
+        <svg viewBox="0 0 1160 470" role="img" aria-label="Selected AHE preserved interactions more often and solved more tasks than V1 or Human V2 on matched endpoints">
+          <g class="grid" aria-hidden="true">
+            {[0, 5, 10, 15, 20].map(tick => <g><line x1={plot.left} x2={plot.right} y1={sy(tick)} y2={sy(tick)} /><text x={plot.left - 13} y={sy(tick) + 4} text-anchor="end">{tick}</text></g>)}
+            {[60, 70, 80, 90, 100].map(tick => <g><line x1={sx(tick)} x2={sx(tick)} y1={plot.top} y2={plot.bottom} /><text x={sx(tick)} y={plot.bottom + 22} text-anchor="middle">{tick}</text></g>)}
+          </g>
+          <g class="endpoint-points">
+            {endpoints.map(point => {
+              const style = endpointStyles[point.key]; const px = sx(point.novelty); const py = sy(point.interaction); const radius = point.key === 'ahe' ? 10 : 7;
+              return <g class:list={['endpoint-point', 'interactive-point', style.className]} data-kind="endpoint" data-index={point.key} tabindex="0" role="button" aria-expanded="false" aria-controls="fig-25-inspector" aria-label={`${point.label}: ${point.novelty.toFixed(1)} percent novelty, ${point.interaction.toFixed(1)} percent interaction preservation, ${point.solved} of 52 tasks solved`}>
+                <circle class="hit-area" cx={px} cy={py} r="18" />
+                {style.shape === 'circle' && <circle cx={px} cy={py} r={radius} />}
+                {style.shape === 'square' && <rect x={px - radius} y={py - radius} width={radius * 2} height={radius * 2} rx="1" />}
+                {style.shape === 'diamond' && <rect x={px - radius * .72} y={py - radius * .72} width={radius * 1.44} height={radius * 1.44} transform={`rotate(45 ${px} ${py})`} />}
+                <text x={px + style.dx} y={py + style.dy} text-anchor={style.anchor ?? 'start'}>{point.label.toUpperCase()}</text>
+              </g>;
+            })}
+          </g>
+          <g class="axes" aria-hidden="true">
+            <line x1={plot.left} x2={plot.right} y1={plot.bottom} y2={plot.bottom} /><line x1={plot.left} x2={plot.left} y1={plot.top} y2={plot.bottom} />
+            <text class="axis-label" x={(plot.left + plot.right) / 2} y="455" text-anchor="middle">novelty-gate pass rate · % of evaluable submissions · higher →</text>
+            <text class="axis-label" x="20" y={(plot.top + plot.bottom) / 2} text-anchor="middle" transform={`rotate(-90 20 ${(plot.top + plot.bottom) / 2})`}>interaction preservation · % of evaluable submissions · higher →</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <button class="drawer-backdrop" type="button" hidden aria-label="Close harness details"></button>
+    <aside id="fig-25-inspector" class="inspector" hidden aria-live="polite" aria-label="Selected harness details">
+      <header>
+        <div class="inspector-heading">
+          <small data-inspector-kicker>ITERATION {selected.iteration} · HARNESS {selected.harnessNumber}</small>
+          <div class="inspector-title-row">
+            <strong data-inspector-title>{harnessChanges[selected.iteration].title}</strong>
+            <span class="change-help">
+              <button class="change-help-trigger" type="button" aria-label="Explain this harness change" aria-expanded="false" aria-describedby="fig-25-change-help">?</button>
+              <span id="fig-25-change-help" class="change-help-tooltip" role="tooltip" data-inspector-description>{harnessChanges[selected.iteration].description}</span>
+            </span>
+          </div>
+        </div>
+        <button class="drawer-close" type="button" aria-label="Close harness details">×</button>
+      </header>
+      <dl class="inspector-metrics">
+        <div><dt>Novelty reliability</dt><dd data-novelty>{selected.noveltyPasses} / {selected.evaluable} · {selected.novelty.toFixed(1)}%</dd></div>
+        <div><dt>Interaction preservation</dt><dd data-interaction>{selected.interactionPasses} / {selected.evaluable} · {selected.interaction.toFixed(1)}%</dd></div>
+        <div><dt>Binding pass</dt><dd data-binding>{selected.bindingPasses} / {selected.evaluable} · {selected.binding.toFixed(1)}%</dd></div>
+        <div><dt data-terminal-label>Terminal success</dt><dd data-terminal>{selected.terminal} / {selected.totalTrajectories}</dd></div>
+        <div data-coverage-row><dt>Tasks solved ≥1/4</dt><dd data-coverage>{selected.tasksSolved} / {selected.totalTasks}</dd></div>
+      </dl>
+      <div class="selection-box"><span>SELECTION</span><strong data-selection>Selected · tied on terminal success, highest interaction preservation</strong></div>
+      <section class="changes-section" data-changes-section>
+        <h4>What changed</h4>
+        <ul data-change-list>{harnessChanges[selected.iteration].bullets.map(bullet => <li>{bullet}</li>)}</ul>
+      </section>
+      <p class="endpoint-interpretation" data-interpretation hidden></p>
+    </aside>
     </div>
 
-    <div class="takeaway"><strong>Human V2</strong> made novelty exact and geometry visible. <span>AHE</span> produced the better balance between scaffold change and interaction preservation.</div>
-    <figcaption><strong>Same binding task, different optimization pressure.</strong> Automated search progressively introduced task-bound candidate testing, conservative scaffold replacement, and pose-aware selection. Human V2 made candidate identity, novelty screening, Boltz execution, and submission substantially more auditable, but normal submission could enforce only the exposed novelty and binding gates; evaluator interaction similarity remained hidden and non-blocking. On the same 52 tasks, Human V2 passed both novelty gates on all 50 evaluable submissions but passed the interaction gate only once, while AHE passed it on 8 of 45 evaluable submissions and produced the stronger terminal result.</figcaption>
+    <div class="takeaway">The selected operating point was less reliable on novelty, but much better at preserving interactions.</div>
+    <figcaption><strong>AHE moved toward a different Scaffold Hopping operating point.</strong> During search, novelty-gate reliability fell from 94.3% to 72.9%, while interaction preservation rose from 0.0% to 15.7% and terminal success increased from 0/80 to 9/80. On the matched 52-task evaluation, selected AHE preserved the reference interaction pattern on 8/45 evaluable submissions and solved 5/52 tasks, compared with 3/39 and 2/52 for V1 and 1/50 and 1/52 for Human V2. Gate rates use evaluable submissions; terminal success uses all intended tasks.</figcaption>
   </figure>
-
-  <template data-detail="base" data-kicker="BASE HARNESS" data-title="Binding score is easier to see than binding mode">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="interface">Interface</button></nav>
-    <section data-panel="summary"><p>Binding probability is returned directly. Predicted candidate poses exist, but finding and comparing them against the reference complex requires substantially more work.</p></section>
-    <section data-panel="interface"><ul><li>Candidate pose files are not surfaced explicitly</li><li>Interaction preservation is not returned as a score</li><li>Novelty gates can pass without preserving the reference interaction pattern</li><li>Qwen must coordinate pose discovery and comparison through its trajectory</li></ul></section>
-  </template>
-
-  <template data-detail="ahe-2" data-kicker="AUTOMATED SEARCH · ITER. 2" data-title="Executable search">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="excerpt">Harness excerpt</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
-    <section data-panel="change"><ul><li>Task-bound tools</li><li>Persistent candidate memory</li><li>Batched cheap screening</li><li>A usable scaffold-hopping workflow</li></ul></section>
-    <section data-panel="excerpt"><pre><code>register candidate
-→ batch cheap checks
-→ retain candidate memory
-→ spend Boltz on finalists</code></pre></section>
-    <section data-panel="evaluation"><dl class="metrics"><div><dt>Optimizer-recorded successes</dt><dd>3 / 80</dd></div><div><dt>Original-attempt successes</dt><dd>2 / 80</dd></div></dl></section>
-  </template>
-
-  <template data-detail="ahe-5" data-kicker="AUTOMATED SEARCH · ITER. 5" data-title="Conservative hops">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="policy">Policy</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
-    <section data-panel="change"><ul><li>Preserve anchors, substituents, and linker geometry</li><li>Replace the core genuinely</li><li>Submit only oracle-tested candidates</li><li>Use binding margins to guide selection</li></ul></section>
-    <section data-panel="policy"><p>Move away from extreme novelty without giving up the scaffold change. The policy seeks candidates that remain genuinely distinct while retaining more of the geometry that supported binding.</p></section>
-    <section data-panel="evaluation"><dl class="metrics"><div><dt>Optimizer-recorded successes</dt><dd>9 / 80</dd></div></dl><p class="method-note">One of two peak harnesses in the search.</p></section>
-  </template>
-
-  <template data-detail="ahe-8" data-kicker="AUTOMATED SEARCH · ITER. 8" data-title="Rebalance evidence">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="change">What changed</button><button role="tab" data-tab="policy">Policy</button><button role="tab" data-tab="evaluation">Evaluation</button></nav>
-    <section data-panel="change"><span class="drawer-badge">selected AHE harness</span><ul><li>Warn against similarity drift</li><li>Restore pose analysis</li><li>Recheck the exact submitted chemistry</li><li>Reject high-binding but overly similar candidates</li></ul></section>
-    <section data-panel="policy"><p>Keep the hop genuine while using predicted poses to preserve more interaction evidence. Exact novelty is rechecked on the molecule that will actually be submitted.</p></section>
-    <section data-panel="evaluation"><dl class="metrics"><div><dt>Optimizer-recorded successes</dt><dd>9 / 80</dd></div><div><dt>Original-attempt successes</dt><dd>8 / 80</dd></div></dl><p class="method-note">H5 and H8 tied on optimizer-recorded reward. H8 was selected for final evaluation.</p></section>
-  </template>
-
-  <template data-detail="human-novelty" data-kicker="HUMAN V2 · NOVELTY" data-title="Make novelty exact">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="implementation">Implementation</button></nav>
-    <section data-panel="summary"><p>“Different scaffold” becomes deterministic before an expensive structure call is spent.</p></section>
-    <section data-panel="implementation"><ul><li>Canonical candidate IDs</li><li>Evaluator-matched Tanimoto and scaffold-MCS calculations</li><li>Signed novelty margins</li><li>Candidate registration</li><li>Failed preflight blocks Boltz</li></ul></section>
-  </template>
-
-  <template data-detail="human-geometry" data-kicker="HUMAN V2 · BINDING GEOMETRY" data-title="Expose geometry">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="interface">Interface</button></nav>
-    <section data-panel="summary"><p>Binding geometry becomes much harder to overlook, but the harness does not expose or calculate the evaluator's interaction-similarity score.</p></section>
-    <section data-panel="interface"><ul><li>Task-bound Boltz execution</li><li>Explicit CIF pose paths</li><li>Pose evidence linked to candidate IDs</li><li>The supplied reference complex remains authoritative</li></ul></section>
-  </template>
-
-  <template data-detail="human-submit" data-kicker="HUMAN V2 · SUBMISSION" data-title="Enforce public gates">
-    <nav class="drawer-tabs" role="tablist"><button role="tab" data-tab="summary">Summary</button><button role="tab" data-tab="logic">Enforcement logic</button></nav>
-    <section data-panel="summary"><p>Normal submission enforces novelty and binding. Interaction evidence remains advisory and non-blocking because evaluator interaction similarity is hidden.</p><p class="key-warning">force=false does not imply complete benchmark success on Scaffold Hopping.</p></section>
-    <section data-panel="logic"><ul><li>Exact canonical output</li><li>Novelty gates enforced</li><li>Binding gate enforced</li><li>Interaction evidence retained but not converted into a blocking evaluator score</li><li>Exact submitted molecule verified against the registry</li></ul></section>
-  </template>
-</scaffold-harness-comparison>
+  <script is:inline type="application/json" class="scaffold-tradeoff-data" set:html={JSON.stringify({ search, endpoints, harnessChanges, endpointDetails })} />
+</scaffold-tradeoff-figure>
 
 <script>
-  class ScaffoldHarnessComparison extends HTMLElement {
-    connectedCallback(){
-      if(this.dataset.ready)return;this.dataset.ready='true';
-      const shell=this.querySelector<HTMLElement>('.figure-shell'),timeline=this.querySelector<HTMLElement>('.forked-timeline'),drawer=this.querySelector<HTMLElement>('.drawer'),backdrop=this.querySelector<HTMLButtonElement>('.drawer-backdrop'),content=this.querySelector<HTMLElement>('.drawer-content'),title=this.querySelector<HTMLElement>('.drawer-title'),kicker=this.querySelector<HTMLElement>('.drawer-kicker'),close=this.querySelector<HTMLButtonElement>('.drawer-close');
-      const triggers=[...this.querySelectorAll<HTMLButtonElement>('.node-trigger')];let active:HTMLButtonElement|null=null;
-      const activateTab=(tab:HTMLButtonElement)=>{if(!content)return;const name=tab.dataset.tab;content.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach(button=>{const selected=button===tab;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});content.querySelectorAll<HTMLElement>('[data-panel]').forEach(panel=>{panel.hidden=panel.dataset.panel!==name;});};
-      const openDrawer=(trigger:HTMLButtonElement)=>{const template=this.querySelector<HTMLTemplateElement>('template[data-detail="'+trigger.dataset.node+'"]');if(!template||!drawer||!backdrop||!content||!title||!kicker)return;active=trigger;triggers.forEach(button=>{const selected=button===trigger;button.classList.toggle('selected',selected);button.setAttribute('aria-expanded',String(selected));});timeline?.classList.add('has-selection');kicker.textContent=template.dataset.kicker||'';title.textContent=template.dataset.title||'';content.replaceChildren(template.content.cloneNode(true));const tabs=[...content.querySelectorAll<HTMLButtonElement>('[role="tab"]')];tabs.forEach(tab=>tab.addEventListener('click',()=>activateTab(tab)));if(tabs[0])activateTab(tabs[0]);drawer.hidden=false;backdrop.hidden=false;shell?.classList.add('drawer-open');close?.focus();};
-      const closeDrawer=()=>{if(!drawer||!backdrop)return;drawer.hidden=true;backdrop.hidden=true;shell?.classList.remove('drawer-open');timeline?.classList.remove('has-selection');triggers.forEach(button=>{button.classList.remove('selected');button.setAttribute('aria-expanded','false');});active?.focus();active=null;};
-      triggers.forEach(trigger=>trigger.addEventListener('click',()=>openDrawer(trigger)));close?.addEventListener('click',closeDrawer);backdrop?.addEventListener('click',closeDrawer);this.addEventListener('keydown',event=>{if(event.key==='Escape'&&!drawer?.hidden)closeDrawer();});
+  class ScaffoldTradeoffFigure extends HTMLElement {
+    cleanup?: () => void;
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const controller = new AbortController(); const { signal } = controller;
+      const payload = JSON.parse(this.querySelector('.scaffold-tradeoff-data')!.textContent!);
+      const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+      const points = [...this.querySelectorAll<SVGGElement>('.interactive-point')];
+      const subtitle = this.querySelector<HTMLElement>('.editorial-figure-heading .subtitle')!;
+      const searchSummary = this.querySelector<HTMLElement>('.search-summary')!;
+      const endpointSummary = this.querySelector<HTMLElement>('.endpoint-summary')!;
+      const searchView = this.querySelector<HTMLElement>('#fig-25-search')!;
+      const endpointView = this.querySelector<HTMLElement>('#fig-25-endpoints')!;
+      const shell = this.querySelector<HTMLElement>('.chart-shell')!;
+      const drawer = this.querySelector<HTMLElement>('.inspector')!;
+      const backdrop = this.querySelector<HTMLButtonElement>('.drawer-backdrop')!;
+      const close = this.querySelector<HTMLButtonElement>('.drawer-close')!;
+      const help = this.querySelector<HTMLElement>('.change-help')!;
+      const helpTrigger = this.querySelector<HTMLButtonElement>('.change-help-trigger')!;
+      const fields = {
+        kicker: this.querySelector<HTMLElement>('[data-inspector-kicker]')!, title: this.querySelector<HTMLElement>('[data-inspector-title]')!,
+        description: this.querySelector<HTMLElement>('[data-inspector-description]')!, novelty: this.querySelector<HTMLElement>('[data-novelty]')!,
+        interaction: this.querySelector<HTMLElement>('[data-interaction]')!, binding: this.querySelector<HTMLElement>('[data-binding]')!,
+        terminalLabel: this.querySelector<HTMLElement>('[data-terminal-label]')!, terminal: this.querySelector<HTMLElement>('[data-terminal]')!,
+        coverageRow: this.querySelector<HTMLElement>('[data-coverage-row]')!, coverage: this.querySelector<HTMLElement>('[data-coverage]')!,
+        selection: this.querySelector<HTMLElement>('[data-selection]')!, changes: this.querySelector<HTMLElement>('[data-changes-section]')!,
+        changeList: this.querySelector<HTMLUListElement>('[data-change-list]')!, interpretation: this.querySelector<HTMLElement>('[data-interpretation]')!,
+      };
+      let activeTrigger: SVGGElement | null = null;
+      const setHelpOpen = (open: boolean) => { help.classList.toggle('open', open); helpTrigger.setAttribute('aria-expanded', String(open)); };
+      const closeDrawer = (restoreFocus = true) => {
+        setHelpOpen(false); drawer.hidden = true; backdrop.hidden = true; shell.classList.remove('drawer-open');
+        points.forEach(point => { point.classList.remove('active'); point.setAttribute('aria-expanded', 'false'); });
+        if (restoreFocus) activeTrigger?.focus(); activeTrigger = null;
+      };
+      const openDrawer = (kind: 'search' | 'endpoint', index: string, trigger: SVGGElement) => {
+        activeTrigger = trigger;
+        points.forEach(point => { const active = point === trigger; point.classList.toggle('active', active); point.setAttribute('aria-expanded', String(active)); });
+        if (kind === 'search') {
+          const point = payload.search[Number(index)]; const meta = payload.harnessChanges[Number(index)];
+          help.hidden = false;
+          fields.kicker.textContent = `${point.iteration === 0 ? 'BASE' : `ITERATION ${point.iteration}`} · HARNESS ${point.harnessNumber}`;
+          fields.title.textContent = meta.title; fields.description.textContent = meta.description;
+          fields.novelty.textContent = `${point.noveltyPasses} / ${point.evaluable} · ${point.novelty.toFixed(1)}%`;
+          fields.interaction.textContent = `${point.interactionPasses} / ${point.evaluable} · ${point.interaction.toFixed(1)}%`;
+          fields.binding.textContent = `${point.bindingPasses} / ${point.evaluable} · ${point.binding.toFixed(1)}%`;
+          fields.terminalLabel.textContent = 'Terminal success'; fields.terminal.textContent = `${point.terminal} / ${point.totalTrajectories}`;
+          fields.coverageRow.hidden = false; fields.coverage.textContent = `${point.tasksSolved} / ${point.totalTasks}`;
+          fields.selection.textContent = point.selected ? 'Selected · tied on terminal success, highest interaction preservation' : point.iteration === 0 ? 'Base harness' : point.iteration === 4 ? 'Not selected · tied on terminal success' : `Not selected · ${point.terminal} / 80 terminal successes`;
+          fields.changes.hidden = false; fields.interpretation.hidden = true;
+          fields.changeList.replaceChildren(...meta.bullets.map((bullet: string) => { const item = document.createElement('li'); item.textContent = bullet; return item; }));
+        } else {
+          const point = payload.endpoints.find((candidate: { key: string }) => candidate.key === index); const meta = payload.endpointDetails[index];
+          help.hidden = true;
+          fields.kicker.textContent = 'MATCHED ENDPOINT · 52 TASKS'; fields.title.textContent = point.label; fields.description.textContent = meta.interpretation;
+          fields.novelty.textContent = `${point.noveltyPasses} / ${point.evaluable} · ${point.novelty.toFixed(1)}%`;
+          fields.interaction.textContent = `${point.interactionPasses} / ${point.evaluable} · ${point.interaction.toFixed(1)}%`;
+          fields.binding.textContent = `${point.bindingPasses} / ${point.evaluable} · ${point.binding.toFixed(1)}%`;
+          fields.terminalLabel.textContent = 'Tasks solved'; fields.terminal.textContent = `${point.solved} / ${point.totalTasks}`;
+          fields.coverageRow.hidden = true; fields.selection.textContent = meta.status;
+          fields.changes.hidden = true; fields.interpretation.hidden = false; fields.interpretation.textContent = meta.interpretation;
+        }
+        setHelpOpen(false); drawer.hidden = false; backdrop.hidden = false; shell.classList.add('drawer-open'); close.focus();
+      };
+      const selectView = (view: 'search' | 'endpoints', focus = false) => {
+        closeDrawer(false); const searchActive = view === 'search'; this.dataset.view = view;
+        subtitle.textContent = searchActive ? 'Scaffold Hopping · 20 tasks · 4 rollouts per harness' : 'Scaffold Hopping · same 52 tasks · one rollout per task';
+        searchSummary.hidden = !searchActive; endpointSummary.hidden = searchActive;
+        searchView.hidden = !searchActive; endpointView.hidden = searchActive;
+        tabs.forEach((tab, index) => {
+          const active = searchActive ? index === 0 : index === 1;
+          tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1;
+          if (active && focus) tab.focus();
+        });
+      };
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => selectView(index === 0 ? 'search' : 'endpoints'), { signal });
+        tab.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault(); const next = event.key === 'Home' || event.key === 'ArrowLeft' ? 0 : 1;
+          selectView(next === 0 ? 'search' : 'endpoints', true);
+        }, { signal });
+      });
+      points.forEach(point => {
+        point.addEventListener('click', () => openDrawer(point.dataset.kind as 'search' | 'endpoint', point.dataset.index!, point), { signal });
+        point.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault(); openDrawer(point.dataset.kind as 'search' | 'endpoint', point.dataset.index!, point); return;
+          }
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          event.preventDefault(); const siblings = [...point.closest('svg')!.querySelectorAll<SVGGElement>('.interactive-point')];
+          const current = siblings.indexOf(point); siblings[(current + (event.key === 'ArrowRight' ? 1 : -1) + siblings.length) % siblings.length].focus();
+        }, { signal });
+      });
+      helpTrigger.addEventListener('focus', () => setHelpOpen(true), { signal });
+      helpTrigger.addEventListener('blur', () => setHelpOpen(false), { signal });
+      helpTrigger.addEventListener('click', event => { event.stopPropagation(); setHelpOpen(true); }, { signal });
+      this.addEventListener('click', event => { if (!help.contains(event.target as Node)) setHelpOpen(false); }, { signal });
+      close.addEventListener('click', () => closeDrawer(), { signal }); backdrop.addEventListener('click', () => closeDrawer(), { signal });
+      this.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (help.classList.contains('open')) { setHelpOpen(false); return; }
+        if (!drawer.hidden) closeDrawer();
+      }, { signal });
+      this.cleanup = () => controller.abort();
     }
+    disconnectedCallback() { this.cleanup?.(); }
   }
-  if(!customElements.get('scaffold-harness-comparison'))customElements.define('scaffold-harness-comparison',ScaffoldHarnessComparison);
+  if (!customElements.get('scaffold-tradeoff-figure')) customElements.define('scaffold-tradeoff-figure', ScaffoldTradeoffFigure);
 </script>
 
 <style>
-  .scaffold-figure{--ahe:#a55a3e;--human:#087c83;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:14px/1.45 var(--font-sans);}
-  .figure-shell{position:relative;overflow:hidden;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.interaction-hint{margin:0;padding:9px 17px 0;color:var(--color-ink-soft);font:9px/1.3 var(--font-mono);text-align:right}
-  .forked-timeline{display:grid;grid-template-columns:182px minmax(0,1fr);gap:40px;padding:14px 18px 9px}.origin-node,.milestone{appearance:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
-  .origin-node{position:relative;align-self:center;padding:12px 10px;border-top:1px solid var(--color-ink-soft);background:transparent}.origin-node small,.origin-node strong,.origin-node span,.origin-node b{display:block}
-  .origin-node small{color:var(--color-ink-soft);font:600 9px/1.3 var(--font-mono);letter-spacing:.06em}.origin-node strong{margin:5px 0 8px;font:600 11px/1.45 var(--font-mono);text-transform:uppercase}.origin-node span{color:var(--color-ink-soft);font:8px/1.5 var(--font-mono)}.origin-node b{margin-top:7px;color:var(--color-ink-soft);font:400 8px/1.45 var(--font-mono)}
-  .node-trigger em{display:block;margin-top:6px;color:currentColor;font:8px/1.3 var(--font-mono);font-style:normal;opacity:0}.node-trigger:hover em,.node-trigger:focus-visible em,.node-trigger.selected em{opacity:1}.node-trigger:focus-visible{outline:1px solid currentColor;outline-offset:4px}.node-trigger{transition:opacity .15s ease}.forked-timeline.has-selection .node-trigger:not(.selected){opacity:.42}
-  .lanes{position:relative;display:grid;gap:22px;min-width:0}.lanes::before{position:absolute;top:62px;bottom:62px;left:-40px;border-left:1px solid var(--color-line);content:''}.lane{position:relative;min-width:0}.lane::before{position:absolute;top:62px;left:-40px;width:40px;border-top:1px solid var(--color-line);content:''}
-  .lane header{min-height:38px;margin:0 180px 10px 0;text-align:center}.lane header strong,.lane header span{display:block;font-family:var(--font-mono)}.lane header strong{font-size:10px;letter-spacing:.06em}.lane header span{margin-top:2px;color:var(--color-ink-soft);font-size:8px;letter-spacing:.05em}.automated header strong{color:var(--ahe)}.human header strong{color:var(--human)}
-  .lane-track{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 170px;gap:14px;min-height:185px}.lane-track::before{position:absolute;top:14px;right:8px;left:0;border-top:1px solid currentColor;content:''}.lane-track::after{position:absolute;top:10px;right:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:8px solid currentColor;content:''}.automated .lane-track{color:var(--ahe)}.human .lane-track{color:var(--human)}
-  .milestone{position:relative;z-index:1;min-width:0;padding:32px 7px 3px;background:transparent}.milestone>i{position:absolute;top:10px;left:50%;width:9px;height:9px;box-sizing:border-box;border:2px solid var(--color-paper);border-radius:50%;background:currentColor;box-shadow:0 0 0 1px currentColor;transform:translateX(-50%);transition:all .14s ease}.milestone::after{position:absolute;top:19px;left:50%;height:10px;border-left:1px solid currentColor;opacity:.55;content:''}.milestone:hover>i,.milestone:focus-visible>i,.milestone.selected>i{top:8px;width:13px;height:13px}
-  .milestone small,.milestone strong,.milestone span,.milestone>b,.milestone mark{display:block}.milestone small{font:600 8px/1.3 var(--font-mono);letter-spacing:.055em}.milestone strong{min-height:30px;margin:4px 0 6px;color:var(--color-ink);font:600 9px/1.45 var(--font-mono);text-transform:uppercase}.milestone:hover strong,.milestone:focus-visible strong,.milestone.selected strong{color:currentColor}.milestone span{color:var(--color-ink-soft);font:8px/1.45 var(--font-mono)}.milestone>b{margin-top:5px;color:currentColor;font:400 7px/1.4 var(--font-mono)}.milestone mark{width:max-content;margin-top:5px;padding:2px 4px;background:#eadbd3;color:var(--ahe);font:600 7px/1.3 var(--font-mono);text-transform:uppercase}
-  .endpoint-summary{position:relative;z-index:1;padding:32px 4px 0 8px;background:var(--color-paper)}.endpoint-summary small,.endpoint-summary strong,.endpoint-summary span,.endpoint-summary b{display:block}.endpoint-summary small{font:600 8px/1.3 var(--font-mono);letter-spacing:.06em}.endpoint-summary strong{margin:4px 0 6px;color:var(--color-ink);font:600 8px/1.4 var(--font-mono);text-transform:uppercase}.endpoint-summary span,.endpoint-summary b{color:var(--color-ink-soft);font:7px/1.45 var(--font-mono);font-weight:400}.endpoint-summary b{margin-top:5px;color:currentColor}
-  .drawer-backdrop{position:absolute;z-index:8;inset:0;width:100%;border:0;background:#f8f7f2b8;cursor:pointer}.drawer{position:absolute;z-index:9;top:0;right:0;bottom:0;width:min(520px,49%);box-sizing:border-box;overflow:auto;padding:15px 17px 18px;border-left:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:-18px 0 35px #00000014}.drawer>header{position:sticky;z-index:2;top:-15px;display:flex;justify-content:space-between;gap:16px;margin:-15px -17px 14px;padding:15px 17px 12px;border-bottom:1px solid var(--color-line);background:var(--color-paper-raised)}.drawer-kicker{color:var(--human);font:600 9px/1.3 var(--font-mono);letter-spacing:.055em}.drawer-title{margin:4px 0 0;font:400 21px/1.2 var(--font-serif)}.drawer-close{padding:0 3px;border:0;background:none;color:var(--color-ink-soft);font:22px/1 var(--font-sans);cursor:pointer}
-  .drawer-tabs{display:flex;flex-wrap:wrap;gap:5px 12px;margin-bottom:15px;border-bottom:1px solid var(--color-line)}.drawer-tabs button{padding:0 0 6px;border:0;border-bottom:1px solid transparent;background:none;color:var(--color-ink-soft);font:9px/1.3 var(--font-mono);cursor:pointer}.drawer-tabs button[aria-selected=true]{border-color:var(--human);color:var(--human)}.drawer-content section{color:var(--color-ink-soft);font-size:12px;line-height:1.6}.drawer-content section>:first-child{margin-top:0}.drawer-content ul{margin:0;padding-left:18px}.drawer-content li+li{margin-top:4px}.drawer-content code{font-family:var(--font-mono)}.drawer-content pre{overflow:auto;margin:0 0 12px;padding:11px 12px;background:var(--color-paper);color:var(--color-ink);font:10px/1.55 var(--font-mono)}.drawer-badge{display:inline-block;margin-bottom:10px;padding:3px 6px;color:var(--ahe);background:#eadbd3;font:600 8px/1.3 var(--font-mono);text-transform:uppercase}.metrics{margin:0}.metrics div{display:flex;justify-content:space-between;gap:15px;padding:6px 0;border-bottom:1px solid var(--color-line)}.metrics dd{margin:0;color:var(--color-ink);font:600 10px/1.4 var(--font-mono);text-align:right}.method-note,.key-warning{margin-top:13px;padding-top:10px;border-top:1px solid var(--color-line);font-size:10px}.key-warning{color:var(--color-ink);font-weight:600}[hidden]{display:none!important}
-  .takeaway{padding:14px 18px;border-bottom:1px solid var(--color-line);color:var(--color-ink-soft);font:10px/1.55 var(--font-mono);text-align:center}.takeaway span{color:var(--ahe)}.takeaway strong{color:var(--human);font-weight:600}figcaption{margin:23px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans)}figcaption strong{color:var(--color-ink);font-weight:600}
-  @media(max-width:900px){.forked-timeline{grid-template-columns:142px minmax(0,1fr);gap:28px;padding-inline:10px}.lanes::before{left:-28px}.lane::before{left:-28px;width:28px}.lane-track{grid-template-columns:repeat(3,minmax(0,1fr)) 130px;gap:7px}.lane header{margin-right:137px}.milestone{padding-inline:3px}.drawer{width:min(540px,65%)}}
-  @media(max-width:680px){.interaction-hint{text-align:left}.forked-timeline{display:block;padding:12px 10px 18px}.origin-node{width:min(270px,82%);margin:0 auto 36px}.lanes{gap:32px}.lanes::before{display:none}.lane::before{top:-12px;left:50%;width:0;height:18px;border-top:0;border-left:1px solid var(--color-line)}.lane header{margin-right:0}.lane-track{grid-template-columns:repeat(3,minmax(150px,1fr)) 140px;gap:8px;overflow-x:auto;padding-bottom:7px}.drawer{width:100%}}
-  @media(prefers-reduced-motion:reduce){.node-trigger,.milestone>i{transition:none}}
+  scaffold-tradeoff-figure{--ahe:#a55a3e;--ahe-soft:#eadbd3;--human:#087c83;--baseline:#858681;display:block;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:14px/1.5 var(--font-sans)}
+  figure{margin:0}[hidden]{display:none!important}.view-controls{display:flex;align-items:center;gap:12px;margin:-7px 0 0}.view-controls>span{color:var(--color-ink-soft);font:700 8px/1 var(--font-mono);letter-spacing:.08em}.view-controls [role="tablist"]{display:flex;border:1px solid var(--color-line)}.view-controls button{padding:7px 13px;border:0;background:transparent;color:var(--color-ink-soft);font:600 9px/1.2 var(--font-mono);cursor:pointer}.view-controls button+button{border-left:1px solid var(--color-line)}.view-controls button[aria-selected="true"]{background:var(--color-ink);color:var(--color-paper)}.view-controls button:focus-visible{outline:2px solid var(--human);outline-offset:2px}.view-note{margin:7px 0 17px;color:var(--color-ink-soft);font:8px/1.4 var(--font-mono)}
+  .view-summary{border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.view-summary>header{display:flex;align-items:center;gap:10px;padding:11px 15px 0;color:var(--ahe);font:700 9px/1.3 var(--font-mono);letter-spacing:.06em}.view-summary>header b{font-size:14px}.summary-metrics{display:grid;grid-template-columns:repeat(3,1fr)}.summary-metrics>div{padding:12px 15px 14px}.summary-metrics>div+div{border-left:1px solid var(--color-line)}.summary-metrics small,.summary-metrics strong{display:block}.summary-metrics small{color:var(--color-ink-soft);font:8px/1.35 var(--font-mono);text-transform:uppercase;letter-spacing:.045em}.summary-metrics strong{margin-top:5px;color:var(--color-ink);font:600 18px/1.2 var(--font-mono)}.summary-metrics i{padding:0 5px;color:var(--ahe);font-style:normal}.view-summary>p{margin:0;padding:9px 15px;border-top:1px solid var(--color-line);color:var(--ahe);font:600 11px/1.45 var(--font-sans);text-align:center}.endpoint-summary>header{color:var(--human)}.endpoint-metrics>div:nth-child(2) strong{color:var(--ahe)}.endpoint-summary>p{color:var(--human)}
+  .chart-shell{position:relative;overflow:hidden}.chart-view{margin-top:22px}.chart-view>header{display:block;margin-bottom:9px}.chart-view>header strong{display:block;font:500 18px/1.3 var(--font-serif)}.chart-view>header small{display:block;margin-top:3px;color:var(--color-ink-soft);font:8px/1.4 var(--font-mono)}.svg-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--color-line) transparent}.svg-scroll svg{display:block;width:100%;min-width:760px;height:auto;overflow:visible}
+  .grid line{stroke:var(--color-line);stroke-width:1}.grid text{fill:color-mix(in srgb,var(--color-ink-soft) 88%,var(--color-ink));font:9px var(--font-mono)}.axes line{stroke:var(--color-ink-soft);stroke-width:.8}.axis-label{fill:color-mix(in srgb,var(--color-ink-soft) 82%,var(--color-ink));font:10px var(--font-mono);letter-spacing:.012em}.trajectory{fill:none;stroke:color-mix(in srgb,var(--ahe) 29%,var(--color-line));stroke-width:1.25;vector-effect:non-scaling-stroke}.tradeoff-arrow{fill:none;stroke:color-mix(in srgb,var(--ahe) 62%,transparent);stroke-width:1.6;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}#fig-25-arrow path{fill:var(--ahe)}.interactive-point{cursor:pointer;outline:none}.hit-area{fill:transparent!important;stroke:transparent!important;pointer-events:all}.search-point circle:not(.hit-area){fill:var(--color-paper);stroke:color-mix(in srgb,var(--ahe) 65%,var(--baseline));stroke-width:1.4;vector-effect:non-scaling-stroke;transition:fill .14s}.search-point.base circle:not(.hit-area){fill:var(--baseline);stroke:var(--color-paper);stroke-width:2}.search-point.selected circle:not(.hit-area){fill:var(--ahe);stroke:var(--color-paper);stroke-width:3}.search-point.terminal-peak circle:not(.hit-area){stroke:var(--ahe);stroke-width:2}.search-point:hover circle:not(.hit-area),.search-point.active circle:not(.hit-area),.search-point:focus-visible circle:not(.hit-area){fill:var(--ahe)}.interactive-point:focus-visible .hit-area{stroke:var(--ahe)!important;stroke-width:1!important}.search-point text,.endpoint-point text{fill:var(--color-ink-soft);stroke:var(--color-paper);stroke-width:5px;stroke-linejoin:round;paint-order:stroke fill;font:700 10px var(--font-mono);text-transform:uppercase}.search-point .iteration-number{fill:color-mix(in srgb,var(--color-ink-soft) 88%,var(--color-ink));stroke-width:4px;font-size:8px;transition:fill .14s}.search-point:hover .iteration-number{fill:var(--ahe)}.search-point.selected text{fill:var(--ahe)}.search-point.base text{fill:var(--baseline)}
+  .endpoint-point circle:not(.hit-area),.endpoint-point rect{stroke-width:2;vector-effect:non-scaling-stroke;transition:stroke .14s,stroke-width .14s}.endpoint-point.v1 circle:not(.hit-area){fill:var(--color-paper);stroke:var(--baseline)}.endpoint-point.ahe rect{fill:var(--ahe);stroke:var(--color-paper);stroke-width:3}.endpoint-point.v2 rect{fill:var(--human);stroke:var(--color-paper)}.endpoint-point.ahe text{fill:var(--ahe)}.endpoint-point.v2 text{fill:var(--human)}.endpoint-point:hover circle:not(.hit-area),.endpoint-point:hover rect,.endpoint-point.active circle:not(.hit-area),.endpoint-point.active rect,.endpoint-point:focus-visible circle:not(.hit-area),.endpoint-point:focus-visible rect{stroke:var(--ahe);stroke-width:3}
+  .drawer-backdrop{position:absolute;z-index:8;inset:0;width:100%;border:0;background:color-mix(in srgb,var(--color-paper) 73%,transparent);cursor:pointer}.inspector{position:absolute;z-index:9;top:0;right:0;bottom:0;display:flex;flex-direction:column;min-width:0;width:min(440px,42%);box-sizing:border-box;overflow-x:hidden;overflow-y:auto;border-left:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:-18px 0 35px #00000014}.inspector>header{position:sticky;z-index:2;top:0;display:flex;flex:0 0 auto;justify-content:space-between;gap:12px;min-height:76px;box-sizing:border-box;padding:14px 15px 12px;border-bottom:1px solid var(--color-line);background:var(--color-paper-raised)}.inspector-heading{min-width:0;flex:1}.inspector>header small{display:block;color:var(--ahe);font:700 9px/1.35 var(--font-mono);letter-spacing:.06em}.inspector-title-row{display:flex;align-items:flex-start;gap:7px}.inspector-title-row>strong{display:block;min-width:0;margin-top:6px;font:500 18px/1.25 var(--font-serif)}.drawer-close{flex:0 0 auto;padding:0 2px;border:0;background:none;color:var(--color-ink-soft);font:22px/1 var(--font-sans);cursor:pointer}.change-help{display:inline-flex;flex:0 0 auto;margin-top:8px}.change-help-trigger{display:grid;width:18px;height:18px;padding:0;border:1px solid color-mix(in srgb,var(--color-ink-soft) 70%,transparent);border-radius:50%;background:var(--color-paper-raised);color:var(--color-ink-soft);font:700 11px/1 var(--font-sans);place-items:center;cursor:help}.change-help-trigger:hover,.change-help-trigger:focus-visible,.change-help.open .change-help-trigger{border-color:var(--human);color:var(--human);outline:none}.change-help-tooltip{position:absolute;z-index:12;top:100%;right:15px;left:15px;box-sizing:border-box;padding:10px 11px;border:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:0 8px 24px #00000018;color:var(--color-ink);font:11px/1.5 var(--font-sans);opacity:0;visibility:hidden;transform:translateY(-3px);pointer-events:none;transition:opacity .12s,transform .12s,visibility .12s}.change-help:hover .change-help-tooltip,.change-help.open .change-help-tooltip{opacity:1;visibility:visible;transform:translateY(0)}.inspector-metrics{flex:0 0 auto;width:100%;margin:0}.inspector-metrics div{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--color-line)}.inspector-metrics dt{color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.inspector-metrics dd{margin:0;font:700 9px/1.35 var(--font-mono);text-align:right}.selection-box{flex:0 0 auto;padding:12px 14px;border-bottom:1px solid var(--color-line)}.selection-box span{display:block;color:var(--color-ink-soft);font:700 8px/1.35 var(--font-mono);letter-spacing:.06em}.selection-box strong{display:block;margin-top:5px;color:var(--ahe);font:600 10px/1.45 var(--font-sans)}.changes-section{flex:0 0 auto;padding:13px 14px}.changes-section h4{margin:0 0 7px;color:var(--color-ink-soft);font:700 8px/1.35 var(--font-mono);letter-spacing:.06em;text-transform:uppercase}.changes-section ul{margin:0;padding-left:17px}.changes-section li{margin:4px 0;font:11px/1.45 var(--font-sans)}.endpoint-interpretation{flex:0 0 auto;margin:0;padding:14px;color:var(--color-ink);font:11px/1.55 var(--font-sans)}
+  .takeaway{padding:13px 17px;margin-top:19px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);color:var(--ahe);font:600 13px/1.5 var(--font-sans);text-align:center}figcaption{margin:22px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans)}figcaption strong{color:var(--color-ink);font-weight:600}
+  @media(max-width:900px){.inspector{width:min(480px,66%)}}
+  @media(max-width:650px){.view-controls{align-items:flex-start;flex-direction:column;gap:7px}.view-controls [role="tablist"]{width:100%}.view-controls button{flex:1}.summary-metrics{grid-template-columns:1fr}.summary-metrics>div+div{border-top:1px solid var(--color-line);border-left:0}.chart-view>header{display:block}.chart-view>header small{display:block;margin-top:3px}.view-note{margin-bottom:14px}.inspector{width:100%}}
 </style>
