@@ -69,7 +69,7 @@ A task is also more than a text prompt. The agent may receive a 3D protein struc
 
 We focus on three SMDD-Bench tasks that expose different kinds of harness dependence. We first engineer their harnesses by hand, then ask whether an automated optimizer can discover similar improvements.
 
-## Our testbed: SMDD-Bench
+## Our Testbed: SMDD-Bench
 
 SMDD-Bench contains 502 instances across five small-molecule design tasks. Each combines chemical and biological reasoning with specialized tools, and several also require reasoning over the 3D geometry of a protein binding pocket.
 
@@ -104,7 +104,7 @@ The task contains a deliberate information asymmetry. **The agent receives a sin
 
 This means the task is not simply asking which interactions look chemically plausible in the visible receptor. It asks which of those possibilities are likely to **recur across a diverse set of binders**. A chemically plausible interaction may therefore still be the wrong answer. And because the agent gets only three predictions, each one has to identify both the right interaction type and approximately the right location in 3D space.
 
-### How well do current agents do?
+### How well do current agents perform?
 
 Not great. Across the models evaluated in the original SMDD-Bench, only Gemini 3.1 Pro solved a single IPD task, while every other model scored **0/25**. Our additional Qwen 3.5 9B baseline also solved **0/25**.
 
@@ -154,11 +154,11 @@ Even when agents found sensible regions of the pocket, they could still waste th
 
 There was also a simpler interface problem. The original harness exposed the same generic drug-design tools across tasks, even though IPD only required the agent to reason about three 3D points and submit them in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness required the agent to manually construct `solution.csv` and submit its path. This occasionally failed for reasons unrelated to the scientific prediction itself. In `smdd_002_Q92769_0`, for example, the model produced three intended points but separated the values with spaces rather than commas, leaving the evaluator unable to parse the file.</Sidenote> This added tool-selection, file-writing, and formatting work that was separate from the scientific problem itself.
 
-The important distinction is that these failures sit at different levels. **Inferring conservation from a single receptor is part of the scientific challenge. Confusing receptor atoms with ligand-side points, duplicating the same hotspot, or losing an otherwise valid answer to file formatting are not.** That gave us a natural place to start. We would remove the representation and execution failures first, then see what scientific difficulty remained.
+The important distinction is that these failures sit at different levels. **Inferring conservation from a single receptor is part of the scientific challenge. Confusing receptor atoms with ligand-side points, duplicating the same hotspot, or losing an otherwise valid answer to file formatting are not.** That gave us a natural place to start. 
 
 ### Fixing the representations
 
-The first set of failures gave us a clear place to start. We refer to the original SMDD-Bench interface as V1, and the redesigned task-specific interface below as V2. We made it explicit that the model had to predict **ligand-side interaction points in the pocket**, rather than receptor atoms themselves. We also removed tools that were irrelevant to IPD<Sidenote number="4" align="paragraph">The original harness exposed the same generic drug-design interface across tasks, including ADMET property prediction and file-based submission. Most of these tools were irrelevant to IPD and added execution choices unrelated to predicting three interaction points.</Sidenote> and replaced manual CSV construction with a dedicated submission interface that accepts the three predicted points directly.
+The first set of failures gave us a clear place to start. We refer to the original SMDD-Bench interface as V1, and the redesigned task-specific interface below as V2. We made it explicit that the model had to predict **ligand-side interaction points in the pocket**, rather than receptor atoms themselves. We also removed the tools that were irrelevant to IPD<Sidenote number="4" align="paragraph">The original harness exposed the same generic drug-design interface across tasks, including ADMET property prediction and file-based submission. Most of these tools were irrelevant to IPD and added execution choices unrelated to predicting three interaction points.</Sidenote> and replaced manual CSV construction with a dedicated submission interface that accepts the three predicted points directly.
 
 That removed some avoidable execution burden, but it did not solve the central problem we saw in the trajectories. Even when the model identified chemically sensible regions of the pocket, it still had little evidence for deciding which of those interactions would actually recur across different bound ligands.
 
@@ -186,7 +186,7 @@ Most of the generated probes had relatively low binding probabilities. That does
 
 There were also simpler search-control failures. Some trajectories stopped while Boltz calls were still available, while others spent multiple predictions around effectively the same hotspot. Both waste scarce evidence or prediction budget even after the representation problem has been improved.
 
-At this point, the obvious next fixes start to look less like interface design and more like writing the scientific strategy ourselves. We could weight evidence by probe confidence, enforce probe diversity, encourage the model to use more of its Boltz budget, or suppress competing predictions around the same hotspot. But every one of those choices tells the agent more about **how it should run the experiment**, rather than simply giving it a better representation of the experiment.
+At this point, the obvious next fixes start to look less like interface design and more like writing the scientific strategy ourselves. We could weigh evidence by probe confidence, enforce probe diversity, encourage the model to use more of its Boltz budget, or suppress competing predictions around the same hotspot. But every one of those choices tells the agent more about **how it should run the experiment**, rather than simply giving it a better representation of the experiment.
 
 ## Lead Optimization
 
@@ -208,27 +208,27 @@ In an LO task, the agent starts from a protein-bound reference molecule and modi
 
 The agent has several tools to guide this search. RDKit handles deterministic chemistry checks such as molecular validity and similarity, ADMET-AI predicts properties such as toxicity and permeability, and Boltz estimates whether a candidate is likely to maintain binding. Both ADMET and Boltz calls are limited, so the agent has to decide which candidates are worth spending those evaluations on.
 
-### How well do current agents do?
+### How well do current agents perform?
 
-Current models handle Lead Optimization much better than Interaction Point Discovery. On the 68-task Lite subset, GPT-5.4 and Gemini 3.1 Pro each solve **37/68** tasks, with Claude Sonnet 4.6 close behind at **36/68**. This gives us something IPD did not: a substantial mix of successful and failed trajectories on the same task family.
+Current models handle LO much better than IPD. On the 68-task Lite subset, GPT-5.4 and Gemini 3.1 Pro each solve **37/68** tasks, with Claude Sonnet 4.6 close behind at **36/68**. This gives us something IPD did not: a substantial mix of successful and failed trajectories on the same task family.
 
 <LoBaselineFigure />
 
 A terminal pass or fail, however, compresses a fairly long optimization process into a single bit. A candidate can satisfy the structural and property constraints but lose binding, preserve binding while missing one property target, or come very close to passing everything without ever becoming the submitted molecule. Looking at the evaluator stages gives us some indication of where these runs diverge. For example, GPT-5.4 and Gemini 3.1 Pro pass the Boltz binding stage on **89.7%** of tasks, while Qwen 3.5 9B does so on **54.4%**. Claude also performs strongly on the earlier checks but loses more candidates at the binding stage.
 
-The search itself is long and state-heavy. A single trajectory can span dozens of turns while the agent proposes related analogues, evaluates different subsets of properties, discovers marginal constraint violations, tests binding, and later returns to candidates it considered much earlier. Across that process, it has to keep track of **which measurements belong to which molecule, which requirements are still untested, which candidates remain viable, and how much evaluation budget remains.**
+The search itself is long and state-heavy. A single trajectory can span dozens of turns while the agent proposes related analogs, evaluates different subsets of properties, discovers marginal constraint violations, tests binding, and later returns to candidates it considered much earlier. Across that process, it has to keep track of **which measurements belong to which molecule, which requirements are still untested, which candidates remain viable, and how much evaluation budget remains.**
 
 <LoCandidateStory />
 
 In the original harness, the model had to track all of this information entirely within its own context. There was no centralized record linking each candidate to the measurements collected for it, the constraints it passed or failed, or the evaluations that were still missing. The trajectory above shows why this becomes difficult. **A single molecular edit can repair one requirement while creating a new bottleneck, and the agent has to carry that updated state forward across many later turns.**
 
-Looking across the failed trajectories, this became a recurring pattern. The models could often propose reasonable candidates, but struggled to reliably keep track of what had already been tested, which evidence belonged to which molecule, and which candidate was actually strongest by the end of the search. What initially looked like a molecular-design problem was therefore also a state-management problem.
+Looking across the failed trajectories, this became a recurring pattern. The models could often propose reasonable candidates, but struggled to reliably keep track of what had already been tested, which evidence belonged to which molecule, and which candidate was actually the strongest by the end of the search. What initially looked like a molecular-design problem was therefore also a state-management problem.
 
 ### What are the agents getting wrong?
 
 Across the failed trajectories, the same general problem appeared at several different points in the search: **the scientific state did not remain consistent over time.**
 
-A model could test a promising molecule, correctly discover that it failed a requirement, and then submit that same molecule later. When several related candidates were explored in parallel, measurements from one could be carried over to another, or an earlier candidate could disappear from consideration entirely. Even the task specification itself could drift. A one-sided constraint might later be remembered as a two-sided interval, changing which molecules the model considered viable.
+A model could test a promising molecule, correctly discover that it failed a requirement, and then submit the same molecule later. When several related candidates were explored in parallel, measurements from one could be carried over to another, or an earlier candidate could disappear from consideration entirely. Even the task specification itself could drift. A one-sided constraint might later be remembered as a two-sided interval, changing which molecules the model considered viable.
 
 <LoFailureMap />
 
@@ -240,7 +240,7 @@ That suggested a different role for the harness. Rather than telling the model w
 
 ### Fixing the state
 
-The failures suggested a fairly simple division of responsibility. We still wanted the model to decide which molecules to make, which experiments were worth running, and how to respond to the results. But there was little reason for it to also reconstruct every threshold, remember which measurement belonged to which analogue, or piece together the evidence for a finalist from dozens of earlier turns.
+The failures suggested a fairly simple division of responsibility. We still wanted the model to decide which molecules to make, which experiments were worth running, and how to respond to the results. But there was little reason for it to also reconstruct every threshold, remember which measurement belonged to which analog, or piece together the evidence for a finalist from dozens of earlier turns.
 
 So we moved that state out of the trajectory and into the harness.
 
@@ -268,7 +268,7 @@ So the redesigned harness made the agent much more selective. Success among subm
 
 The gain also did not come from simply giving the model more room to reason. Across the 68 tasks, V2 used **12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls**, while Boltz usage increased by **51%**. With cheap checks and candidate state handled explicitly, the model spent less effort reconstructing the search and more of its expensive evaluation budget testing whether promising candidates actually maintained binding.
 
-There was still a clear limit. **Twenty V2 trajectories reached the turn limit without submitting, compared with only two under V1.** Making the search state reliable could prevent many avoidable mistakes, but it could not tell the model how to escape an unproductive chemical search or which modification to try next.
+There was still a clear limit. **Twenty V2 trajectories reached the turn limit without submitting, compared with only 2 under V1.** Making the search state reliable could prevent many avoidable mistakes, but it could not tell the model how to escape an unproductive chemical search or which modification to try next.
 
 Lead Optimization produced a different dynamic than IPD. In IPD, expanding the evidence the model could observe yielded the largest gain. Here, much of the necessary evidence already existed, and the larger gain came from keeping that data **persistent, candidate-specific, and hard to lose.** The next task explores what happens when neither intervention proves sufficient.
 
@@ -282,7 +282,7 @@ Those two goals pull in opposite directions. Moving farther away in chemical spa
 
 Lead Optimization therefore rewards controlled local change. Scaffold Hopping asks the agent to **change the molecular scaffold while preserving pocket behaviour.**
 
-### How well do current agents do?
+### How well do current agents perform?
 
 Almost not at all. Across the 52 Scaffold Hopping tasks, no evaluated model solves more than two. Claude Sonnet 4.6, DeepSeek V3.2, GPT-5.4, and our additional Qwen 3.5 9B baseline each solve **2/52**, while the remaining models solve one task or none.
 
@@ -306,7 +306,7 @@ So the problem is not simply finding novel chemistry that can still bind. Agents
 
 ### Exposing binding geometry to the agent
 
-One problem was how the original harness presented Boltz results. The binding probability was returned directly to the model, while the structural evidence needed to inspect the predicted binding mode remained inside generated structure files. Once the agent found a sufficiently novel molecule with a high binding probability, it was therefore much easier to answer **whether it bound** than **whether it bound in the same way as the reference.**
+One problem was how the original harness presented Boltz results. The binding probability was returned directly to the model, while the structural evidence needed to inspect the predicted binding mode remained inside generated structure files. Once the agent found a sufficiently novel molecule with a high binding probability, it was much easier to answer **whether it bound** than **whether it bound in the same way as the reference.**
 
 But those are different requirements. Verifying a scaffold hop meant comparing the reference complex with the candidate’s predicted poses and reasoning about whether the important protein–ligand interactions had been preserved. Under the original interface, the model had to locate the generated structure files and reconstruct that comparison for itself.
 
@@ -336,9 +336,9 @@ The redesigned harness was also more efficient. It used roughly 40% fewer tokens
 
 At this point, the obvious next interventions start to move beyond representation and execution. We could explicitly extract the reference interactions, score how closely candidate poses reproduce them, or suggest structural edits that restore missing contacts. But each of those choices encodes more of the Scaffold Hopping strategy into the harness itself.
 
-That is the limit this task exposed. A harness can streamline search execution, clarify evidence inspection, and eliminate accidental operational failures without necessarily improving the model's scientific choices. **V2 made the remaining bottleneck far easier to see, but it did not solve it.**
+That is the limit this task exposed. A harness can streamline search execution, clarify evidence inspection, and eliminate accidental operational failures without necessarily improving the model's scientific choices. **V2 made the remaining bottlenecks far easier to see, but it did not solve them.**
 
-## What was the human doing all this time?
+## What Was the Human Doing All This Time?
 
 Looking back, the final interventions are easy to summarize. IPD needed better ligand-side evidence. Lead Optimization needed durable candidate state. Scaffold Hopping needed easier access to predicted binding geometry.
 
@@ -360,7 +360,7 @@ Manual harness engineering was therefore far more than mere implementation work.
 
 **If harness engineering is itself a search process, how much of that search can we automate?**
 
-## Can the harness engineer itself?
+## Can the Harness Engineer Itself?
 
 There are already several ways to automate parts of harness design, including prompt optimizers such as GEPA ([Agrawal et al., 2026](#agrawal-et-al-2026)). But our manual interventions changed much more than the prompt. Across the three tasks, we modified tools, state representation, context compaction, task-bound evaluators, and submission logic. We therefore wanted to test **automated harness engineering (AHE)** in a setting where the **entire executable harness** could be part of the search space.
 
@@ -382,7 +382,7 @@ AHE makes that division of labor much sharper. If a model can inspect the same t
 
 To make the comparison clean, we kept the downstream scientific agent fixed. **Qwen 3.5 9B** solved the SMDD tasks in every run, while **Claude Opus 5** acted as the meta-agent proposing changes to the harness around it. This isolates the object being optimized: the scientific agent stays the same, while the executable harness changes.
 
-For each task family, automated harness engineering (AHE) started from the same original harness used at the beginning of our manual experiments, rather than from the manually improved version. The meta-agent could inspect the current harness source code, trajectories produced by previous candidates, and their evaluation results, then propose a new executable harness for the next round.
+For each task family, AHE started from the same original harness used at the beginning of our manual experiments, rather than from the manually improved version. The meta-agent could inspect the current harness source code, trajectories produced by previous candidates, and their evaluation results, then propose a new executable harness for the next round.
 
 We placed very few restrictions on what could change. Prompts were editable, but so were the tools themselves, the state exposed to the agent, tool outputs, context management, and the control logic around submission. In other words, the search space covered essentially the same parts of the system that we had spent the previous sections modifying by hand.
 
@@ -396,7 +396,7 @@ We deliberately kept the optimization signal simple: every harness was scored on
 
 This was a conservative choice for studying harness search, not necessarily the reward we would use if the only goal were to maximize benchmark performance.
 
-## Human taste vs automated search
+## Human Taste vs Automated Search
 
 The automated optimizer started from the same original harness and had access to the same kinds of evidence we used manually: code, trajectories, evaluation results, and repeated attempts. What it did not receive were our diagnoses of what was wrong or which parts of the harness should change.
 
@@ -412,7 +412,7 @@ The clearest gap was in **Lead Optimization.** The original harness solved **13/
 
 **Scaffold Hopping was the exception.** Automated search reached **5/52**, compared with **2/52** under V1 and **1/52** under Manual V2. The absolute numbers remain small, so this is not evidence that Scaffold Hopping is solved. But it is the one task family where automated search found an intervention that moved terminal performance beyond both the starting harness and our manual redesign.
 
-The interesting result is therefore not that one approach simply beat the other. **They were good at different kinds of harness change.**
+The interesting result is therefore not that one approach simply beats the other. **They are good at different kinds of harness change.**
 
 Our largest manual gains came when the main problem was the structure of the agent’s environment. In IPD, we changed **what evidence the model could observe.** In Lead Optimization, we changed **what state the environment remembered for it.** Automated search made only small gains on those tasks.
 
@@ -492,7 +492,7 @@ So human taste is not disappearing from harness engineering. **It is moving up a
 
 Once that boundary is chosen well, much of the optimization inside it may not need a human at all.
 
-### What remains
+### Future considerations
 
 SMDD-Bench has been useful precisely because its failures are difficult to classify cleanly as either “the model is bad at chemistry” or “the agent system is badly designed.” A model can propose useful chemistry and still fail because it loses track of evidence. A much cleaner harness can remove those failures and simply expose a harder scientific bottleneck underneath.
 
