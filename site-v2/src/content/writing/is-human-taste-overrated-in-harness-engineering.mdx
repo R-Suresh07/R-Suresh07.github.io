@@ -455,20 +455,17 @@ Manual V2 changed something more fundamental. Instead of asking Qwen to infer co
 
 That distinction showed up in the final evaluation: the selected automated harness recovered **12/75** hidden interaction points, while Manual V2 recovered **30/75**.
 
-**Scaffold Hopping.** Here, the pattern reversed. Both approaches recognized that the original harness made a strong binding score much easier to use than the structural evidence needed to preserve the reference interaction pattern. Manual V2 responded by making the deterministic parts of the task exact and auditable: candidate identity, novelty checks, task-bound Boltz execution, pose access, and submission state.
+**Scaffold Hopping.** Here, the pattern reversed. Both approaches recognized the same underlying difficulty: the original harness made a strong binding score much easier to use than the structural evidence needed to preserve the reference interaction pattern. Manual V2 responded by making the deterministic parts of the task exact and auditable: candidate identity, novelty checks, task-bound Boltz execution, pose access, and submission state.
 
-AHE went further into the search policy itself.
-
-Across iterations, the automated harness became increasingly conservative about _how_ Qwen should change the molecule. It encouraged preservation of anchors and linker geometry, pushed the model away from overly aggressive scaffold changes, required candidates to be measured before submission, and later reintroduced pose inspection while explicitly balancing novelty against interaction preservation.
+AHE moved in a different direction. Across iterations, it became increasingly conservative about _how_ Qwen should modify the molecule. It encouraged preservation of anchors and linker geometry, pushed the model away from overly aggressive scaffold changes, and brought pose inspection back into the decision process.
 
 <ScaffoldAheVsHumanFigure />
 
-That difference mattered. Manual V2 was extremely good at enforcing what the public harness could verify: all 50 evaluable submissions passed the novelty requirements. But the hidden interaction-preservation gate remained the bottleneck, with only one candidate passing it. AHE passed that interaction gate on **8/45** evaluable submissions and ultimately solved **5/52** tasks, compared with **1/52** under Manual V2.
+The resulting harness occupied a different operating point. Manual V2 was extremely reliable at enforcing the novelty requirements it could observe directly, but that did not translate into preserving the hidden interaction pattern. AHE was willing to sacrifice some of that novelty reliability in exchange for a search policy that preserved interactions more often.
 
-Here, the fact that automated search was willing to shape the chemical search strategy was an advantage.
+This is the important difference from Lead Optimization and IPD. Here, the automated optimizer did not win by making the task representation cleaner. It won by **changing the scientific strategy Qwen followed inside that representation.**
 
-Manual V2 asked: **how do we expose the task faithfully without deciding the chemistry for the model?**
-AHE was rewarded for a different question: **what harness behavior makes Qwen solve more tasks?**
+Manual V2 was asking: **how do we expose the task faithfully without deciding the chemistry for the model?** AHE was rewarded for a different question: **what harness behavior makes Qwen solve more tasks?**
 
 Those objectives overlap, but they are not identical.
 
