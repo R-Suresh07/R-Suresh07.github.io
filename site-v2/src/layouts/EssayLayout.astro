@@ -6,17 +6,24 @@ interface Props {
   description: string;
   published: Date;
   updated?: Date;
+  authors?: string[];
+  affiliation?: string;
   topics?: string[];
   headings?: Array<{ depth: number; slug: string; text: string }>;
 }
 
-const { title, description, published, updated, topics = [], headings = [] } = Astro.props;
+const { title, description, published, updated, authors = [], affiliation, topics = [], headings = [] } = Astro.props;
 const tableOfContents = headings.filter((heading) => heading.depth === 2);
 const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
 }).format(date);
+const formatAuthors = (names: string[]) => {
+  if (names.length < 2) return names.join('');
+  if (names.length === 2) return names.join(' and ');
+  return `${names.slice(0, -1).join(', ')}, and ${names.at(-1)}`;
+};
 ---
 
 <BaseLayout title={title} description={description}>
@@ -38,11 +45,19 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
         <header class="essay-header">
           <h1>{title}</h1>
           <p class="dek">{description}</p>
-          <div class="essay-meta">
-            <span>Published {formatDate(published)}</span>
-            {updated && <span>Updated {formatDate(updated)}</span>}
-            {topics.length > 0 && <span>{topics.join(' · ')}</span>}
-          </div>
+          {authors.length > 0 ? (
+            <div class="essay-meta essay-byline">
+              <strong>By {formatAuthors(authors)} · {formatDate(published)}</strong>
+              {affiliation && <em>{affiliation}</em>}
+              {updated && <span>Updated {formatDate(updated)}</span>}
+            </div>
+          ) : (
+            <div class="essay-meta">
+              <span>Published {formatDate(published)}</span>
+              {updated && <span>Updated {formatDate(updated)}</span>}
+              {topics.length > 0 && <span>{topics.join(' · ')}</span>}
+            </div>
+          )}
         </header>
         <div class="prose">
           <slot />
@@ -183,6 +198,16 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
   .essay-meta span + span::before {
     content: '·';
     margin-right: var(--space-2);
+  }
+
+  .essay-byline {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .essay-byline em {
+    font-size: var(--text-sm);
   }
 
   :global(.prose h2) {

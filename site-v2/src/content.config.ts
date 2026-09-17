@@ -10,6 +10,8 @@ const writing = defineCollection({
     published: z.coerce.date(),
     updated: z.coerce.date().optional(),
     draft: z.boolean().default(false),
+    authors: z.array(z.string()).default([]),
+    affiliation: z.string().optional(),
     topics: z.array(z.string()).default([]),
     featured: z.boolean().default(false),
     image: image().optional(),
