@@ -174,7 +174,7 @@ But the intervention also changed the kind of failure we were looking at. Once t
 
 ### What is still going wrong?
 
-The improvement does not mean that the probing strategy itself became reliable. Once the model could generate probe molecules, the challenge shifted from extracting interactions from the receptor to **choosing useful probes and deciding what to believe from the resulting poses.**
+The improvement does not mean that the probing strategy itself became reliable. Once the model could generate probe molecules, the challenge shifted from extracting interactions from the receptor to **choosing useful probes** and **deciding what to believe from the resulting poses.**
 
 The first problem is probe design. The model chooses its probes after inspecting the pocket, and some trajectories generated several molecules that were only minor variations of one another. In that case, apparently repeated evidence may really be several measurements of almost the same hypothesis rather than independent support for a conserved interaction.
 
@@ -222,7 +222,7 @@ The search itself is long and state-heavy. A single trajectory can span dozens o
 
 <LoCandidateStory />
 
-In the original harness, the model had to track all of this information entirely within its own context. There was no centralized record linking each candidate to the measurements collected for it, the constraints it passed or failed, or the evaluations that were still missing. The trajectory above shows why this becomes difficult. **A single molecular edit can repair one requirement while creating a new bottleneck, and the agent has to carry that updated state forward across many later turns.**
+In the original harness, the model had to track all of this information entirely within its own context. There was no centralized record linking each candidate to the measurements collected for it, the constraints it passed or failed, or the evaluations that were still missing. The trajectory above shows why this becomes difficult. **A single molecular edit can repair one requirement while creating a new bottleneck,** and **the agent has to carry that updated state forward across many later turns.**
 
 Looking across the failed trajectories, this became a recurring pattern. The models could often propose reasonable candidates, but struggled to reliably keep track of what had already been tested, which evidence belonged to which molecule, and which candidate was actually the strongest by the end of the search. What initially looked like a molecular-design problem was therefore also a state-management problem.
 
@@ -424,7 +424,7 @@ Our largest manual gains came when the main problem was the structure of the age
 
 Scaffold Hopping was different. By the time we had cleaned up the representation and exposed the relevant geometry, the remaining problem was increasingly about **how to search the chemistry itself.** That was also the one setting where automated harness search did better than our manual redesign.
 
-This split gave us a more useful question than “human or automated?”: **what kinds of harness decisions are easy to discover through optimization, and which ones still depend on choosing the right representation of the problem in the first place?**
+This split gave us a more useful question than “human or automated?”: **what kinds of harness decisions are easy to discover through optimization,** and **which ones still depend on choosing the right representation of the problem in the first place?**
 
 ### What did the automated optimizer actually learn?
 
