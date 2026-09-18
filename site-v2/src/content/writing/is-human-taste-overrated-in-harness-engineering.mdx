@@ -18,7 +18,7 @@ import Sidenote from '../../components/Sidenote.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
 import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
-import IpdProbeConfidence from '../../components/figures/IpdProbeConfidence.astro';
+import IpdRecurrenceFigure from '../../components/figures/IpdRecurrenceFigure.astro';
 import LoBaselineFigure from '../../components/figures/LoBaselineFigure.astro';
 import LoCandidateStory from '../../components/figures/LoCandidateStory.astro';
 import LoFailureMap from '../../components/figures/LoFailureMap.astro';
@@ -170,25 +170,43 @@ The harness still did not choose which probes to generate or which recurring fea
 
 <IpdHarnessFigure />
 
-The effect was much broader than the two newly solved tasks alone suggest. On the same 25 Qwen 3.5 9B tasks, point recovery increased from **10/75** to **30/75**, while full-task success went from **0/25** to **2/25**. Sixteen tasks improved, six were unchanged, and three declined.
+The two complete successes still compress a lot of partial progress into a single number. Each submitted point can fail in two different ways: it can be in the **wrong part of the pocket**, or it can land near the right region but predict the **wrong ligand-side feature type**. Separating those two errors lets us see what the new representation actually changed.
 
-But the intervention also changed the kind of failure we were looking at. Once the agent could recover ligand-side evidence more reliably, the remaining problem was no longer just how to infer interactions from the receptor. It was whether the model could generate informative probes, combine evidence across them, and decide how much trust to place in noisy predictions.
+We therefore look at point recovery in two ways. A **coordinate-only match** asks only whether the prediction lands within 2.5 Å of a hidden interaction point, ignoring its pharmacophore label. A **type-compatible match** uses the full benchmark criterion: the prediction must be close enough **and** specify a compatible ligand-side feature such as Donor, Acceptor, or Hydrophobic.<Sidenote number="5">The benchmark also matches submitted and hidden points one-to-one, so the same hidden hotspot cannot receive credit for multiple predictions.</Sidenote>
 
-### What is still going wrong?
+On the same 25 Qwen 3.5 9B tasks, coordinate-only recovery rises from **19/75 under V1 to 47/75 under V2**, while fully type-compatible recovery rises from **10/75 to 30/75**.
 
-The improvement does not mean that the probing strategy itself became reliable. Once the model could generate probe molecules, the challenge shifted from extracting interactions from the receptor to **choosing useful probes** and **deciding what to believe from the resulting poses.**
+The larger change is therefore spatial. **V2 makes Qwen much better at finding regions that actually contain hidden interaction points.** The remaining gap between 47 coordinate matches and 30 fully correct matches tells us that locating the hotspot and identifying the correct ligand feature are still separate problems.
 
-The first problem is probe design. The model chooses its probes after inspecting the pocket, and some trajectories generated several molecules that were only minor variations of one another. In that case, apparently repeated evidence may really be several measurements of almost the same hypothesis rather than independent support for a conserved interaction.
+<IpdRecurrenceFigure />
 
-The second problem is deciding how much to trust each probe. Boltz returns a binding probability alongside every predicted pose, but the redesigned harness currently aggregates pharmacophore features without weighting them by that probability. A feature extracted from a weakly supported pose therefore contributes just as much evidence as one from a much more credible predicted binder.
+### Repeated evidence across probes identifies better hotspots
 
-<IpdProbeConfidence />
+Why does the probe representation improve localization? One possibility is simply that Boltz gives Qwen candidate coordinates to copy from. If that were enough, a feature seen in a single predicted ligand should already be useful.
 
-Most of the generated probes had relatively low binding probabilities. That does not make their poses automatically useless, and IPD itself does not impose a binding-probability threshold, but it does make simple recurrence a noisy signal. **If several weak poses place the same feature in roughly the same region, repeated model error can start to look like conserved ligand evidence.**
+We do not see that pattern. At a 1.5 Å support radius, final predictions supported by only one probe match a hidden point on **3/16** cases, almost identical to predictions with no supporting probe (**3/13**).
 
-There were also simpler search-control failures. Some trajectories stopped while Boltz calls were still available, while others spent multiple predictions around effectively the same hotspot. Both waste scarce evidence or prediction budget even after the representation problem has been improved.
+The signal becomes much stronger when **multiple different probes place the same kind of ligand feature in approximately the same region**. Among final points supported by at least two probes, **24/46, or 52.2%,** match a hidden interaction point.
 
-At this point, the obvious next fixes start to look less like interface design and more like writing the scientific strategy ourselves. We could weigh evidence by probe confidence, enforce probe diversity, encourage the model to use more of its Boltz budget, or suppress competing predictions around the same hotspot. But every one of those choices tells the agent more about **how it should run the experiment**, rather than simply giving it a better representation of the experiment.
+We refer to this agreement across probes as **spatial recurrence**. The value of the probe interface is therefore not simply that Boltz generates another set of coordinates. It gives Qwen a way to ask which ligand-side features keep reappearing across several independently predicted molecules.
+
+That makes the computational experiment resemble the hidden task more closely. The benchmark target is constructed from interactions recurring across an ensemble of real binders. V2 lets Qwen construct a small, noisy ligand ensemble of its own.
+
+The probes themselves were already chemically diverse, with a mean within-task Morgan similarity of **0.159**, but more probes or more distinct scaffolds did not predict better task performance. The two fully solved tasks actually used fewer probes on average than the failed tasks. **What mattered more was spatial convergence across those probes, not simply how many molecules were generated.**
+
+Boltz binding probability was also only a weak guide to which individual feature was correct.<Sidenote number="6">Across extracted features, the correlation between the parent probe's binding probability and feature correctness was 0.106. Mean binding probability was 0.347 for feature hits and 0.316 for misses. A binding score can help identify a broadly plausible pose, but every feature in that pose shares the same score, so it cannot identify which individual ligand feature corresponds to a conserved hotspot.</Sidenote>
+
+### Better localization exposes a different bottleneck
+
+The error distribution shows what remains after localization improves. Wrong-region predictions fall from **46/75 under V1 to 16/75 under V2**, but **21/75 V2 predictions land near a hidden hotspot with an incompatible feature type**. The new evidence is getting Qwen into the right parts of the pocket much more often; choosing the correct ligand-side chemistry within those regions is now the larger residual error.
+
+`P14061` makes this failure concrete. Its three submitted points were supported by **4, 3, and 1 probes**, and all three landed close to hidden interaction regions. But all three were assigned incompatible feature types, so the task still scored 0/3.
+
+The probe ensemble had therefore found the right parts of the pocket without solving the full semantic problem.
+
+This also makes the role of the other V2 changes clearer. The redesigned harness explicitly states the strict 2.5 Å matching threshold, explains that each hidden point can match at most one prediction, and replaces file-based submission with a structured interface. Those changes make execution more reliable, but they do not explain the main improvement: duplicate-region errors do not decrease, while wrong-region errors fall sharply.
+
+**The main effect of V2 is therefore to improve the evidence Qwen has for where conserved ligand interactions are likely to occur. Once those regions become easier to find, assigning the correct ligand-side feature type becomes the next bottleneck.**
 
 ## Lead Optimization
 
@@ -252,7 +270,7 @@ The task requirements were compiled once into an immutable specification with ex
 
 <LoStateHarnessFigure />
 
-Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="7">Agent Rosetta keeps long protein-design trajectories manageable by maintaining a compact summary of earlier actions and their effects on key design metrics, while keeping only the two most recent interaction steps in the model’s active context. We borrow the same general idea of separating long-term trajectory information from the recent local context, but keep our structured candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
+Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="9">Agent Rosetta keeps long protein-design trajectories manageable by maintaining a compact summary of earlier actions and their effects on key design metrics, while keeping only the two most recent interaction steps in the model’s active context. We borrow the same general idea of separating long-term trajectory information from the recent local context, but keep our structured candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
 
 This distinction mattered. **We could compress the model’s memory of the search without compressing the scientific record itself.** Older reasoning could be summarized, but candidate identities, measurements, failed constraints, and missing evidence remained exact.
 
@@ -320,7 +338,7 @@ But those are different requirements. Verifying a scaffold hop meant comparing t
 
 We redesigned the harness to make this evidence easier to access. As in Lead Optimization, proposed molecules were registered under persistent candidate IDs and passed through deterministic novelty checks before spending a Boltz call. The protein and pocket configuration were also bound directly to the task.
 
-The larger change came after Boltz. Instead of returning a scalar binding score alongside a directory of generated structures, V2 attached the result directly to the candidate and surfaced the predicted pose files explicitly.<Sidenote number="9" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking **whether a candidate appeared to bind** to inspecting **how it was predicted to bind.**
+The larger change came after Boltz. Instead of returning a scalar binding score alongside a directory of generated structures, V2 attached the result directly to the candidate and surfaced the predicted pose files explicitly.<Sidenote number="11" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking **whether a candidate appeared to bind** to inspecting **how it was predicted to bind.**
 
 The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts had to survive. Deciding whether a pose preserved the important interactions, how to modify a candidate when it did not, and whether another experiment was worth running remained part of the model’s scientific reasoning. Final submission was also tied to the same registered candidate state rather than an independently written molecule.
 
@@ -356,7 +374,7 @@ This means V2 never spends its structural-evaluation budget on a molecule that i
 
 <ScaffoldNoveltyInteractionFigure />
 
-The molecules Qwen proposes under V2 suggest one reason for this asymmetry. Failed finalists contain, on average, only **73% as many heavy atoms as their reference molecules**.<Sidenote number="10">A molecule's **heavy-atom count** is the number of non-hydrogen atoms in it. We use the candidate/reference ratio here as a coarse measure of molecular size: a ratio of 1.0 means the candidate has roughly the same number of non-hydrogen atoms as the reference, while 0.73 means it contains about 27% fewer.</Sidenote> Across many trajectories, Qwen reaches a safely novel scaffold through fairly aggressive structural changes, often producing molecules substantially smaller than the reference.
+The molecules Qwen proposes under V2 suggest one reason for this asymmetry. Failed finalists contain, on average, only **73% as many heavy atoms as their reference molecules**.<Sidenote number="12">A molecule's **heavy-atom count** is the number of non-hydrogen atoms in it. We use the candidate/reference ratio here as a coarse measure of molecular size: a ratio of 1.0 means the candidate has roughly the same number of non-hydrogen atoms as the reference, while 0.73 means it contains about 27% fewer.</Sidenote> Across many trajectories, Qwen reaches a safely novel scaffold through fairly aggressive structural changes, often producing molecules substantially smaller than the reference.
 
 That is effective for moving away from the reference in chemical space, but it gives the model little guidance on the competing objective: **changing the scaffold while preserving the molecular architecture that supports the original interaction pattern.** V2 verifies novelty, exposes the predicted poses, and keeps candidate evidence consistent, but Qwen still has to decide which anchors, substituents, linker lengths, and geometric relationships should survive the scaffold change.
 
@@ -470,25 +488,33 @@ AHE gave Qwen a better **procedure for doing the bookkeeping.** Manual V2 moved 
 
 Both approaches uncovered the state-management problem. **Automated search made state easier for Qwen to track, while Manual V2 made less of that state Qwen’s responsibility in the first place.**
 
-### Interaction Point Discovery: Better receptor reasoning, not new evidence
+### Interaction Point Discovery
 
-Here, the automated search took a different path from our manual redesign. Rather than changing the source of evidence available to Qwen, it kept trying to improve how Qwen inferred the hidden interaction points from the receptor itself.
+Automated search improved how Qwen reasoned about the receptor, but it did not change the source of evidence the model used.
 
-Early harnesses simplified the workflow and tightened budget control. Later versions scored the three predictions jointly, constrained their spatial spread, and eventually used the shape of the pocket to distribute points across a ligand-sized region.
+Across iterations, AHE added increasingly structured geometric heuristics: mapping the cavity, identifying plausible receptor hotspots, scoring the three predictions jointly, controlling their spatial spread, and eventually distributing points through a ligand-sized pocket region.
 
-These were meaningful adaptations. The optimizer learned that three individually plausible sites were not enough; the points also had to form a coherent spatial configuration.
+Those changes helped localization. On the matched 25-task endpoint, coordinate-only recovery increases from **19/75 under V1 to 26/75 under AHE**. But once the ligand-side feature type is included, the improvement is much smaller: **10/75 becomes 12/75**.
 
-But it never made the representational jump that Manual V2 did.
+Manual V2 behaves differently. It reaches **47/75** coordinate-only matches and **30/75** fully compatible matches. The gap is not simply that Manual V2 reasons more carefully about the same receptor. It gives Qwen a different source of evidence.
+
+**AHE never moved beyond using the receptor alone.** Raw Boltz access existed in the runtime, but the selected harness explicitly framed IPD as a structure-geometry problem that did not require an oracle. Across the 25-task endpoint evaluation and every AHE search iteration, the agent made **zero Boltz calls**. One intermediate harness briefly introduced optional fragment probes, but none of its 80 trajectories used them, and the probe recipe disappeared again in the next iteration.
+
+Manual V2 instead used Boltz on **24/25 tasks**, producing 138 usable ligand poses and extracting 622 ligand-side pharmacophore features. Qwen could then compare those features across probes and prioritize regions where several predicted ligands independently placed compatible features.
+
+As discussed earlier, this recurrence signal is substantially more informative than a single pose: at a 1.5 Å support radius, final points supported by at least two probes match **52.2%** of the time, compared with **18.8%** for points supported by only one probe.
+
+The distinction is therefore not simply better versus worse geometric reasoning. **AHE became better at asking where a ligand could plausibly interact with the visible receptor. Manual V2 gave Qwen evidence about where predicted ligands repeatedly placed interaction features.** The latter is much closer to how the hidden target itself is constructed.
+
+There is, however, another reason AHE underperformed: **its reward hid most partial progress.**
 
 <IpdAheVsHumanFigure />
 
-There was also an important limitation in what AHE could see during this search. We optimized only for terminal task success. In IPD, recovering zero, one, or two of the three hidden interaction points all produced the same reward: zero. One later harness actually recovered substantially more individual points than the harness selected by AHE, but because it solved fewer complete tasks, the optimizer ranked it lower.
+The optimizer selected Harness 3 because it was the first harness to reach the maximum observed complete-task reward, with **2/80** successful trajectories and **33/240** matched points. A later harness recovered **43/240** points but solved only **1/80** complete tasks, so the terminal objective ranked it lower.
 
-This does not mean automated search could not have found a better IPD harness. It means that the optimization signal was blind to most of the partial progress being made. We chose terminal reward deliberately so that the automated side would not receive a handcrafted IPD-specific objective, but a richer reward would be an obvious choice if the only goal were maximum performance.
+Selecting by point recovery would therefore have produced a stronger AHE harness for partial IPD performance. But it does not remove the representation gap. The better AHE harness still operates from receptor geometry, while Manual V2 introduces ligand-derived features and cross-probe recurrence.
 
-Manual V2 changed something more fundamental. Instead of asking Qwen to infer conserved ligand interactions from a single receptor, we gave it a way to generate probe molecules, predict their poses with Boltz, and extract ligand-side features from those poses. The agent could now gather a crude ligand ensemble of its own.
-
-That distinction showed up in the final evaluation: the selected automated harness recovered **12/75** hidden interaction points, while Manual V2 recovered **30/75**.
+The automated search was therefore improving a real subproblem, but mostly the wrong one. **It became better at arranging plausible receptor-derived hypotheses, while Manual V2 changed the evidence from which those hypotheses were formed.**
 
 ### Scaffold Hopping
 
@@ -514,7 +540,7 @@ The same trajectories show that AHE is usually not succeeding through a long pro
 
 AHE works differently. Instead of enforcing those checks inside the harness, it gives Qwen an RDKit recipe and asks the model to calculate novelty itself. That introduces two distinct failure modes.
 
-First, the **local calculation is not identical to the benchmark evaluator.** In particular, AHE's scaffold-MCS recipe uses different ring-matching settings, which can make a molecule appear more novel than it actually is.<Sidenote number="11">The main mismatch is in the scaffold-MCS calculation. AHE uses `ringMatchesRingOnly=True`, which only allows atoms in a ring to match atoms in another ring when computing the maximum common substructure. The benchmark evaluator does not impose that restriction. This can make AHE report a smaller shared scaffold than the evaluator, making some candidates look more novel locally than they actually are under the benchmark. Manual V2 avoids this mismatch by calling the benchmark's novelty functions directly.</Sidenote> Replaying AHE's local calculation on the endpoint candidates shows that **10 of the 45 evaluable finalists were classified as novel locally but failed the benchmark's novelty check.**
+First, the **local calculation is not identical to the benchmark evaluator.** In particular, AHE's scaffold-MCS recipe uses different ring-matching settings, which can make a molecule appear more novel than it actually is.<Sidenote number="13">The main mismatch is in the scaffold-MCS calculation. AHE uses `ringMatchesRingOnly=True`, which only allows atoms in a ring to match atoms in another ring when computing the maximum common substructure. The benchmark evaluator does not impose that restriction. This can make AHE report a smaller shared scaffold than the evaluator, making some candidates look more novel locally than they actually are under the benchmark. Manual V2 avoids this mismatch by calling the benchmark's novelty functions directly.</Sidenote> Replaying AHE's local calculation on the endpoint candidates shows that **10 of the 45 evaluable finalists were classified as novel locally but failed the benchmark's novelty check.**
 
 Second, the calculation is only advisory. Qwen can still submit a molecule even when its own local novelty check says the candidate should fail. This happens for another **6 of the 45 evaluable finalists**.
 
