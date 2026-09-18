@@ -36,6 +36,7 @@ import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
 import AheVsHumanStateFigure from '../../components/figures/AheVsHumanStateFigure.astro';
 import IpdAheVsHumanFigure from '../../components/figures/IpdAheVsHumanFigure.astro';
 import ScaffoldAheVsHumanFigure from '../../components/figures/ScaffoldAheVsHumanFigure.astro';
+import AheScaffoldSuccessFigure from '../../components/figures/AheScaffoldSuccessFigure.astro';
 import fig1 from './data/fig1.png';
 import smddBenchOverview from './data/smdd-bench-overview.png';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
@@ -445,11 +446,15 @@ Scaffold Hopping was different. By the time we had cleaned up the representation
 
 This split gave us a more useful question than “human or automated?”: **what kinds of harness decisions are easy to discover through optimization,** and **which ones still depend on choosing the right representation of the problem in the first place?**
 
-### What did the automated optimizer actually learn?
+The endpoint comparison tells us that manual and automated harness search produced different outcomes across the three tasks. It does not yet tell us **what kinds of changes each process discovered.** To understand that difference, we inspected the selected AHE harnesses and the trajectories they produced.
 
-The aggregate results hide three quite different stories. Automated harness engineering was clearly capable of adapting to each task, but it did not simply rediscover our manual interventions. Sometimes it found the same failure and addressed it at a different level. Sometimes it optimized the strategy already available to the agent. And in one task, that willingness to shape the strategy more aggressively produced the better harness.
+## What Did the Automated Optimizer Actually Learn?
 
-**Lead Optimization.** Automated search came closest here to the diagnosis we reached manually. The original harness left most of the search state inside Qwen’s trajectory, so Meta-Harness quickly began adding structure around candidate tracking, measurement, and submission.
+The endpoint scores tell us where AHE helped, but not what changed inside the harness. Looking at the selected harnesses and their trajectories reveals three different stories.
+
+### Lead Optimization: A procedure for state, not authoritative state
+
+Automated search came closest here to the diagnosis we reached manually. The original harness left most of the search state inside Qwen’s trajectory, so Meta-Harness quickly began adding structure around candidate tracking, measurement, and submission.
 
 By iteration 1, Meta-Harness had introduced a cheap-to-expensive workflow, persistent candidate notes, budget checkpoints, and explicit instructions to measure candidates before moving on. Iteration 2 made that procedure harder to violate: candidates had to pass through structured generation and measurement steps, objective completion was tracked explicitly, and the exact submitted molecule was checked against the one that had actually been evaluated.
 
@@ -465,7 +470,9 @@ AHE gave Qwen a better **procedure for doing the bookkeeping.** Manual V2 moved 
 
 Both approaches uncovered the state-management problem. **Automated search made state easier for Qwen to track, while Manual V2 made less of that state Qwen’s responsibility in the first place.**
 
-**Interaction Point Discovery.** Here, the automated search took a different path from our manual redesign. Rather than changing the source of evidence available to Qwen, it kept trying to improve how Qwen inferred the hidden interaction points from the receptor itself.
+### Interaction Point Discovery: Better receptor reasoning, not new evidence
+
+Here, the automated search took a different path from our manual redesign. Rather than changing the source of evidence available to Qwen, it kept trying to improve how Qwen inferred the hidden interaction points from the receptor itself.
 
 Early harnesses simplified the workflow and tightened budget control. Later versions scored the three predictions jointly, constrained their spatial spread, and eventually used the shape of the pocket to distribute points across a ligand-sized region.
 
@@ -483,23 +490,43 @@ Manual V2 changed something more fundamental. Instead of asking Qwen to infer co
 
 That distinction showed up in the final evaluation: the selected automated harness recovered **12/75** hidden interaction points, while Manual V2 recovered **30/75**.
 
-**Scaffold Hopping.** Here, the pattern reversed. Both approaches recognized the same underlying difficulty: the original harness made a strong binding score much easier to use than the structural evidence needed to preserve the reference interaction pattern. Manual V2 responded by making the deterministic parts of the task exact and auditable: candidate identity, novelty checks, Boltz execution configured directly from the task, pose access, and submission state.
+### Scaffold Hopping
 
-AHE moved in a different direction. Across iterations, it supplied an increasingly explicit prior over _how_ Qwen should modify the molecule. It encouraged the model to preserve the reference molecule's anchors, linker geometry, and overall architecture while replacing the core, and it brought pose inspection back into the decision process. This was not merely a more conservative version of the same search. It was a scaffold-proposal policy: guidance about where structural change should be concentrated so that novelty did not require rebuilding the whole molecule.
+The selected AHE harness solved **5/52** tasks, compared with **2/52** under V1 and **1/52** under Manual V2.
+
+The terminal numbers are still small, so we looked one level deeper at the two requirements that define a scaffold hop: changing the scaffold enough to be novel, while preserving the interaction pattern of the reference molecule.
 
 <ScaffoldAheVsHumanFigure />
 
-The audit above lets us separate two differences that the aggregate results otherwise confound. First, AHE's novelty enforcement was weaker than V2's. Second, and independently, AHE gave Qwen a much more explicit proposal policy for preserving the reference architecture while changing the scaffold. The first is a harness failure mode; the second is a plausible explanation for why more of AHE's proposals retained the required interactions.
+The three harnesses fail very differently. Among evaluable submissions, V1 passes both novelty gates on **36/39** molecules and preserves the reference interactions on **3/39**. Manual V2 pushes novelty to **50/50**, but preserves the interactions on only **1/50**. AHE moves in the opposite direction: only **29/45** evaluable submissions pass both novelty gates, while **8/45** preserve the required interaction pattern. AHE therefore does not make every part of the task more reliable. It improves interaction preservation while weakening novelty control.
 
-Crucially, AHE's five successful endpoint molecules all pass the authoritative novelty gates. Its higher success rate therefore cannot be explained by allowing those successes to evade the benchmark's novelty requirement. AHE did not succeed by trading novelty away. It found five molecules that satisfied both objectives, using a policy that more directly targeted their joint satisfaction.
+**AHE changes what Qwen proposes.** The selected harness asks the model to preserve important anchors and substituents, maintain similar linker lengths and molecular size, and make relatively conservative changes to the central scaffold. Manual V2 verifies whether a molecule is novel and exposes the resulting Boltz poses, but leaves the choice of _how_ to modify the scaffold to Qwen. AHE begins to encode that choice into the search procedure.
 
-The evidence still does not isolate the policy's causal effect. V2 and AHE differ in more than one respect, and we did not rerun a controlled ablation that adds only AHE's proposal prior to V2's exact novelty machinery. What we can say is narrower: V2 solved novelty enforcement but left scaffold proposal largely to Qwen; AHE enforced novelty less reliably overall, yet supplied much stronger guidance about how to make a novel core change without discarding the rest of the reference molecule's architecture. All five of AHE's actual successes remained genuinely novel.
+<AheScaffoldSuccessFigure />
 
-This is the important difference from Lead Optimization and IPD. The stronger AHE result did not come from making the task representation cleaner. It came from **changing the scientific strategy Qwen followed inside that representation.**
+The successful molecules reflect that policy. Their heavy-atom counts range from **0.89× to 1.23×** the reference, with a mean of **1.06×**, while failed Manual V2 finalists average **0.73×**. All five pass the authoritative novelty, interaction-preservation, and binding requirements, and four are the first successfully measured candidate in their trajectory. AHE is therefore producing full-sized, valid scaffold replacements without usually relying on a long repair sequence.
 
-Manual V2 was asking: **how do we expose the task faithfully without deciding the chemistry for the model?** AHE was rewarded for a different question: **what harness behavior makes Qwen solve more tasks?**
+**The improvement does not appear to come from a better interaction oracle or a stronger repair loop.** AHE tells Qwen to inspect predicted contacts and compare them against the reference, but the harness does not calculate the benchmark's interaction-preservation score or expose any equivalent scalar. Qwen still has to perform these comparisons itself through Python, and in practice those attempts are unreliable: we see failed pose parsers, missing paths, syntax errors, empty ligand selections, and incomplete contact comparisons. None of the five successes contains a trustworthy measured contact-overlap result that explains why the final molecule was selected.
 
-Those objectives overlap, but they are not identical.
+The same trajectories show that AHE is usually not succeeding through a long propose–measure–repair loop. Four of the five successful tasks solve with the **first molecule** that receives a successful Boltz evaluation. Only `3KWZ_0` contains a substantial measured refinement sequence, and even there the useful feedback comes mainly from the binding score and chemical reasoning rather than a reliable measured comparison of the reference contacts. For most of the successful cases, **the important difference appears before Boltz is called: AHE proposes a better candidate on its first serious attempt.**
+
+**Novelty is also enforced less reliably under AHE.** Manual V2 treats novelty as a hard, trusted gate: it uses the same novelty calculations as the benchmark evaluator, and a candidate cannot reach Boltz or normal submission unless it passes both the Tanimoto and scaffold-MCS thresholds.
+
+AHE works differently. Instead of enforcing those checks inside the harness, it gives Qwen an RDKit recipe and asks the model to calculate novelty itself. That introduces two distinct failure modes.
+
+First, the **local calculation is not identical to the benchmark evaluator.** In particular, AHE's scaffold-MCS recipe uses different ring-matching settings, which can make a molecule appear more novel than it actually is.<Sidenote number="11">The main mismatch is in the scaffold-MCS calculation. AHE uses `ringMatchesRingOnly=True`, which only allows atoms in a ring to match atoms in another ring when computing the maximum common substructure. The benchmark evaluator does not impose that restriction. This can make AHE report a smaller shared scaffold than the evaluator, making some candidates look more novel locally than they actually are under the benchmark. Manual V2 avoids this mismatch by calling the benchmark's novelty functions directly.</Sidenote> Replaying AHE's local calculation on the endpoint candidates shows that **10 of the 45 evaluable finalists were classified as novel locally but failed the benchmark's novelty check.**
+
+Second, the calculation is only advisory. Qwen can still submit a molecule even when its own local novelty check says the candidate should fail. This happens for another **6 of the 45 evaluable finalists**.
+
+Together, these two effects account for AHE's **16 novelty failures at the endpoint**: **10 false local passes and 6 cases where the local check itself indicated failure but the candidate was submitted anyway.** Manual V2 avoids both problems by making novelty a deterministic harness-level gate rather than a model-managed procedure.
+
+This weaker enforcement explains why AHE's novelty pass rate falls to **29/45**, but it does not explain away its successful scaffold hops: **all five terminal successes pass the benchmark's true novelty requirements.**
+
+Manual V2 and AHE also differ in what happens to a molecule that is not yet novel. V2 blocks that candidate before Boltz, while AHE can still evaluate it. In theory, that could matter: a molecule that cannot be submitted might still provide useful structural feedback before a later modification crosses the novelty threshold. We see little evidence that this mechanism explains AHE's five successes. Four solve with their first successfully measured molecule, and only `3KWZ_0` goes through a longer measured sequence. The hard novelty gate may still remove useful exploratory candidates, but it does not appear to be the main observed difference between the two harnesses.
+
+Taken together, the trajectories point to a simple contrast between the two harnesses. **Manual V2 makes the constraints reliable:** every molecule reaching Boltz is genuinely novel, evidence remains attached to the right candidate, and predicted poses are available for inspection. But the molecular redesign strategy remains Qwen's responsibility. **AHE makes that strategy more explicit:** it tells Qwen which parts of the reference architecture to preserve and encourages conservative scaffold changes that remain close in size and geometry to the starting ligand.
+
+The resulting harness has weaker novelty enforcement, but preserves the reference interaction pattern more often. The five successful trajectories also rule out several simpler explanations: all five are genuinely novel, four occur on the first successfully measured candidate, and none is explained by a reliable interaction-measurement loop. **The strongest explanation supported by the current evidence is that AHE changed the distribution of molecules Qwen proposed**, pushing the model toward minimally disruptive scaffold changes while Manual V2 focused on making novelty and execution exact.
 
 ## Conclusion
 

@@ -1,0 +1,138 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const gates = [
+  { label: 'Authoritative novelty', note: 'both benchmark gates', value: '5 / 5' },
+  { label: 'Interaction preservation', note: 'reference pattern retained', value: '5 / 5' },
+  { label: 'Binding threshold', note: 'terminal requirement passed', value: '5 / 5' },
+  { label: 'First measured candidate', note: 'no preceding successful Boltz result', value: '4 / 5' },
+];
+
+const successes = [
+  { task: '2VQM_1', ratio: 1.00, lane: 0 },
+  { task: '3KWZ_0', ratio: 1.23, lane: 0 },
+  { task: '5DC8_0', ratio: 1.00, lane: 1 },
+  { task: '5UEN_1', ratio: 0.89, lane: 0 },
+  { task: '8OKQ_1', ratio: 1.17, lane: 0 },
+];
+const domain = { min: 0.70, max: 1.25 };
+const position = (value: number) => (value - domain.min) / (domain.max - domain.min) * 100;
+const aheMean = successes.reduce((sum, success) => sum + success.ratio, 0) / successes.length;
+const v2FailedMean = 0.73;
+---
+
+<figure class="ahe-scaffold-success" aria-label="Evidence from the five successful AHE Scaffold Hopping molecules">
+  <FigureHeading
+    label="FIG. 27"
+    title="AHE's successful scaffold hops are genuinely novel and remain close to the reference size"
+    subtitle="selected AHE · matched 52-task evaluation · five successful finalists"
+  />
+
+  <section class="evidence-grid" aria-label="Evidence across the five successful molecules">
+    {gates.map(gate => (
+      <article>
+        <header>
+          <strong>{gate.label}</strong>
+          <small>{gate.note}</small>
+        </header>
+        <p>{gate.value}</p>
+        <div class="checks" aria-hidden="true">{[1, 2, 3, 4, 5].map((_, index) => <i class:list={{ muted: gate.value === '4 / 5' && index === 1 }}>{gate.value === '4 / 5' && index === 1 ? '—' : '✓'}</i>)}</div>
+      </article>
+    ))}
+  </section>
+
+  <section class="size-evidence" aria-label="Successful AHE candidate to reference heavy-atom ratios are 1.00, 1.23, 1.00, 0.89, and 1.17; their mean is 1.06, versus 0.73 for failed Manual V2 finalists">
+    <header>
+      <div>
+        <strong>Candidate / reference heavy-atom count</strong>
+        <small>each rust dot is one successful AHE finalist</small>
+      </div>
+      <p><span>AHE mean</span><b>{aheMean.toFixed(2)}×</b></p>
+    </header>
+
+    <div class="ratio-plot" aria-hidden="true">
+      <div class="plot-area">
+        <i class="baseline"></i>
+        <i class="reference-line" style={`left:${position(1)}%`}></i>
+        <i class="v2-marker" style={`left:${position(v2FailedMean)}%`}></i>
+        <i class="ahe-mean" style={`left:${position(aheMean)}%`}></i>
+        {successes.map(success => <i class="success-dot" style={`left:${position(success.ratio)}%;top:${success.lane ? 29 : 12}px`} title={`${success.task}: ${success.ratio.toFixed(2)}×`}></i>)}
+      </div>
+      <div class="axis-labels"><span>0.70×</span><span style={`left:${position(1)}%`}>1.00×<small>reference</small></span><span>1.25×</span></div>
+      <div class="plot-legend">
+        <span class="v2"><i></i>Manual V2 failed-finalist mean <b>0.73×</b></span>
+        <span class="ahe"><i></i>Successful AHE molecules <b>mean {aheMean.toFixed(2)}×</b></span>
+      </div>
+    </div>
+  </section>
+
+  <figcaption><strong>The five AHE successes are valid scaffold hops, not novelty failures.</strong> All five pass novelty, interaction-preservation, and binding requirements under the authoritative evaluator. Four of the five are also the first successfully measured candidate, and their heavy-atom counts remain close to the reference molecules.</figcaption>
+</figure>
+
+<style>
+  .ahe-scaffold-success {
+    --ahe:#a55a3e;
+    --ahe-soft:#eadbd3;
+    --success:#087c83;
+    --v2:#93938e;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:14px/1.5 var(--font-sans);
+  }
+  .evidence-grid { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .evidence-grid article { min-width:0; padding:19px 15px; }
+  .evidence-grid article + article { border-left:1px solid var(--color-line); }
+  .evidence-grid header { min-height:65px; }
+  .evidence-grid strong { display:block; font:600 11px/1.4 var(--font-mono); letter-spacing:.025em; text-transform:uppercase; }
+  .evidence-grid small { color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
+  .evidence-grid p { margin:10px 0 13px; color:var(--success); font:500 25px/1 var(--font-serif); }
+  .checks { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
+  .checks i { display:grid; height:20px; background:color-mix(in srgb,var(--success) 9%,transparent); color:var(--success); font:700 10px/1 var(--font-mono); font-style:normal; place-items:center; }
+  .checks i.muted { background:color-mix(in srgb,var(--color-line) 30%,transparent); color:var(--color-ink-soft); }
+  .size-evidence { padding:20px 17px 22px; margin-top:22px; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .size-evidence > header { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+  .size-evidence header strong { display:block; font:600 12px/1.4 var(--font-mono); letter-spacing:.025em; text-transform:uppercase; }
+  .size-evidence header small { color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
+  .size-evidence header p { margin:0; color:var(--color-ink-soft); font:10px/1 var(--font-mono); text-align:right; text-transform:uppercase; }
+  .size-evidence header p span { display:block; margin-bottom:5px; }
+  .size-evidence header p b { color:var(--ahe); font:500 25px/1 var(--font-serif); text-transform:none; }
+  .ratio-plot { margin:22px 4px 0; }
+  .plot-area { position:relative; height:48px; margin:0 9px; }
+  .baseline { position:absolute; top:23px; right:0; left:0; border-top:1px solid var(--color-line); }
+  .reference-line { position:absolute; top:3px; height:41px; border-left:1px dashed var(--color-ink-soft); }
+  .v2-marker { position:absolute; top:23px; width:10px; height:10px; border:2px solid var(--color-paper); background:var(--v2); box-shadow:0 0 0 1px var(--v2); transform:translate(-50%,-50%) rotate(45deg); }
+  .ahe-mean { position:absolute; top:5px; height:38px; border-left:2px solid color-mix(in srgb,var(--ahe) 65%,transparent); }
+  .success-dot { position:absolute; width:10px; height:10px; border:2px solid var(--color-paper); border-radius:50%; background:var(--ahe); box-shadow:0 0 0 1px var(--ahe); transform:translate(-50%,-50%); }
+  .axis-labels { position:relative; display:flex; justify-content:space-between; height:31px; color:var(--color-ink-soft); font:9px/1.2 var(--font-mono); }
+  .axis-labels > span:nth-child(2) { position:absolute; display:grid; transform:translateX(-50%); text-align:center; }
+  .axis-labels small { font-size:8px; }
+  .plot-legend { display:flex; flex-wrap:wrap; gap:8px 24px; padding-top:13px; margin-top:5px; border-top:1px solid var(--color-line); color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
+  .plot-legend span { display:flex; align-items:center; gap:7px; }
+  .plot-legend i { width:9px; height:9px; background:var(--v2); }
+  .plot-legend .ahe i { border-radius:50%; background:var(--ahe); }
+  .plot-legend b { color:var(--color-ink); font-weight:600; }
+  figcaption { margin:22px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+
+  @media (max-width:760px) {
+    .evidence-grid { grid-template-columns:repeat(2,1fr); }
+    .evidence-grid article:nth-child(3) { border-top:1px solid var(--color-line); border-left:0; }
+    .evidence-grid article:nth-child(4) { border-top:1px solid var(--color-line); }
+    .evidence-grid header { min-height:49px; }
+  }
+  @media (max-width:500px) {
+    .evidence-grid { grid-template-columns:1fr; }
+    .evidence-grid article { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 18px; }
+    .evidence-grid article + article { border-top:1px solid var(--color-line); border-left:0; }
+    .evidence-grid header { min-height:0; }
+    .evidence-grid p { margin:0; }
+    .checks { grid-column:1 / -1; }
+    .size-evidence > header { align-items:flex-start; }
+    .plot-legend { align-items:flex-start; flex-direction:column; }
+  }
+</style>

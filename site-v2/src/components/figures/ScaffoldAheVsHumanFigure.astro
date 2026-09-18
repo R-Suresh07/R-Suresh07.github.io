@@ -91,20 +91,20 @@ const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: '
 };
 ---
 
-<scaffold-tradeoff-figure data-view="search">
+<scaffold-tradeoff-figure data-view="endpoints">
   <figure aria-label="Scaffold Hopping novelty and interaction-preservation trade-off during automated harness search and at matched endpoints">
-    <FigureHeading label="FIG. 26" title="AHE preserves more interactions despite weaker novelty enforcement" subtitle="Scaffold Hopping · 20 tasks · 4 rollouts per harness" />
+    <FigureHeading label="FIG. 26" title="AHE preserved interactions more often, but passed novelty less reliably" subtitle="Scaffold Hopping · same 52 tasks · one rollout per task" />
 
     <div class="view-controls">
       <span>VIEW</span>
       <div role="tablist" aria-label="Choose Scaffold Hopping evidence view">
-        <button type="button" role="tab" id="fig-25-search-tab" aria-selected="true" aria-controls="fig-25-search">AHE search</button>
-        <button type="button" role="tab" id="fig-25-endpoint-tab" aria-selected="false" aria-controls="fig-25-endpoints" tabindex="-1">Matched endpoints</button>
+        <button type="button" role="tab" id="fig-25-search-tab" aria-selected="false" aria-controls="fig-25-search" tabindex="-1">AHE search</button>
+        <button type="button" role="tab" id="fig-25-endpoint-tab" aria-selected="true" aria-controls="fig-25-endpoints">Matched endpoints</button>
       </div>
     </div>
     <p class="view-note">Search and endpoint results are shown separately because they use different evaluation sets.</p>
 
-    <section class="view-summary search-summary" aria-label="Base to selected AHE comparison">
+    <section class="view-summary search-summary" aria-label="Base to selected AHE comparison" hidden>
       <header><span>BASE</span><b aria-hidden="true">→</b><span>SELECTED AHE</span></header>
       <div class="summary-metrics">
         <div><small>Novelty reliability</small><strong>{base.novelty.toFixed(1)}% <i>→</i> {selected.novelty.toFixed(1)}%</strong></div>
@@ -114,7 +114,7 @@ const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: '
       <p>Across the search, stronger interaction preservation coincided with lower novelty reliability.</p>
     </section>
 
-    <section class="view-summary endpoint-summary" aria-label="Matched 52-task endpoint comparison" hidden>
+    <section class="view-summary endpoint-summary" aria-label="Matched 52-task endpoint comparison">
       <header><span>MATCHED 52-TASK ENDPOINT</span></header>
       <div class="summary-metrics endpoint-metrics">
         <div><small>V1</small><strong>{v1Endpoint.solved} / 52</strong></div>
@@ -125,7 +125,7 @@ const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: '
     </section>
 
     <div class="chart-shell">
-    <section id="fig-25-search" class="chart-view" role="tabpanel" aria-labelledby="fig-25-search-tab">
+    <section id="fig-25-search" class="chart-view" role="tabpanel" aria-labelledby="fig-25-search-tab" hidden>
       <header><strong>AHE search trajectory</strong><small>Each point is one harness variant evaluated during search. Click a point to inspect what that harness changed and how it performed.</small></header>
       <div class="svg-scroll" tabindex="0" role="region" aria-label="Novelty versus interaction-preservation rate across eleven harness evaluations">
         <svg viewBox="0 0 1160 470" role="img" aria-label="AHE search moved from high novelty with no interaction preservation toward lower novelty with better interaction preservation">
@@ -155,7 +155,7 @@ const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: '
       </div>
     </section>
 
-    <section id="fig-25-endpoints" class="chart-view" role="tabpanel" aria-labelledby="fig-25-endpoint-tab" hidden>
+    <section id="fig-25-endpoints" class="chart-view" role="tabpanel" aria-labelledby="fig-25-endpoint-tab">
       <header><strong>Matched 52-task endpoint comparison</strong><small>One rollout per task for V1, selected AHE, and Human V2.</small></header>
       <div class="svg-scroll" tabindex="0" role="region" aria-label="Matched endpoint novelty and interaction-preservation rates">
         <svg viewBox="0 0 1160 470" role="img" aria-label="Selected AHE preserved interactions more often and solved more tasks than V1 or Human V2 on matched endpoints">
