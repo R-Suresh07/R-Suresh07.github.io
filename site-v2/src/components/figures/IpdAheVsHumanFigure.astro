@@ -118,7 +118,7 @@ const dataMismatch = search.length !== 11 || harnessChanges.length !== search.le
   || partialPeak.iteration !== 7 || partialPeak.terminal !== 1 || partialPeak.matchedPoints !== 43
   || reachedOne !== 20 || reachedTwo !== 17 || reachedThree !== 6
   || Math.round(correlation * 100) / 100 !== 0.29;
-if (dataMismatch) throw new Error('FIG. 24: IPD AHE search data no longer matches its validated totals.');
+if (dataMismatch) throw new Error('FIG. 25: IPD AHE search data no longer matches its validated totals.');
 
 const chart = { left: 76, right: 930 };
 const topPlot = { top: 48, bottom: 205 };
@@ -138,7 +138,7 @@ const matchedPointPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(
 
 <ipd-reward-gap data-active-iteration={selected.iteration}>
   <figure aria-label="IPD automated harness search objective and hidden partial progress across 11 evaluations">
-    <FigureHeading label="FIG. 24" title="AHE saw only the last step" subtitle="Interaction Point Discovery · 20 tasks · 4 rollouts per harness · optimized for terminal success" />
+    <FigureHeading label="FIG. 25" title="AHE saw only the last step" subtitle="Interaction Point Discovery · 20 tasks · 4 rollouts per harness · optimized for terminal success" />
 
     <div class="rank-comparison" aria-label="The ranking inversion between iterations 2 and 7">
       <section class="selected-summary">

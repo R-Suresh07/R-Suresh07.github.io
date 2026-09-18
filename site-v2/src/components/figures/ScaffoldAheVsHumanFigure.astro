@@ -28,7 +28,7 @@ const harnessChanges = [
 
 const endpointDetails: Record<string, { interpretation: string; status: string }> = {
   v1: { interpretation: 'V1 kept novelty reliability high, but preserved the reference interaction pattern on only 3 of 39 evaluable submissions.', status: 'Baseline harness' },
-  ahe: { interpretation: 'Selected AHE accepted lower novelty reliability, preserved interactions most often, and achieved the strongest matched terminal result.', status: 'Best observed endpoint result' },
+  ahe: { interpretation: 'Selected AHE had lower novelty reliability, preserved interactions most often, and achieved the strongest matched terminal result.', status: 'Best observed endpoint result' },
   v2: { interpretation: 'Human V2 made novelty deterministic, but preserved the reference interaction pattern on only 1 of 50 evaluable submissions.', status: 'Manual V2 endpoint' },
 };
 
@@ -66,7 +66,7 @@ const mismatch = search.length !== 11 || harnessChanges.length !== search.length
   || selectedEndpoint.noveltyPasses !== 29 || selectedEndpoint.evaluable !== 45 || selectedEndpoint.interactionPasses !== 8 || selectedEndpoint.solved !== 5
   || human.noveltyPasses !== 50 || human.evaluable !== 50 || human.interactionPasses !== 1 || human.solved !== 1
   || v1Endpoint.noveltyPasses !== 36 || v1Endpoint.evaluable !== 39 || v1Endpoint.interactionPasses !== 3 || v1Endpoint.solved !== 2;
-if (mismatch) throw new Error('FIG. 25: Scaffold Hopping trade-off data no longer matches its validated totals.');
+if (mismatch) throw new Error('FIG. 26: Scaffold Hopping trade-off data no longer matches its validated totals.');
 
 const domain = { xMin: 60, xMax: 100, yMin: 0, yMax: 20 };
 const plot = { left: 94, right: 1082, top: 38, bottom: 392 };
@@ -93,7 +93,7 @@ const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: '
 
 <scaffold-tradeoff-figure data-view="search">
   <figure aria-label="Scaffold Hopping novelty and interaction-preservation trade-off during automated harness search and at matched endpoints">
-    <FigureHeading label="FIG. 25" title="AHE traded novelty reliability for interaction preservation" subtitle="Scaffold Hopping · 20 tasks · 4 rollouts per harness" />
+    <FigureHeading label="FIG. 26" title="AHE preserves more interactions despite weaker novelty enforcement" subtitle="Scaffold Hopping · 20 tasks · 4 rollouts per harness" />
 
     <div class="view-controls">
       <span>VIEW</span>
@@ -111,7 +111,7 @@ const iterationLabelOffsets: Record<number, { dx: number; dy: number; anchor?: '
         <div><small>Interaction preservation</small><strong>{base.interaction.toFixed(1)}% <i>→</i> {selected.interaction.toFixed(1)}%</strong></div>
         <div><small>Terminal success</small><strong>{base.terminal} <i>→</i> {selected.terminal} / 80</strong></div>
       </div>
-      <p>The search gave up some novelty reliability to recover the interaction pattern.</p>
+      <p>Across the search, stronger interaction preservation coincided with lower novelty reliability.</p>
     </section>
 
     <section class="view-summary endpoint-summary" aria-label="Matched 52-task endpoint comparison" hidden>

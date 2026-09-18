@@ -28,6 +28,7 @@ import LoVsScaffoldHopFigure from '../../components/figures/LoVsScaffoldHopFigur
 import BoltzInterfaceNote from '../../components/figures/BoltzInterfaceNote.astro';
 import ScaffoldHopBaselineFigure from '../../components/figures/ScaffoldHopBaselineFigure.astro';
 import ScaffoldHopHarnessOutcomes from '../../components/figures/ScaffoldHopHarnessOutcomes.astro';
+import ScaffoldNoveltyInteractionFigure from '../../components/figures/ScaffoldNoveltyInteractionFigure.astro';
 import HarnessOptimizationLoop from '../../components/figures/HarnessOptimizationLoop.astro';
 import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverviewFigure.astro';
 import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHarnessSearchOverview.astro';
@@ -342,7 +343,25 @@ The redesigned harness was also more efficient. It used roughly 40% fewer tokens
 
 At this point, the obvious next interventions start to move beyond representation and execution. We could explicitly extract the reference interactions, score how closely candidate poses reproduce them, or suggest structural edits that restore missing contacts. But each of those choices encodes more of the Scaffold Hopping strategy into the harness itself.
 
-That is the limit this task exposed. A harness can streamline search execution, clarify evidence inspection, and eliminate accidental operational failures without necessarily improving the model's scientific choices. **V2 made the remaining bottlenecks far easier to see, but it did not solve them.**
+**The asymmetry in V2 makes this boundary clear.** The harness became very good at enforcing one side of the task (structural novelty) without becoming correspondingly better at preserving the reference interaction pattern. Looking at those two objectives separately helps explain why a cleaner and more reliable workflow still failed to improve terminal performance.
+
+### V2 solves novelty, not interaction preservation
+
+**Manual V2 makes novelty a hard prerequisite for structural evaluation.** Every proposed molecule is first checked for both whole-molecule similarity and scaffold overlap against the reference, and **a candidate cannot be sent to Boltz unless it passes both novelty gates.**
+
+This means V2 never spends its structural-evaluation budget on a molecule that is still too similar to the reference. Across all **236 Boltz-tested candidates**, every molecule satisfied the benchmark’s novelty requirements.
+
+**The question is whether solving novelty actually helps with the harder objective: preserving the reference interaction pattern.**
+
+<ScaffoldNoveltyInteractionFigure />
+
+The molecules Qwen proposes under V2 suggest one reason for this asymmetry. Failed finalists contain, on average, only **73% as many heavy atoms as their reference molecules**.<Sidenote number="10">A molecule's **heavy-atom count** is the number of non-hydrogen atoms in it. We use the candidate/reference ratio here as a coarse measure of molecular size: a ratio of 1.0 means the candidate has roughly the same number of non-hydrogen atoms as the reference, while 0.73 means it contains about 27% fewer.</Sidenote> Across many trajectories, Qwen reaches a safely novel scaffold through fairly aggressive structural changes, often producing molecules substantially smaller than the reference.
+
+That is effective for moving away from the reference in chemical space, but it gives the model little guidance on the competing objective: **changing the scaffold while preserving the molecular architecture that supports the original interaction pattern.** V2 verifies novelty, exposes the predicted poses, and keeps candidate evidence consistent, but Qwen still has to decide which anchors, substituents, linker lengths, and geometric relationships should survive the scaffold change.
+
+The hard novelty gate may also make the search more conservative. Because candidates that fail novelty are blocked before Boltz, V2 cannot use them as intermediate structural experiments, even if their predicted poses might contain useful information for a later design. We do not see enough evidence to attribute V2's poor interaction preservation to this restriction alone.
+
+**The practical bottleneck is therefore no longer enforcing novelty. It is proposing a molecule that is novel without changing so much of the reference architecture that the interaction pattern is lost.**
 
 ## What Was the Human Doing All This Time?
 
@@ -466,11 +485,15 @@ That distinction showed up in the final evaluation: the selected automated harne
 
 **Scaffold Hopping.** Here, the pattern reversed. Both approaches recognized the same underlying difficulty: the original harness made a strong binding score much easier to use than the structural evidence needed to preserve the reference interaction pattern. Manual V2 responded by making the deterministic parts of the task exact and auditable: candidate identity, novelty checks, Boltz execution configured directly from the task, pose access, and submission state.
 
-AHE moved in a different direction. Across iterations, it became increasingly conservative about _how_ Qwen should modify the molecule. It encouraged preservation of anchors and linker geometry, pushed the model away from overly aggressive scaffold changes, and brought pose inspection back into the decision process.
+AHE moved in a different direction. Across iterations, it supplied an increasingly explicit prior over _how_ Qwen should modify the molecule. It encouraged the model to preserve the reference molecule's anchors, linker geometry, and overall architecture while replacing the core, and it brought pose inspection back into the decision process. This was not merely a more conservative version of the same search. It was a scaffold-proposal policy: guidance about where structural change should be concentrated so that novelty did not require rebuilding the whole molecule.
 
 <ScaffoldAheVsHumanFigure />
 
-**Because a successful scaffold hop needs both novelty and interaction preservation, neither objective is useful on its own.** The selected AHE harness traded some novelty reliability for a search policy that preserved interactions more often.
+The audit above lets us separate two differences that the aggregate results otherwise confound. First, AHE's novelty enforcement was weaker than V2's. Second, and independently, AHE gave Qwen a much more explicit proposal policy for preserving the reference architecture while changing the scaffold. The first is a harness failure mode; the second is a plausible explanation for why more of AHE's proposals retained the required interactions.
+
+Crucially, AHE's five successful endpoint molecules all pass the authoritative novelty gates. Its higher success rate therefore cannot be explained by allowing those successes to evade the benchmark's novelty requirement. AHE did not succeed by trading novelty away. It found five molecules that satisfied both objectives, using a policy that more directly targeted their joint satisfaction.
+
+The evidence still does not isolate the policy's causal effect. V2 and AHE differ in more than one respect, and we did not rerun a controlled ablation that adds only AHE's proposal prior to V2's exact novelty machinery. What we can say is narrower: V2 solved novelty enforcement but left scaffold proposal largely to Qwen; AHE enforced novelty less reliably overall, yet supplied much stronger guidance about how to make a novel core change without discarding the rest of the reference molecule's architecture. All five of AHE's actual successes remained genuinely novel.
 
 This is the important difference from Lead Optimization and IPD. The stronger AHE result did not come from making the task representation cleaner. It came from **changing the scientific strategy Qwen followed inside that representation.**
 
@@ -504,7 +527,7 @@ SMDD-Bench has been useful precisely because its failures are difficult to class
 
 We have only explored part of that space. Interaction Point Discovery still has very sparse full-task success, Scaffold Hopping still struggles to preserve the reference interaction pattern, and the interventions here have not been evaluated across every model or SMDD-Bench task family. Tasks such as 2D Pharmacophore Identification and Fragment Assembly may put pressure on very different parts of the harness–policy boundary. The human-versus-automated patterns we saw here therefore need to be tested across more models, tasks, harnesses, and optimization procedures before treating them as general properties of scientific agents.
 
-The optimization objective is another major open question. We intentionally gave AHE only terminal task success rather than task-specific partial-credit rewards. That kept the comparison cleaner, but Fig. 24 also shows what gets lost: in IPD, recovering zero, one, or two correct interaction points all looked identical to the optimizer unless the task was fully solved.
+The optimization objective is another major open question. We intentionally gave AHE only terminal task success rather than task-specific partial-credit rewards. That kept the comparison cleaner, but Fig. 25 also shows what gets lost: in IPD, recovering zero, one, or two correct interaction points all looked identical to the optimizer unless the task was fully solved.
 
 If the goal were purely to maximize performance, there are obvious alternatives. IPD could expose point-level recovery, Lead Optimization could use graded progress across evaluator gates, and other tasks could use evaluator-derived rubrics or richer intermediate rewards. The interesting question is whether better feedback simply makes automated harness search stronger, or whether it also changes what kinds of interventions it discovers.
 
