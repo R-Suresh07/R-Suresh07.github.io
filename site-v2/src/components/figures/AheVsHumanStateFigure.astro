@@ -101,7 +101,7 @@ if (search.length !== 11 || taskMatrix.length !== 20 || search.some(point => poi
   || search.some(point => taskMatrix.filter(task => task.counts[point.iteration] > 0).length !== point.tasksSolved)
   || selectedPoint.iteration !== 2 || selectedPoint.successes !== 30 || selectedPoint.reward !== 37.5
   || solvedAcrossSearch !== 18 || maxCoverage !== 13) {
-  throw new Error('FIG. 24: Lead Optimization AHE search data no longer matches its validated totals.');
+  throw new Error('FIG. 24A: Lead Optimization AHE search data no longer matches its validated totals.');
 }
 
 const chart = { left: 82, right: 930, top: 42, bottom: 350, maxY: 40 };
@@ -122,7 +122,7 @@ const initialTaskCounts = taskMatrix.map(task => ({ id: task.id, count: task.cou
 
 <ahe-search-dynamics>
   <figure aria-label="Lead Optimization automated harness search across 11 evaluations">
-    <FigureHeading label="FIG. 24" title="Automated harness search makes stepwise gains" subtitle="Lead Optimization · same 20 tasks · 4 rollouts per harness" />
+    <FigureHeading label="FIG. 24A" title="Automated harness search makes stepwise gains" subtitle="Lead Optimization · same 20 tasks · 4 rollouts per harness" />
 
     <div class="summary-readout" aria-label="Search summary">
       <span><small>selected</small><strong>{selectedPoint.successes} / 80</strong><b>successful trajectories</b></span>

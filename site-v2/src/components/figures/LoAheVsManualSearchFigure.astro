@@ -1,0 +1,80 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const funnels = [
+  {
+    label: 'Selected AHE',
+    kind: 'ahe',
+    stages: [
+      { value: '765', label: 'tracked candidates' },
+      { value: '103', label: 'Boltz evaluated' },
+      { value: '43', label: 'Boltz passed' },
+      { value: '13', label: 'fully passing' },
+    ],
+    conversion: '13 / 13',
+    yield: '1.70%',
+  },
+  {
+    label: 'Manual V2',
+    kind: 'v2',
+    stages: [
+      { value: '2,200', label: 'tracked candidates' },
+      { value: '255', label: 'Boltz evaluated' },
+      { value: '127', label: 'Boltz passed' },
+      { value: '33', label: 'fully passing' },
+    ],
+    conversion: '33 / 33',
+    yield: '1.50%',
+  },
+];
+---
+
+<lo-ahe-vs-manual-search>
+  <figure aria-label="Lead Optimization candidate funnels under selected AHE and Manual V2">
+    <FigureHeading
+      label="FIG. 24B"
+      title="Manual V2 sustains a broader search at a similar per-candidate hit rate"
+      subtitle="Lead Optimization · same 68 tasks · one rollout per task"
+    />
+
+    <div class="conversion-headline">
+      <strong>Every discovered full solution became a success</strong>
+      <span><b class="ahe-text">AHE {funnels[0].conversion}</b><i>·</i><b class="v2-text">Manual V2 {funnels[1].conversion}</b></span>
+    </div>
+
+    <section class="funnels" aria-label="Candidate evaluation funnels">
+      {funnels.map(funnel => (
+        <article class={funnel.kind}>
+          <header>{funnel.label}</header>
+          <div class="stages">
+            {funnel.stages.map((stage, index) => (
+              <>
+                <div class={`stage stage-${index + 1}`}>
+                  <strong>{stage.value}</strong>
+                  <span>{stage.label}</span>
+                </div>
+                {index < funnel.stages.length - 1 && <i class="connector" aria-hidden="true">↓</i>}
+              </>
+            ))}
+          </div>
+        </article>
+      ))}
+    </section>
+
+    <div class="yield-callout">
+      <span>Full solutions / tracked candidate</span>
+      <p><b class="ahe-text">AHE {funnels[0].yield}</b><i>·</i><b class="v2-text">Manual V2 {funnels[1].yield}</b></p>
+    </div>
+
+    <p class="takeaway">Similar per-candidate yield, a much wider search, and more complete solutions.</p>
+    <figcaption><strong>Manual V2 finds more complete solutions by sustaining a broader search.</strong> Both harnesses convert tracked candidates into complete solutions at roughly the same rate, but Manual V2 carries substantially more candidates through evaluation.</figcaption>
+  </figure>
+</lo-ahe-vs-manual-search>
+
+<style>
+  lo-ahe-vs-manual-search{--ahe:#a55a3e;--ahe-soft:#eadbd3;--v2:#087c83;--v2-soft:#d8ebe8;display:block;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:14px/1.5 var(--font-sans)}
+  figure{margin:0}.conversion-headline{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:13px 17px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.conversion-headline>strong{font:600 13px/1.4 var(--font-sans)}.conversion-headline>span{display:flex;align-items:center;gap:10px;font:11px/1 var(--font-mono)}.conversion-headline b{font-weight:700}.conversion-headline i,.yield-callout i{color:var(--color-ink-soft);font-style:normal}.ahe-text{color:var(--ahe)}.v2-text{color:var(--v2)}
+  .funnels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:22px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.funnels article{padding:0 22px 20px}.funnels article+article{border-left:1px solid var(--color-line)}.funnels header{padding:12px 0;color:var(--color-ink-soft);font:700 10px/1.3 var(--font-mono);letter-spacing:.06em;text-align:center;text-transform:uppercase}.ahe header{color:var(--ahe)}.v2 header{color:var(--v2)}.stages{display:flex;flex-direction:column;align-items:center}.stage{display:flex;align-items:baseline;justify-content:center;gap:10px;box-sizing:border-box;min-height:47px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--color-line) 82%,transparent);background:var(--color-paper-raised);text-align:center}.stage strong{font:500 22px/1 var(--font-serif)}.stage span{color:var(--color-ink-soft);font:700 9px/1.3 var(--font-mono);letter-spacing:.025em;text-transform:uppercase}.stage-1{width:100%}.stage-2{width:86%}.stage-3{width:72%}.stage-4{width:58%}.ahe .stage{border-color:color-mix(in srgb,var(--ahe) 24%,var(--color-line));background:color-mix(in srgb,var(--ahe) 3%,var(--color-paper))}.ahe .stage strong{color:var(--ahe)}.v2 .stage{border-color:color-mix(in srgb,var(--v2) 24%,var(--color-line));background:color-mix(in srgb,var(--v2) 3%,var(--color-paper))}.v2 .stage strong{color:var(--v2)}.connector{height:19px;color:var(--color-ink-soft);font:13px/19px var(--font-mono);font-style:normal}
+  .yield-callout{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:13px 17px;margin-top:20px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.yield-callout>span{color:var(--color-ink-soft);font:700 9px/1.4 var(--font-mono);letter-spacing:.045em;text-transform:uppercase}.yield-callout p{display:flex;align-items:center;gap:10px;margin:0;font:700 14px/1 var(--font-mono)}.takeaway{padding:13px 17px;margin:20px 0 0;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);color:var(--v2);font:600 13px/1.5 var(--font-sans);text-align:center}figcaption{margin:22px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans)}figcaption strong{color:var(--color-ink);font-weight:600}
+  @media(max-width:650px){.conversion-headline,.yield-callout{align-items:flex-start;flex-direction:column;gap:9px}.funnels{grid-template-columns:1fr}.funnels article+article{border-top:1px solid var(--color-line);border-left:0}.stage{gap:7px;padding-inline:8px}.stage strong{font-size:20px}.stage span{font-size:8px}}
+</style>

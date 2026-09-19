@@ -34,6 +34,7 @@ import MetaHarnessOverviewFigure from '../../components/figures/MetaHarnessOverv
 import AutomatedHarnessSearchOverview from '../../components/figures/AutomatedHarnessSearchOverview.astro';
 import HumanVsAHEFigure from '../../components/figures/HumanVsAHEFigure.astro';
 import AheVsHumanStateFigure from '../../components/figures/AheVsHumanStateFigure.astro';
+import LoAheVsManualSearchFigure from '../../components/figures/LoAheVsManualSearchFigure.astro';
 import IpdAheVsHumanFigure from '../../components/figures/IpdAheVsHumanFigure.astro';
 import ScaffoldAheVsHumanFigure from '../../components/figures/ScaffoldAheVsHumanFigure.astro';
 import AheScaffoldSuccessFigure from '../../components/figures/AheScaffoldSuccessFigure.astro';
@@ -266,33 +267,37 @@ The failures suggested a fairly simple division of responsibility. We still want
 
 So we moved that state out of the trajectory and into the harness.
 
-The task requirements were compiled once into an immutable specification with explicit thresholds and optimization goals. Every unique molecule was assigned a persistent candidate ID, and its measurements were attached to that candidate in a central ledger. Deterministic checks such as molecular validity and constraint margins were computed by the harness, while ADMET and Boltz results were recorded directly against the exact molecule they evaluated.
+The task requirements were compiled once into an immutable specification with explicit thresholds and optimization goals.<Sidenote number="9" align="paragraph">V2 does not expose hidden evaluator information. The optimization thresholds stored in the task specification are already given to the agent as part of the task, and the harness converts those public requirements into persistent, machine-readable state. This deliberately makes bookkeeping easier. Our goal is to separate that bookkeeping burden from the scientific problem of deciding which molecules to propose, which measurements to run, and how to respond when a candidate fails a requirement.</Sidenote> Every unique molecule was assigned a persistent candidate ID, and its measurements were attached to that candidate in a central ledger. Deterministic checks such as molecular validity and constraint margins were computed by the harness, while ADMET and Boltz results were recorded directly against the exact molecule they evaluated.
 
 <LoStateHarnessFigure />
 
-Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="9">Agent Rosetta keeps long protein-design trajectories manageable by maintaining a compact summary of earlier actions and their effects on key design metrics, while keeping only the two most recent interaction steps in the model’s active context. We borrow the same general idea of separating long-term trajectory information from the recent local context, but keep our structured candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
+Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="10" align="paragraph">Agent Rosetta keeps long protein-design trajectories manageable by maintaining a compact summary of earlier actions and their effects on key design metrics, while keeping only the two most recent interaction steps in the model’s active context. We borrow the same general idea of separating long-term trajectory information from the recent local context, but keep our structured candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
 
-This distinction mattered. **We could compress the model’s memory of the search without compressing the scientific record itself.** Older reasoning could be summarized, but candidate identities, measurements, failed constraints, and missing evidence remained exact.
+**We could thus compress the model’s memory of the search without compressing the scientific record itself.** Older reasoning could be summarized, but candidate identities, measurements, failed constraints, and missing evidence remained exact.
 
-Submission became stateful as well. Instead of asking the model to write an arbitrary molecule to `solution.smi`, the redesigned harness required it to submit a registered candidate directly. A normal submission was accepted only when that exact molecule had complete passing evidence. An incomplete candidate could still be forced through as a fallback, but doing so became an explicit choice rather than an accidental mismatch between what had been tested and what was submitted.
+Submission became stateful as well. Instead of asking the model to write an arbitrary molecule to `solution.smi`, the redesigned harness required it to submit a registered candidate directly. A normal submission was accepted only when that exact molecule had complete passing evidence. An incomplete or failed candidate could still be forced through as a fallback, but doing so became an explicit choice rather than an accidental mismatch between what had been measured and what was submitted.
 
-The harness still did not choose which molecule to propose, which candidate deserved an expensive evaluation, or what chemical edit to try next. **It made the facts of the search durable while leaving the scientific decisions to the model.**
+The harness still did not choose which molecule to propose, which candidate deserved an expensive evaluation, or what chemical edit to try next. **It made the facts of the search durable while leaving the molecular-design decisions to the model.**
 
 ### Did better state management help?
 
 For Qwen 3.5 9B, the change was substantial. On the same 68-task Lead Optimization Lite subset, successful tasks increased from **13/68** to **33/68**, raising the pass rate from **19.1%** to **48.5%**.
 
-What makes the result more interesting is that V2 did not get there by submitting more often. Under the original harness, Qwen produced a terminal submission on 66 of 68 tasks, but only 13 passed every requirement. Under V2, it submitted on just 48 tasks: **33 were verified successes, 9 were explicit forced submissions with a known failed requirement, and 6 were forced with required evidence still missing.** The remaining 20 trajectories reached the turn limit without submitting.
+The redesigned harness also made the execution much cleaner. Under V1, the same molecule was sometimes sent to ADMET or Boltz multiple times even though an earlier result was already available. Across the 68 tasks, this produced **208 repeated ADMET calls and 24 repeated Boltz calls**. Because V2 stored each result against the molecule's canonical identity and reused it automatically, those counts fell to **zero and two**, respectively. V2 also stopped spending Boltz calls on molecules that had already failed deterministic structural checks.
+
+The same difference appeared at submission time. Under V1, the model could submit a molecule even when an earlier measurement had already shown that it failed a required property, or when some required evidence had never been collected. V2 instead recomputed submission eligibility from the candidate's stored evidence. A normal submission was accepted only when that exact molecule had complete passing measurements. Otherwise, the model had to continue searching or explicitly force a known-incomplete fallback.
 
 <LoHarnessOutcomes />
 
-So the redesigned harness made the agent much more selective. Success among submitted candidates increased from **19.7%** to **68.8%**, while overall task success improved by **29.4 percentage points**. The task-level result is the cleaner comparison, since the original harness did not distinguish forced or incomplete submissions before accepting them.
+These changes made the scientific state considerably more reliable, but they did not make the molecular search itself easy. V2 blocked **22** attempts to normally submit a failed or incompletely evaluated candidate. Nine of those trajectories continued searching afterward, but none subsequently found a passing molecule. The guardrail therefore prevented invalid submissions and made failures easier to interpret, but it did not itself manufacture successful chemistry.
 
-The gain also did not come from simply giving the model more room to reason. Across the 68 tasks, V2 used **12% fewer turns, 26% fewer tokens, and 17% fewer ADMET calls**, while Boltz usage increased by **51%**. With cheap checks and candidate state handled explicitly, the model spent less effort reconstructing the search and more of its expensive evaluation budget testing whether promising candidates actually maintained binding.
+The remaining failures make that distinction clearer. Among the 35 unsuccessful V2 trajectories, **22 ended exactly one measured requirement away from success**, while most of the remainder were still blocked on multiple requirements. Binding affinity was the largest single bottleneck among the near-passes, accounting for **9 of those 22 tasks**.
 
-There was still a clear limit. **Twenty V2 trajectories reached the turn limit without submitting, compared with only 2 under V1.** Making the search state reliable could prevent many avoidable mistakes, but it could not tell the model how to escape an unproductive chemical search or which modification to try next.
+This is an important shift. Once candidate identity, measurements, and task state become reliable, the remaining question is increasingly **how to discover or refine a molecule that satisfies the last difficult property**, rather than how to remember which molecule passed which test.
 
-Lead Optimization produced a different dynamic than IPD. In IPD, expanding the evidence the model could observe yielded the largest gain. Here, much of the necessary evidence already existed, and the larger gain came from keeping that data **persistent, candidate-specific, and hard to lose.** The next task explores what happens when neither intervention proves sufficient.
+The exact state representation would be more complicated in a real lead-optimization campaign. SMDD-Bench gives us explicit requirements, while real programs may involve noisy assays, changing priorities, conflicting measurements, or trade-offs that cannot be reduced to a fixed pass/fail gate. But the underlying separation still applies: **candidate identity and experimental evidence can remain authoritative even when the policy for interpreting that evidence changes.** A real system could therefore keep a stable scientific record while allowing the campaign objectives above it to evolve.
+
+Lead Optimization produced a different dynamic than IPD. In IPD, the largest gain came from changing the evidence the model could observe. Here, much of the necessary evidence already existed, but keeping that evidence consistent across a long, multi-candidate search was itself a bottleneck. **Externalizing that state did not solve the chemistry directly. It removed avoidable execution failures so that the remaining difficulty was increasingly the chemistry itself.**
 
 ## Scaffold Hopping
 
@@ -338,7 +343,7 @@ But those are different requirements. Verifying a scaffold hop meant comparing t
 
 We redesigned the harness to make this evidence easier to access. As in Lead Optimization, proposed molecules were registered under persistent candidate IDs and passed through deterministic novelty checks before spending a Boltz call. The protein and pocket configuration were also bound directly to the task.
 
-The larger change came after Boltz. Instead of returning a scalar binding score alongside a directory of generated structures, V2 attached the result directly to the candidate and surfaced the predicted pose files explicitly.<Sidenote number="11" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking **whether a candidate appeared to bind** to inspecting **how it was predicted to bind.**
+The larger change came after Boltz. Instead of returning a scalar binding score alongside a directory of generated structures, V2 attached the result directly to the candidate and surfaced the predicted pose files explicitly.<Sidenote number="12" align="paragraph"><BoltzInterfaceNote /></Sidenote> The agent could now move directly from asking **whether a candidate appeared to bind** to inspecting **how it was predicted to bind.**
 
 The harness still did not calculate the scaffold-hopping interaction score or tell the model which contacts had to survive. Deciding whether a pose preserved the important interactions, how to modify a candidate when it did not, and whether another experiment was worth running remained part of the model’s scientific reasoning. Final submission was also tied to the same registered candidate state rather than an independently written molecule.
 
@@ -374,7 +379,7 @@ This means V2 never spends its structural-evaluation budget on a molecule that i
 
 <ScaffoldNoveltyInteractionFigure />
 
-The molecules Qwen proposes under V2 suggest one reason for this asymmetry. Failed finalists contain, on average, only **73% as many heavy atoms as their reference molecules**.<Sidenote number="12">A molecule's **heavy-atom count** is the number of non-hydrogen atoms in it. We use the candidate/reference ratio here as a coarse measure of molecular size: a ratio of 1.0 means the candidate has roughly the same number of non-hydrogen atoms as the reference, while 0.73 means it contains about 27% fewer.</Sidenote> Across many trajectories, Qwen reaches a safely novel scaffold through fairly aggressive structural changes, often producing molecules substantially smaller than the reference.
+The molecules Qwen proposes under V2 suggest one reason for this asymmetry. Failed finalists contain, on average, only **73% as many heavy atoms as their reference molecules**.<Sidenote number="13">A molecule's **heavy-atom count** is the number of non-hydrogen atoms in it. We use the candidate/reference ratio here as a coarse measure of molecular size: a ratio of 1.0 means the candidate has roughly the same number of non-hydrogen atoms as the reference, while 0.73 means it contains about 27% fewer.</Sidenote> Across many trajectories, Qwen reaches a safely novel scaffold through fairly aggressive structural changes, often producing molecules substantially smaller than the reference.
 
 That is effective for moving away from the reference in chemical space, but it gives the model little guidance on the competing objective: **changing the scaffold while preserving the molecular architecture that supports the original interaction pattern.** V2 verifies novelty, exposes the predicted poses, and keeps candidate evidence consistent, but Qwen still has to decide which anchors, substituents, linker lengths, and geometric relationships should survive the scaffold change.
 
@@ -470,23 +475,37 @@ The endpoint comparison tells us that manual and automated harness search produc
 
 The endpoint scores tell us where AHE helped, but not what changed inside the harness. Looking at the selected harnesses and their trajectories reveals three different stories.
 
-### Lead Optimization: A procedure for state, not authoritative state
+### Lead Optimization
 
-Automated search came closest here to the diagnosis we reached manually. The original harness left most of the search state inside Qwen’s trajectory, so Meta-Harness quickly began adding structure around candidate tracking, measurement, and submission.
+Automated search came closest here to the diagnosis we reached manually. The original harness left much of the search state inside Qwen's trajectory, so Meta-Harness quickly began adding structure around candidate tracking, measurement, and submission.
 
-By iteration 1, Meta-Harness had introduced a cheap-to-expensive workflow, persistent candidate notes, budget checkpoints, and explicit instructions to measure candidates before moving on. Iteration 2 made that procedure harder to violate: candidates had to pass through structured generation and measurement steps, objective completion was tracked explicitly, and the exact submitted molecule was checked against the one that had actually been evaluated.
-
-That iteration produced the highest observed reward and became the harness used in our final comparison.
+Early iterations introduced a cheap-to-expensive workflow, persistent candidate notes, budget checkpoints, and explicit verification before submission. By iteration 2, candidates moved through more structured generation and measurement steps, objective completion was tracked explicitly, and the submitted molecule was checked against the candidate that had actually been evaluated. That iteration produced the highest observed reward and became the harness used in our final comparison.
 
 <AheVsHumanStateFigure />
 
-Later iterations continued in the same direction, routing requirements to their measurement sources, tracking missing gates, and ranking candidates by their weakest remaining margin. In other words, automated search had independently found much of the same high-level failure we had: **evidence from different candidates and different requirements was not being integrated reliably at the final decision.**
+The later search continued to elaborate the same basic idea. Automated optimization had therefore found much of the same high-level problem we had: **a long Lead Optimization trajectory needs explicit machinery for keeping candidates, measurements, and requirements organized.**
 
-The difference was where the two approaches placed the solution.
+The primary distinction was where that state lived.
 
-AHE gave Qwen a better **procedure for doing the bookkeeping.** Manual V2 moved more of that bookkeeping out of Qwen altogether. The task specification became immutable, every molecule received a canonical identity, measurements were attached directly to that identity, and submission validity was computed from the stored evidence rather than reconstructed by the model.
+AHE gave Qwen a better **procedure for maintaining the search state.** It introduced candidate registration and persistent notes, but Qwen still had to combine raw ADMET outputs, local structural checks, task thresholds, candidate names, and current measurements into its own view of which molecules remained viable.
 
-Both approaches uncovered the state-management problem. **Automated search made state easier for Qwen to track, while Manual V2 made less of that state Qwen’s responsibility in the first place.**
+Manual V2 moved more of those joins into the environment itself. Candidate identity, task requirements, oracle results, missing measurements, and current gate status became authoritative program state rather than information the model had to repeatedly reconstruct from its context.
+
+That difference still produced measurable execution failures under AHE. Across the 68 endpoint tasks, it repeated **89 ADMET evaluations and 8 Boltz evaluations** on molecules it had already measured, and spent 20 Boltz calls on candidates that already failed deterministic structural checks. We also found 14 cases across nine tasks where the trajectory referred to one registered candidate while sending a different SMILES to the ADMET oracle. Manual V2 eliminated these classes of ambiguity by attaching evidence directly to canonical candidate identities.
+
+But these execution errors do **not** explain the 20-success gap by themselves.
+
+Both systems converted every fully passing molecule they discovered into a successful task. AHE found **13** such molecules, while Manual V2 found **33**. The difference therefore appeared earlier, during candidate discovery and evaluation.
+
+<LoAheVsManualSearchFigure />
+
+**The performance gap therefore appears in how much search each harness can sustain, not in a large improvement in the quality of any individual proposal.** Manual V2 carries many more candidates through the search while keeping their identities, measurements, and current status consistent.
+
+The ledger makes that larger search easier to execute reliably. Known measurements can be reused, evidence stays attached to the correct molecule, and cheap failures can be rejected before spending expensive evaluation budget. Its role is therefore not to preserve a single winning candidate until submission, but to keep a large multi-candidate search coherent as it expands.
+
+Submission control played a different role. Manual V2 could block a failed or incompletely evaluated normal submission, but none of those blocked trajectories later became a success. The additional passing molecules were discovered **during candidate generation and evaluation**, not recovered at the final submission step.
+
+**AHE taught Qwen a better procedure for managing a Lead Optimization campaign. Manual V2 moved more of that campaign state into the environment and used it to support a substantially broader staged search.** The result was not a dramatic increase in the quality of each individual proposal, but a search process that could explore and evaluate many more candidates without losing track of its own experiments.
 
 ### Interaction Point Discovery
 
@@ -540,7 +559,7 @@ The same trajectories show that AHE is usually not succeeding through a long pro
 
 AHE works differently. Instead of enforcing those checks inside the harness, it gives Qwen an RDKit recipe and asks the model to calculate novelty itself. That introduces two distinct failure modes.
 
-First, the **local calculation is not identical to the benchmark evaluator.** In particular, AHE's scaffold-MCS recipe uses different ring-matching settings, which can make a molecule appear more novel than it actually is.<Sidenote number="13">The main mismatch is in the scaffold-MCS calculation. AHE uses `ringMatchesRingOnly=True`, which only allows atoms in a ring to match atoms in another ring when computing the maximum common substructure. The benchmark evaluator does not impose that restriction. This can make AHE report a smaller shared scaffold than the evaluator, making some candidates look more novel locally than they actually are under the benchmark. Manual V2 avoids this mismatch by calling the benchmark's novelty functions directly.</Sidenote> Replaying AHE's local calculation on the endpoint candidates shows that **10 of the 45 evaluable finalists were classified as novel locally but failed the benchmark's novelty check.**
+First, the **local calculation is not identical to the benchmark evaluator.** In particular, AHE's scaffold-MCS recipe uses different ring-matching settings, which can make a molecule appear more novel than it actually is.<Sidenote number="14">The main mismatch is in the scaffold-MCS calculation. AHE uses `ringMatchesRingOnly=True`, which only allows atoms in a ring to match atoms in another ring when computing the maximum common substructure. The benchmark evaluator does not impose that restriction. This can make AHE report a smaller shared scaffold than the evaluator, making some candidates look more novel locally than they actually are under the benchmark. Manual V2 avoids this mismatch by calling the benchmark's novelty functions directly.</Sidenote> Replaying AHE's local calculation on the endpoint candidates shows that **10 of the 45 evaluable finalists were classified as novel locally but failed the benchmark's novelty check.**
 
 Second, the calculation is only advisory. Qwen can still submit a molecule even when its own local novelty check says the candidate should fail. This happens for another **6 of the 45 evaluable finalists**.
 
