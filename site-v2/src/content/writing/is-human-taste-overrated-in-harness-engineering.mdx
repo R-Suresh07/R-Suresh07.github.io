@@ -64,7 +64,7 @@ The asymmetry is that these two procedures are optimized very differently. The m
 
 Those choices rely heavily on **human taste**. Usually, we run an agent, inspect where it failed, form a hypothesis about whether the problem came from the model or its environment, modify the harness, and run everything again. The final fix can be a few lines of code. Figuring out which few lines to change can take days.
 
-This raises the question behind this post. **How far can harness engineering take us before the remaining bottleneck is the model’s scientific policy itself?** And if harness engineering is another iterative search process, how much of that search actually requires a human?
+This raises the question behind this post. **If harness engineering is itself an iterative search process, how much of that search actually requires a human?** And as we improve the harness, **how far can we go before the remaining bottleneck is the model’s scientific policy itself?**
 
 Our testing ground is the Small Molecule Drug Design benchmark, SMDD-Bench ([Han et al., 2026](#han-et-al-2026)), a collection of challenging, multi-turn agentic tasks in small-molecule design. Coding and math give agents relatively cheap and direct feedback when something goes wrong. Generative chemistry is far messier, because evaluating a candidate can require specialized scientific models, the feedback is imperfect, and several tasks depend on reasoning over 3D molecular structure.<Sidenote number="1">Boltz-2, which we shorten to Boltz below, lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It is much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote>
 
@@ -579,17 +579,17 @@ Not entirely. But these experiments suggest that its value depends heavily on **
 
 Automated search was quite capable of improving workflows inside an existing interface. It could add procedures, restructure tools, introduce memory, tighten submission logic, and even shape how the model searched the chemistry. But our largest manual gains came when the intervention changed the abstraction itself: **what evidence the model could observe, what state the environment maintained for it, and what work the model should have to reconstruct at all.**
 
-**Lead Optimization improved when candidate identity and experimental evidence became authoritative enough to support a much broader multi-candidate search. Interaction Point Discovery improved when the harness stopped asking the model to infer conserved ligand behavior from a single receptor and instead exposed ligand-side features that could be compared for recurrence.** Scaffold Hopping provided the counterexample: once novelty and execution were reliable, the remaining bottleneck was increasingly which chemistry to propose.
+The three tasks expose different versions of that boundary. **Interaction Point Discovery improved when the harness stopped asking the model to infer conserved ligand behavior from a single receptor and instead exposed ligand-side features that could be compared for recurrence. Lead Optimization improved when candidate identity and experimental evidence became authoritative enough to support a much broader multi-candidate search. Scaffold Hopping marked the other side of the boundary: once novelty and execution were reliable, the remaining bottleneck was increasingly which chemistry to propose and which parts of the reference architecture to preserve.**
 
-That suggests a useful division of labor. Human judgment still matters when deciding **what should be represented explicitly, what should be enforced by the environment, and what should remain the model’s responsibility.** Once those choices are sensible, automated optimization can search over workflows, instructions, heuristics, and control policies far more cheaply than repeatedly running the same loop by hand.
+That suggests a useful division of labor. Human judgment still matters when deciding **what should be represented explicitly, what should be enforced by the environment, and what should remain the model’s responsibility.** Once those choices are sensible, automated optimization can search systematically over workflows, instructions, heuristics, and control policies without requiring the same cycle of manual inspection and redesign.
 
-It also gives us a practical stopping rule for manual harness engineering. Maintaining deterministic state, exposing task information, and making execution reliable are natural jobs for the harness. As interventions begin to prescribe chemical transformations, prioritize particular interactions, or resolve scientific trade-offs, they increasingly become part of the model’s policy rather than infrastructure. At that point, improving the policy through training may be a cleaner lever than progressively hardcoding the strategy into the environment.
+It also gives us a practical stopping rule for manual harness engineering. Maintaining deterministic state, exposing task-relevant evidence, and making execution reliable are natural jobs for the harness. As interventions begin to prescribe chemical transformations, prioritize particular interactions, or resolve scientific trade-offs, they increasingly become part of the model’s policy rather than infrastructure. At that point, improving the policy through training may be a cleaner lever than progressively hardcoding the strategy into the environment.
 
 So human taste is not disappearing from harness engineering. **It is moving up a level.** The interesting question is becoming less “What prompt or tool should we add?” and more:
 
 **“Where should the boundary between the environment and the scientist actually be?”**
 
-Once that boundary is chosen well, much of the optimization inside it may not need a human at all.
+Once that boundary is chosen well, much of the optimization inside it may be automated.
 
 ### Future considerations
 
@@ -611,7 +611,7 @@ We have also packaged SMDD-Bench into Harbor and Prime environments for running 
 
 ```PLACEHOLDER_URL```
 
-The environment is still evolving, particularly across the less-tested task families, so bug reports and contributions are very welcome.
+The environment is still a work-in-progress, particularly across the less-tested task families, so bug reports and contributions are very welcome.
 
 ### Acknowledgments
 
