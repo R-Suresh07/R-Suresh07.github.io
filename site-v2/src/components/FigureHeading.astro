@@ -1,0 +1,16 @@
+---
+interface Props { label?: string; title?: string; subtitle?: string; }
+const { label, title, subtitle } = Astro.props;
+---
+<header class="editorial-figure-heading">
+  {label && <span class="number">{label}</span>}
+  {title && <span class="title">{title}</span>}
+  {subtitle && <span class="subtitle">{subtitle}</span>}
+</header>
+<style>
+  .editorial-figure-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:14px; border-top:1px solid var(--color-line); padding-top:12px; margin-bottom:24px; }
+  .number { color:#087c83; font:700 13px/1.5 var(--font-sans); letter-spacing:.08em; text-transform:uppercase; }
+  .title { color:var(--color-ink); font:25px/1.25 var(--font-serif); }
+  .subtitle { color:var(--color-ink-soft); font:12px/1.6 var(--font-mono); }
+  @media (max-width:600px) { .title { font-size:23px; } .subtitle { flex-basis:100%; } }
+</style>

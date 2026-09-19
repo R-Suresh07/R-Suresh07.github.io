@@ -1,0 +1,35 @@
+---
+import { Image } from 'astro:assets';
+import FigureHeading from '../FigureHeading.astro';
+import metaHarnessOverview from '../../content/writing/data/meta-harness-overview.png';
+---
+
+<figure class="meta-harness-overview" aria-label="Meta-Harness search loop">
+  <FigureHeading label="FIG. 21" title="The harness becomes the search space" />
+  <Image
+    src={metaHarnessOverview}
+    alt="Meta-Harness loop in which an agent reads previous harness code, traces, and scores from a filesystem, proposes a new harness, evaluates it with an LLM on tasks, and stores the resulting logs for the next iteration."
+    loading="lazy"
+  />
+  <figcaption><strong>Automated harness engineering turns the harness itself into an optimization target.</strong> A meta-agent inspects previous harness implementations together with their trajectories and terminal task scores, proposes a new executable harness, evaluates it with the same underlying agent model, and stores the resulting code, traces, and score for the next iteration.</figcaption>
+</figure>
+
+<style>
+  .meta-harness-overview {
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+  }
+  .meta-harness-overview :global(img) {
+    display:block;
+    width:100%;
+    height:auto;
+    border:1px solid var(--color-line);
+    background:#fff;
+  }
+  figcaption { margin:22px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+</style>

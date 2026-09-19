@@ -1,0 +1,18 @@
+{
+  "id": "smdd_002_P42574_0",
+  "name": "Pharmacophore_Caspase_3",
+  "receptor": "receptor.pdb",
+  "groundTruth": "ground_truth.json",
+  "pocket": {
+    "center": {
+      "x": 37.646751403808594,
+      "y": 33.5653190612793,
+      "z": 27.973283767700195
+    },
+    "radius": 12
+  },
+  "output": {
+    "count": 3,
+    "allowedTypes": ["Donor", "Acceptor", "Aromatic", "Hydrophobic", "Cation", "Anion"]
+  }
+}

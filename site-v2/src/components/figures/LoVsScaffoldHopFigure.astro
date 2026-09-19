@@ -1,0 +1,280 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import Sidenote from '../Sidenote.astro';
+
+interface Props { label?: string; }
+const { label = 'FIG. 16' } = Astro.props;
+---
+
+<lo-vs-scaffold-hop id="fig-16" data-pocket-view="overlay">
+  <figure aria-label="Mirrored comparison of Lead Optimization and Scaffold Hopping">
+    <FigureHeading
+      label={label}
+      title="Two opposite ways to move through chemical space"
+      subtitle="Lead Optimization stays structurally close to the reference while moving its properties. Scaffold Hopping does the opposite: it must move away structurally while preserving how the molecule interacts with the pocket."
+    />
+
+    <div class="figure-question"><p>What is allowed to change, and what has to stay the same?</p></div>
+
+    <div class="mirrored-canvas">
+      <section class="task-panel lo-panel" data-show-changes>
+        <header class="panel-heading">
+          <span>01</span>
+          <div><h3>Lead Optimization</h3><p>A2A adenosine receptor · 5NM2</p></div>
+          <b>stay close</b>
+        </header>
+
+        <div class="molecule-stage structure-emphasis">
+          <div class="molecule-pair" aria-label="The Lead Optimization candidate changes the para methyl substituent to fluorine while preserving the rest of the chemotype">
+            <div class="molecule-card reference-molecule">
+              <span>reference</span>
+              <svg viewBox="0 0 260 150" role="img" aria-label="Reference xanthine with para methyl substituent">
+                <g class="shared-structure">
+                  <path d="M35 75 58 35 104 35 127 75 104 115 58 115Z M58 35 81 75 58 115 M104 35 81 75 104 115 M127 75 157 75 M157 75 177 45 215 52 224 88 195 112 160 98Z M177 45 184 79 160 98 M215 52 184 79 224 88" />
+                  <path d="M167 38 158 19 M218 48 235 32 M225 92 242 104 M196 113 198 137" />
+                  <text x="148" y="17">O</text><text x="236" y="31">O</text><text x="241" y="117">N</text><text x="191" y="148">N</text><text x="168" y="104">N</text><text x="201" y="70">NH</text>
+                </g>
+                <g class="changed-region"><path d="M35 75 12 75" /><text x="0" y="69">CH₃</text></g>
+              </svg>
+            </div>
+            <span class="pair-arrow" aria-hidden="true">→</span>
+            <div class="molecule-card candidate-molecule">
+              <span>optimized · C001</span>
+              <svg viewBox="0 0 260 150" role="img" aria-label="Optimized xanthine with para fluorine substituent">
+                <g class="shared-structure">
+                  <path d="M35 75 58 35 104 35 127 75 104 115 58 115Z M58 35 81 75 58 115 M104 35 81 75 104 115 M127 75 157 75 M157 75 177 45 215 52 224 88 195 112 160 98Z M177 45 184 79 160 98 M215 52 184 79 224 88" />
+                  <path d="M167 38 158 19 M218 48 235 32 M225 92 242 104 M196 113 198 137" />
+                  <text x="148" y="17">O</text><text x="236" y="31">O</text><text x="241" y="117">N</text><text x="191" y="148">N</text><text x="168" y="104">N</text><text x="201" y="70">NH</text>
+                </g>
+                <g class="changed-region"><path d="M35 75 12 75" /><text x="1" y="69">F</text></g>
+              </svg>
+            </div>
+          </div>
+          <p class="move-label"><strong>small structural move</strong><span>CH₃</span><i>→</i><span>F</span></p>
+        </div>
+
+        <div class="metric-block structure-block structure-emphasis">
+          <header><span>Structure</span><strong>must stay close</strong></header>
+          <div class="metric-line"><span>Tanimoto similarity</span><b>0.7907</b><small>required ≥ 0.70</small><i>✓</i></div>
+          <div class="gauge similarity-gauge" aria-label="Tanimoto similarity 0.7907, passing the required minimum of 0.70">
+            <span class="pass-zone" /><i class="threshold" /><b class="marker" /><small class="threshold-label">0.70</small><small class="marker-label">0.7907</small>
+          </div>
+        </div>
+
+        <div class="metric-block property-block function-emphasis">
+          <header><span>Property</span><strong>must move</strong></header>
+          <div class="metric-line"><span>CYP3A4</span><b>0.6862 → 0.4458</b><small>required ≤ 0.5862</small><i>✓</i></div>
+          <div class="gauge property-gauge" aria-label="CYP3A4 moved from 0.6862 to 0.4458, passing the required maximum of 0.5862">
+            <span class="pass-zone" /><i class="threshold" /><b class="start-marker" /><em class="movement-arrow" /><b class="marker" /><small class="threshold-label">0.5862</small><small class="start-label">0.6862</small><small class="marker-label">0.4458</small>
+          </div>
+          <p class="held-gates">hERG · BBB · solubility · affinity held within range <b>✓</b></p>
+        </div>
+      </section>
+
+      <section class="task-panel sh-panel" data-show-changes>
+        <header class="panel-heading">
+          <span>02</span>
+          <div><h3>Scaffold Hopping</h3><p>Protein P43235 · 3KWZ</p></div>
+          <b>move away</b>
+        </header>
+
+        <div class="molecule-stage structure-emphasis">
+          <div class="molecule-pair sh-pair" aria-label="The Scaffold Hopping reference and candidate have visibly different core structures">
+            <div class="molecule-card reference-molecule">
+              <span>reference · KWZ</span>
+              <svg viewBox="0 0 260 150" role="img" aria-label="3KWZ reference inhibitor structure">
+                <g class="retained-feature"><path d="M106 74 130 35 176 35 199 74 176 113 130 113Z" /><text x="137" y="32">N</text><text x="178" y="119">N</text><path d="M106 74 87 89 M85 86 61 101 M87 89 63 104 M89 92 65 107" /><text x="47" y="116">N</text></g>
+                <g class="changed-region"><path d="M199 74 224 58 244 72 242 100 218 112 198 96Z M130 35 105 19 72 28 60 58 82 77 M72 28 47 14" /><text x="6" y="14">CF₃</text><path d="M198 96 218 127" /></g>
+              </svg>
+            </div>
+            <span class="pair-arrow" aria-hidden="true">→</span>
+            <div class="molecule-card candidate-molecule">
+              <span>scaffold hop · C007</span>
+              <svg viewBox="0 0 260 150" role="img" aria-label="C007 scaffold-hop candidate with a substantially different core">
+                <g class="retained-feature"><path d="M106 74 130 48 154 74 178 48 199 74" /><text x="120" y="43">O</text><text x="146" y="89">NH</text><text x="181" y="43">O</text></g>
+                <g class="changed-region"><path d="M106 74 84 44 48 44 27 74 48 105 84 105Z M48 44 65 74 48 105 M84 44 65 74 84 105 M199 74 218 43 248 52 252 88 226 109 199 96Z M218 43 226 75 199 96 M248 52 226 75 252 88 M27 74 8 58 M226 109 236 139" /></g>
+              </svg>
+            </div>
+          </div>
+          <div class="structure-key" aria-label="Structure colors"><span><i class="retained-key" />shared local motif</span><span><i class="changed-key" />scaffold replaced</span></div>
+          <p class="move-label"><strong>large structural move</strong><span>new core</span><i>→</i><span>same contact geometry</span></p>
+        </div>
+
+        <div class="metric-block novelty-block structure-emphasis">
+          <header><span>Structure</span><strong>must move</strong></header>
+          <div class="metric-line"><span>Tanimoto similarity</span><b>0.3412</b><small>required &lt; 0.50</small><i>✓</i></div>
+          <div class="metric-line"><span>Scaffold MCS</span><b>0.6216</b><small>required &lt; 0.65</small><i>✓</i></div>
+        </div>
+
+        <div class="pocket-section function-emphasis">
+          <header class="pocket-heading"><div><span>Pocket interactions</span><strong>must stay</strong></div><p>similar pocket-interaction pattern</p></header>
+          <div class="pocket-tabs" role="group" aria-label="Pocket ligand view">
+            <button type="button" aria-pressed="false" data-pocket-button="reference">reference</button><span>|</span>
+            <button type="button" aria-pressed="false" data-pocket-button="candidate">scaffold hop</button><span>|</span>
+            <button type="button" aria-pressed="true" data-pocket-button="overlay">overlay</button>
+          </div>
+          <svg class="pocket-map" viewBox="0 0 560 248" role="img" aria-label="Interaction map showing different ligand scaffolds preserving contacts to GLN19, CYS25, GLY66, TYR67, ASN161, and LEU209">
+            <defs><radialGradient id="pocket-field"><stop offset="0" stop-color="#e2edea" stop-opacity=".85"/><stop offset="1" stop-color="#e2edea" stop-opacity="0"/></radialGradient></defs>
+            <ellipse class="pocket-field" cx="280" cy="124" rx="205" ry="105" fill="url(#pocket-field)" />
+            <g class="pocket-contours" aria-hidden="true"><path d="M42 112C76 35 157 20 218 51S339 15 434 45s102 119 43 165"/><path d="M67 172c67 61 145 36 202 12s124 46 221-5"/><path d="M110 85c47-31 94-20 127 1m104-16c42-14 81 2 103 38"/></g>
+            <g class="contact-lines">
+              <path d="M228 102 119 48 M244 137 124 191 M276 83 276 27 M306 149 314 222 M337 100 455 43 M355 140 473 188" />
+            </g>
+            <g class="residues">
+              <g transform="translate(82 35)"><circle r="5"/><text x="11" y="4">GLN19</text></g>
+              <g transform="translate(83 199)"><circle r="5"/><text x="11" y="4">CYS25</text></g>
+              <g transform="translate(276 20)"><circle r="5"/><text x="10" y="4">GLY66</text></g>
+              <g transform="translate(314 229)"><circle r="5"/><text x="10" y="4">TYR67</text></g>
+              <g transform="translate(461 36)"><circle r="5"/><text x="10" y="4">ASN161</text></g>
+              <g transform="translate(479 195)"><circle r="5"/><text x="10" y="4">LEU209</text></g>
+            </g>
+            <g class="ligand reference-ligand"><path d="M245 120 263 89 299 89 317 120 299 151 263 151 245 120 M263 89 240 72 210 80 198 105 219 121 245 120 M210 80 188 68 M317 120 343 101 367 112 369 139 346 154 318 145 317 120 M245 120 223 136"/><circle cx="263" cy="89" r="3"/><circle cx="299" cy="151" r="3"/></g>
+            <g class="ligand candidate-ligand"><path d="M245 120 267 96 290 120 313 96 333 120 M245 120 224 93 194 93 176 120 194 147 224 147 245 120 M194 93 210 120 194 147 M224 93 210 120 224 147 M333 120 350 94 378 102 382 131 359 149 333 139 333 120 M350 94 359 121 333 139 M378 102 359 121 382 131"/><circle cx="267" cy="96" r="3"/><circle cx="313" cy="96" r="3"/></g>
+            <g class="contact-points"><circle cx="228" cy="102" r="5"/><circle cx="244" cy="137" r="5"/><circle cx="276" cy="83" r="5"/><circle cx="306" cy="149" r="5"/><circle cx="337" cy="100" r="5"/><circle cx="355" cy="140" r="5"/></g>
+          </svg>
+          <div class="interaction-metrics">
+            <div><span>Interaction similarity</span><b>0.7778</b><small>required &gt; 0.75</small><i>✓</i></div>
+            <div><span>Binding probability</span><b>0.9827</b><small>required &gt; 0.70</small><i>✓</i></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="punchline-strip">
+      <div><span>Lead Optimization</span><p>stay near the reference <i>→</i> <strong>improve the property profile</strong></p></div>
+      <div><span>Scaffold Hopping</span><p>different molecule family <i>→</i> <strong>same pocket behaviour</strong></p></div>
+    </div>
+    <figcaption><strong>The two tasks reward opposite structural behavior.</strong> In Lead Optimization, the para-fluoro analog succeeds by remaining similar to its reference while moving the target property into range. In Scaffold Hopping, C007 succeeds by becoming structurally dissimilar (low scaffold MCS)<Sidenote number="11">MCS stands for maximum common substructure. Scaffold MCS measures how much of that substructure is shared between the reference and candidate scaffolds; lower values indicate a larger structural change.</Sidenote> while preserving the reference interaction pattern and binding. <strong>The same structural similarity that helps a Lead Optimization candidate would make a Scaffold Hopping candidate fail.</strong><small class="figure-note">The pocket panel maps the conserved contacts reported for the trajectory rather than reproducing atomic coordinates.</small></figcaption>
+  </figure>
+</lo-vs-scaffold-hop>
+
+<script>
+  class LoVsScaffoldHop extends HTMLElement {
+    cleanup?: () => void;
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const controller = new AbortController();
+      const { signal } = controller;
+      const pocketButtons = [...this.querySelectorAll<HTMLButtonElement>('[data-pocket-button]')];
+      const setPocket = (view: string) => {
+        this.dataset.pocketView = view;
+        pocketButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.pocketButton === view)));
+      };
+
+      pocketButtons.forEach(button => button.addEventListener('click', () => setPocket(button.dataset.pocketButton!), { signal }));
+      this.cleanup = () => controller.abort();
+    }
+    disconnectedCallback() { this.cleanup?.(); }
+  }
+  if (!customElements.get('lo-vs-scaffold-hop')) customElements.define('lo-vs-scaffold-hop', LoVsScaffoldHop);
+</script>
+
+<style>
+  lo-vs-scaffold-hop {
+    --accent:#087c83; --accent-soft:#dcecea; --rust:#a94f35; --rust-soft:#f0dfd8; --gold:#b9872e;
+    display:block; width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter)))); max-width:calc(100vw - 2 * var(--page-gutter)); box-sizing:border-box;
+    margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); font:14px/1.5 var(--font-sans);
+  }
+  figure { margin:0; }
+  button { color:inherit; font:inherit; }
+  .figure-question { margin:-9px 0 24px; }
+  .figure-question > p { margin:0; color:var(--accent); font:19px/1.4 var(--font-serif); }
+  .pocket-tabs button { padding:2px 0; border:0; border-bottom:1px solid transparent; background:none; color:var(--color-ink-soft); cursor:pointer; }
+  .pocket-tabs button[aria-pressed="true"] { border-bottom-color:var(--accent); color:var(--accent); }
+  button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .mirrored-canvas { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--color-line); }
+  .task-panel { min-width:0; padding:22px 24px 25px; }
+  .task-panel + .task-panel { border-left:1px solid var(--color-line); }
+  .panel-heading { display:grid; grid-template-columns:auto 1fr auto; align-items:start; gap:11px; padding-bottom:17px; border-bottom:1px solid var(--color-line); }
+  .panel-heading > span { color:var(--accent); font:11px/1.5 var(--font-mono); }
+  .panel-heading h3 { margin:0; font:22px/1.2 var(--font-serif); font-weight:500; }
+  .panel-heading p { margin:3px 0 0; color:var(--color-ink-soft); font:11px/1.45 var(--font-mono); }
+  .panel-heading > b { padding:3px 6px; background:var(--accent-soft); color:var(--accent); font:10px/1.4 var(--font-mono); font-weight:600; text-transform:uppercase; }
+  .sh-panel .panel-heading > b { background:var(--rust-soft); color:var(--rust); }
+  .molecule-stage { position:relative; padding:18px 0 17px; transition:opacity .2s; }
+  .molecule-pair { display:grid; grid-template-columns:1fr 20px 1fr; align-items:center; gap:7px; }
+  .molecule-card > span { display:block; margin-bottom:3px; color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); text-align:center; }
+  .molecule-card svg { display:block; width:100%; height:128px; overflow:visible; }
+  .molecule-card path { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+  .molecule-card text { fill:currentColor; stroke:var(--color-paper); stroke-width:4px; stroke-linejoin:round; paint-order:stroke fill; font:11px var(--font-mono); }
+  .pair-arrow { color:#aaa69c; font:18px/1 var(--font-mono); text-align:center; }
+  .shared-structure,.retained-feature,.changed-region { transition:opacity .18s,color .18s; }
+  .changed-region,.retained-feature { color:var(--color-ink); }
+  .move-label { display:flex; align-items:center; justify-content:center; gap:8px; margin:5px 0 0; color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
+  .move-label strong { color:var(--accent); font-weight:600; }
+  .sh-panel .move-label strong { color:var(--rust); }
+  .move-label i { color:#aaa69c; font-style:normal; }
+  .structure-key { display:flex; justify-content:center; flex-wrap:wrap; gap:7px 16px; margin:4px 0 9px; color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
+  .structure-key span { display:flex; align-items:center; gap:6px; }
+  .structure-key i { width:14px; border-top:3px solid var(--accent); }
+  .structure-key .changed-key { border-color:var(--rust); }
+  .task-panel[data-show-changes] .shared-structure { opacity:.18; }
+  .sh-panel[data-show-changes] .retained-feature { color:var(--accent); opacity:.58; }
+  .task-panel[data-show-changes] .changed-region { color:var(--rust); }
+  .metric-block,.pocket-section { padding-top:16px; border-top:1px solid var(--color-line); transition:opacity .2s; }
+  .metric-block + .metric-block,.pocket-section { margin-top:20px; }
+  .metric-block > header,.pocket-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .metric-block > header span,.pocket-heading span { color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .metric-block > header strong,.pocket-heading strong { color:var(--accent); font:12px/1.4 var(--font-mono); font-weight:600; text-transform:uppercase; }
+  .sh-panel .metric-block > header strong,.sh-panel .pocket-heading strong { color:var(--rust); }
+  .metric-line { display:grid; grid-template-columns:1fr auto auto auto; align-items:baseline; gap:9px; padding:7px 0; font:11px/1.4 var(--font-mono); }
+  .metric-line > span { color:var(--color-ink); }
+  .metric-line > b { color:var(--accent); font-weight:600; }
+  .metric-line > small { color:var(--color-ink-soft); font-size:10px; }
+  .metric-line > i { color:var(--accent); font-style:normal; }
+  .sh-panel .metric-line > b,.sh-panel .metric-line > i { color:var(--rust); }
+  .gauge { position:relative; height:42px; margin:1px 0 0; }
+  .gauge::before { position:absolute; top:15px; right:0; left:0; border-top:1px solid #aaa69c; content:''; }
+  .gauge .pass-zone { position:absolute; top:12px; height:7px; background:var(--accent-soft); }
+  .similarity-gauge .pass-zone { right:0; left:70%; }
+  .property-gauge .pass-zone { right:41.38%; left:0; }
+  .gauge .threshold { position:absolute; top:6px; height:19px; border-left:1px solid var(--color-ink); }
+  .similarity-gauge .threshold { left:70%; }.property-gauge .threshold { left:58.62%; }
+  .gauge .marker,.gauge .start-marker { position:absolute; top:9px; width:13px; height:13px; border:2px solid var(--color-paper); border-radius:50%; transform:translateX(-50%); }
+  .gauge .marker { background:var(--accent); }.similarity-gauge .marker { left:79.07%; }.property-gauge .marker { left:44.58%; }
+  .gauge .start-marker { left:68.62%; background:#aaa69c; }
+  .movement-arrow { position:absolute; top:5px; left:45.7%; width:21.7%; border-top:2px solid var(--rust); }
+  .movement-arrow::before { position:absolute; top:-4px; left:-1px; width:7px; height:7px; border-bottom:2px solid var(--rust); border-left:2px solid var(--rust); content:''; transform:rotate(45deg); }
+  .gauge small { position:absolute; top:27px; color:var(--color-ink-soft); font:10px/1.2 var(--font-mono); transform:translateX(-50%); }
+  .similarity-gauge .threshold-label { left:70%; }.similarity-gauge .marker-label { left:79.07%; color:var(--accent); }
+  .property-gauge .threshold-label { left:58.62%; }.property-gauge .start-label { left:68.62%; }.property-gauge .marker-label { left:44.58%; color:var(--accent); }
+  .held-gates { margin:9px 0 0; color:var(--color-ink-soft); font:10px/1.5 var(--font-mono); }
+  .held-gates b { color:var(--accent); }
+  .novelty-block .metric-line + .metric-line { border-top:1px solid color-mix(in srgb,var(--color-line) 65%,transparent); }
+  .pocket-heading { align-items:flex-start; }
+  .pocket-heading div { display:flex; flex-direction:column; gap:3px; }
+  .pocket-heading p { margin:0; color:var(--rust); font:11px/1.4 var(--font-serif); text-align:right; }
+  .pocket-tabs { display:flex; justify-content:flex-end; gap:7px; margin:-5px 0 8px; color:var(--color-line); font:10px/1.4 var(--font-mono); }
+  .pocket-map { display:block; width:100%; height:210px; border:1px solid var(--color-line); background:color-mix(in srgb,var(--accent-soft) 25%,var(--color-paper)); }
+  .pocket-contours path { fill:none; stroke:#a9aaa4; stroke-width:1; opacity:.55; }
+  .contact-lines path { fill:none; stroke:var(--gold); stroke-width:1; stroke-dasharray:4 4; opacity:.72; }
+  .residues circle { fill:var(--gold); }.residues text { fill:var(--color-ink-soft); font:10px var(--font-mono); }
+  .ligand path { fill:none; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; }
+  .reference-ligand { color:var(--accent); }.candidate-ligand { color:var(--rust); }
+  .reference-ligand path { stroke:currentColor; }.candidate-ligand path { stroke:currentColor; }
+  .reference-ligand circle { fill:var(--accent); }.candidate-ligand circle { fill:var(--rust); }
+  .contact-points circle { fill:var(--gold); stroke:var(--color-paper); stroke-width:2; }
+  lo-vs-scaffold-hop[data-pocket-view="reference"] .candidate-ligand { opacity:0; }
+  lo-vs-scaffold-hop[data-pocket-view="candidate"] .reference-ligand { opacity:0; }
+  lo-vs-scaffold-hop[data-pocket-view="overlay"] .reference-ligand,lo-vs-scaffold-hop[data-pocket-view="overlay"] .candidate-ligand { opacity:.78; }
+  .ligand { transition:opacity .18s; }
+  .interaction-metrics { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--color-line); border-top:0; }
+  .interaction-metrics > div { display:grid; grid-template-columns:1fr auto; gap:3px 10px; padding:10px 12px; }
+  .interaction-metrics > div + div { border-left:1px solid var(--color-line); }
+  .interaction-metrics span { font:10px/1.35 var(--font-mono); }.interaction-metrics b { color:var(--rust); font:600 15px/1.2 var(--font-mono); }
+  .interaction-metrics small { color:var(--color-ink-soft); font:10px/1.35 var(--font-mono); }.interaction-metrics i { color:var(--rust); font-style:normal; text-align:right; }
+  .punchline-strip { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--color-line); border-top:0; background:color-mix(in srgb,var(--accent-soft) 30%,var(--color-paper)); }
+  .punchline-strip > div { padding:15px 18px; }.punchline-strip > div + div { border-left:1px solid var(--color-line); }
+  .punchline-strip span { color:var(--accent); font:600 10px/1.4 var(--font-mono); text-transform:uppercase; }
+  .punchline-strip p { margin:5px 0 0; font:15px/1.4 var(--font-serif); }.punchline-strip i { padding:0 5px; color:#aaa69c; font-style:normal; }.punchline-strip strong { font-weight:500; }
+  figcaption { margin:24px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); } figcaption strong { color:var(--color-ink); font-weight:600; }
+  .figure-note { display:block; margin-top:8px; color:var(--color-ink-soft); font:10px/1.55 var(--font-mono); }
+  @media(max-width:900px){
+    .mirrored-canvas { grid-template-columns:1fr; }.task-panel + .task-panel { border-top:1px solid var(--color-line); border-left:0; }.punchline-strip { grid-template-columns:1fr; }.punchline-strip > div + div { border-top:1px solid var(--color-line); border-left:0; }
+  }
+  @media(max-width:600px){
+    .task-panel { padding:18px 15px 21px; }.molecule-card svg { height:105px; }.metric-line { grid-template-columns:1fr auto auto; }.metric-line > small { grid-column:1 / 3; }.metric-line > i { grid-row:1; grid-column:3; }.pocket-map { height:180px; }.interaction-metrics { grid-template-columns:1fr; }.interaction-metrics > div + div { border-top:1px solid var(--color-line); border-left:0; }
+  }
+  @media(prefers-reduced-motion:reduce){.shared-structure,.retained-feature,.changed-region,.ligand,.structure-emphasis,.function-emphasis{transition:none;}}
+</style>

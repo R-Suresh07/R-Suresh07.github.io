@@ -3,13 +3,16 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 const writing = defineCollection({
-  loader: glob({ base: './src/content/writing', pattern: '**/*.{md,mdx}' }),
+  loader: glob({ base: './src/content/writing', pattern: ['**/*.{md,mdx}', '!data/**'] }),
   schema: ({ image }) => z.object({
     title: z.string(),
     description: z.string(),
     published: z.coerce.date(),
     updated: z.coerce.date().optional(),
     draft: z.boolean().default(false),
+    unlisted: z.boolean().default(false),
+    authors: z.array(z.string()).default([]),
+    affiliation: z.string().optional(),
     topics: z.array(z.string()).default([]),
     featured: z.boolean().default(false),
     image: image().optional(),

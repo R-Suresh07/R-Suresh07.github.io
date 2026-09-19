@@ -1,0 +1,294 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import searchCsv from '../../content/writing/data/lead_optimization_ahe_search.csv?raw';
+import taskMatrixCsv from '../../content/writing/data/lead_optimization_ahe_task_matrix.csv?raw';
+
+const parseCsv = (source: string) => {
+  const [headerLine, ...lines] = source.trim().split(/\r?\n/);
+  const headers = headerLine.split(',');
+  return lines.filter(Boolean).map(line => {
+    const values = line.split(',');
+    return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? '']));
+  });
+};
+
+type HarnessChange = { label: string; explanation: string };
+const milestoneDetails: Record<number, { title: string; changes: HarnessChange[] }> = {
+  0: { title: 'Base harness', changes: [
+    { label: 'generic tools', explanation: 'The model had basic analysis and submission tools, but little Lead Optimization-specific guidance about how to use them together.' },
+    { label: 'trajectory-held state', explanation: 'Candidate results were remembered mainly through the conversation history, rather than stored in a structured record.' },
+    { label: 'model coordinates the search', explanation: 'The model independently decided what molecules to create, which tests to run, and when to submit.' },
+  ] },
+  1: { title: 'Build staged workflow', changes: [
+    { label: 'cheap-to-expensive search', explanation: 'First filter molecules with free local calculations, then use the cheaper ADMET predictor, and reserve expensive binding predictions for finalists.' },
+    { label: 'persistent candidate table', explanation: 'Store every tested molecule and its results in a structured table so earlier evidence is not lost.' },
+    { label: 'budget checkpoints', explanation: 'Periodic reminders tell the model when to stop exploring, start measuring, select a finalist, and submit.' },
+  ] },
+  2: { title: 'Harden exact finalist and submission', changes: [
+    { label: 'RDKit-generated edits', explanation: 'Create molecular variants programmatically with RDKit instead of manually typing potentially invalid chemical structures.' },
+    { label: 'objective measurement required', explanation: 'A molecule cannot be called successful based on intuition; the property being optimized must be measured with the appropriate predictor.' },
+    { label: 'exact-file verification', explanation: 'Write the chosen molecule to the required output file, read it back, and confirm that the file contains exactly the molecule that was evaluated.' },
+  ] },
+  3: { title: 'Simplify Python execution', changes: [
+    { label: 'reduce execution friction', explanation: 'Use short, self-contained Python scripts and simplify immediately after errors instead of spending many turns debugging elaborate code.' },
+    { label: 'shorten the workflow', explanation: 'Reach candidate generation and testing more quickly by removing unnecessary setup and repeated calculations.' },
+    { label: 'retain candidate checks', explanation: 'Even with a simpler workflow, candidates must still pass structural, similarity, property, and binding checks before selection.' },
+  ] },
+  4: { title: 'Route requirements and guard submission', changes: [
+    { label: 'authoritative requirement routing', explanation: 'Assign each requirement to its correct measurement source: RDKit for structural properties, ADMET for predicted drug properties, and the binding predictor for binding.' },
+    { label: 'complete gate table', explanation: 'Before submission, list every requirement alongside its threshold, measured value, data source, and pass/fail result.' },
+    { label: 'refuse known failed gates', explanation: 'Continue searching when a candidate has a measured failure. Only near the turn limit may the model submit the closest best-effort candidate.' },
+  ] },
+  5: { title: 'Continue guarded search', changes: [
+    { label: 'retain structured workflow', explanation: 'Keep the same sequence of local filtering, inexpensive screening, binding confirmation, and final verification.' },
+    { label: 'refine final selection', explanation: 'Test chemically diverse edits first, learn which direction improves the objective, and then make stronger or combined versions of the most promising edits.' },
+    { label: 'preserve submission checks', explanation: 'The submitted molecule must still be the exact measured finalist and must be checked against every requirement.' },
+  ] },
+  6: { title: 'Refine the workflow', changes: [
+    { label: 'retain candidate memory', explanation: 'Continue storing molecules, measurements, hypotheses, and remaining budgets in structured state.' },
+    { label: 'adjust search procedure', explanation: 'Favor smaller, high-similarity edits first; add a second edit only when a measured first edit moves the property in the right direction but not far enough.' },
+    { label: 'preserve gate checks', explanation: 'Structural constraints, required properties, binding, and output-file correctness are still checked before submission.' },
+  ] },
+  7: { title: 'Compact protocol rewrite', changes: [
+    { label: 'compress the procedure', explanation: 'Replace the long collection of detailed instructions with a shorter five-stage protocol.' },
+    { label: 'retain core safeguards', explanation: 'Keep the important rules: generate valid molecules, measure claims, check binding, verify the final file, and submit before time expires.' },
+    { label: 'reduce instruction overhead', explanation: 'Give the model fewer rules to read and track, leaving more attention and context for the actual molecular search.' },
+  ] },
+  8: { title: 'Restore detailed guarded workflow', changes: [
+    { label: 'restore detailed instructions', explanation: 'Bring back explicit RDKit procedures, search guidance, tool-use rules, and error-recovery instructions.' },
+    { label: 'keep adaptive candidate search', explanation: 'Continue choosing new molecular edits based on the results observed during screening rather than following fixed batches.' },
+    { label: 'preserve verification', explanation: 'Maintain the requirement table, measured-property checks, binding confirmation, and exact-file check.' },
+  ] },
+  9: { title: 'Fixed two-batch screening recipe', changes: [
+    { label: 'fixed candidate batches', explanation: 'Test six chemically diverse molecules first, followed by three or four new molecules derived from the best-performing edits.' },
+    { label: 'explicit screening stages', explanation: 'Follow a fixed sequence: generate candidates, screen the first batch, refine the winners, check binding, and submit.' },
+    { label: 'guarded finalist selection', explanation: 'Select a finalist only after reviewing the complete requirement table and confirming that the exact molecule passes the necessary checks.' },
+  ] },
+  10: { title: 'Return to flexible guarded workflow', changes: [
+    { label: 'restore search flexibility', explanation: 'Remove the mandatory batch sizes and allow the model to decide how many candidates to test and how to adapt the search.' },
+    { label: 'retain evidence checks', explanation: 'Continue requiring measured evidence from the correct tool for every important claim.' },
+    { label: 'keep guarded submission', explanation: 'Recheck the exact finalist, write and read back the required file, and avoid submitting a known failure while time remains.' },
+  ] },
+};
+
+const search = parseCsv(searchCsv).map(row => {
+  const iteration = Number(row.display_index);
+  return {
+    iteration,
+    harnessNumber: Number(row.harness_number),
+    selected: row.selected === 'true',
+    successes: Number(row.successful_trajectories),
+    totalTrajectories: Number(row.total_trajectories),
+    reward: Number(row.reward_percent),
+    bestSuccesses: Number(row.best_so_far_percent) * Number(row.total_trajectories) / 100,
+    tasksSolved: Number(row.tasks_solved_at_least_once),
+    totalTasks: Number(row.total_tasks),
+    deltaVsBase: Number(row.delta_vs_base_pp),
+    ...milestoneDetails[iteration],
+  };
+});
+
+const taskMatrix = parseCsv(taskMatrixCsv).map(row => ({
+  id: row.task_id.replace('smdd_004_', ''),
+  counts: search.map(point => Number(row[`iter${point.iteration}`])),
+}));
+const selectedPoint = search.find(point => point.selected)!;
+const solvedAcrossSearch = taskMatrix.filter(task => task.counts.some(count => count > 0)).length;
+const maxCoverage = Math.max(...search.map(point => point.tasksSolved));
+
+if (search.length !== 11 || taskMatrix.length !== 20 || search.some(point => point.totalTrajectories !== 80 || point.totalTasks !== 20)
+  || search.some(point => taskMatrix.reduce((sum, task) => sum + task.counts[point.iteration], 0) !== point.successes)
+  || search.some(point => taskMatrix.filter(task => task.counts[point.iteration] > 0).length !== point.tasksSolved)
+  || selectedPoint.iteration !== 2 || selectedPoint.successes !== 30 || selectedPoint.reward !== 37.5
+  || solvedAcrossSearch !== 18 || maxCoverage !== 13) {
+  throw new Error('FIG. 24A: Lead Optimization AHE search data no longer matches its validated totals.');
+}
+
+const chart = { left: 82, right: 930, top: 42, bottom: 350, maxY: 40 };
+const x = (iteration: number) => chart.left + iteration / 10 * (chart.right - chart.left);
+const y = (value: number) => chart.bottom - value / chart.maxY * (chart.bottom - chart.top);
+const observedPath = search.map((point, index) => `${index ? 'L' : 'M'} ${x(point.iteration)} ${y(point.successes)}`).join(' ');
+const bestPath = search.reduce((path, point, index) => {
+  const pointX = x(point.iteration); const pointY = y(point.bestSuccesses);
+  return index ? `${path} H ${pointX} V ${pointY}` : `M ${pointX} ${pointY}`;
+}, '');
+const annotatedMilestones = [
+  { iteration: 2, label: 'finalist verification' },
+  { iteration: 4, label: 'submission guards' },
+  { iteration: 7, label: 'compaction' },
+];
+const initialTaskCounts = taskMatrix.map(task => ({ id: task.id, count: task.counts[selectedPoint.iteration] }));
+---
+
+<ahe-search-dynamics>
+  <figure aria-label="Lead Optimization automated harness search across 11 evaluations">
+    <FigureHeading label="FIG. 24A" title="Automated harness search makes stepwise gains" subtitle="Lead Optimization · same 20 tasks · 4 rollouts per harness" />
+
+    <div class="summary-readout" aria-label="Search summary">
+      <span><small>selected</small><strong>{selectedPoint.successes} / 80</strong><b>successful trajectories</b></span>
+      <span><small>max task coverage</small><strong>{maxCoverage} / 20</strong><b>tasks solved ≥ once</b></span>
+      <span><small>ever solved</small><strong>{solvedAcrossSearch} / 20</strong><b>tasks solved by at least one harness</b></span>
+    </div>
+
+    <div class="figure-shell">
+      <div class="chart-legend" aria-label="Chart legend">
+        <span><i class="observed-key"></i>observed reward</span>
+        <span><i class="best-key"></i>best so far</span>
+        <em>select a point for details</em>
+      </div>
+      <div class="chart-scroll" tabindex="0" role="region" aria-label="Search curve; scroll horizontally on narrow screens">
+        <svg class="search-chart" viewBox="0 0 1000 455" role="img" aria-label="Successful trajectories out of 80 for each Lead Optimization harness evaluation">
+          <g class="grid" aria-hidden="true">
+            {[0, 10, 20, 30, 40].map(tick => <g><line x1={chart.left} x2={chart.right} y1={y(tick)} y2={y(tick)} /><text x={chart.left - 14} y={y(tick) + 4} text-anchor="end">{tick}</text></g>)}
+            <text class="axis-title" x="20" y={(chart.top + chart.bottom) / 2} text-anchor="middle" transform={`rotate(-90 20 ${(chart.top + chart.bottom) / 2})`}>successful trajectories / 80</text>
+          </g>
+
+          <path class="best-path" d={bestPath} />
+          <path class="observed-path" d={observedPath} />
+
+          <g class="points">
+            {search.map(point => <g class:list={['point', { selected: point.selected }]} data-point={point.iteration} tabindex="0" role="button" aria-expanded="false" aria-controls="fig-23-inspector" aria-label={`${point.iteration === 0 ? 'Base harness' : `Iteration ${point.iteration}`}: ${point.successes} of 80 successful trajectories, ${point.reward.toFixed(1)} percent; ${point.tasksSolved} of 20 tasks solved at least once.${point.selected ? ' Selected AHE harness.' : ''}`}>
+              <title>{point.iteration === 0 ? 'Base' : `Iteration ${point.iteration}`} · {point.successes}/80 · {point.reward.toFixed(1)}% · {point.tasksSolved}/20 tasks</title>
+              <circle class="point-hit" cx={x(point.iteration)} cy={y(point.successes)} r="17" />
+              <circle class="point-mark" cx={x(point.iteration)} cy={y(point.successes)} r={point.selected ? 7 : 5} />
+              {point.selected && <g class="selected-label"><text x={x(point.iteration)} y={y(point.successes) - 22} text-anchor="middle">selected harness</text><text x={x(point.iteration)} y={y(point.successes) - 10} text-anchor="middle">30 / 80</text></g>}
+            </g>)}
+          </g>
+
+          <g class="x-axis" aria-hidden="true">
+            <line x1={chart.left} x2={chart.right} y1={chart.bottom} y2={chart.bottom} />
+            {search.map(point => <g><line x1={x(point.iteration)} x2={x(point.iteration)} y1={chart.bottom} y2={chart.bottom + 5} /><text x={x(point.iteration)} y={chart.bottom + 21} text-anchor="middle">{point.iteration === 0 ? 'Base' : point.iteration}</text></g>)}
+          </g>
+          <g class="milestones" aria-hidden="true">
+            {annotatedMilestones.map((milestone, index) => <g><line x1={x(milestone.iteration)} x2={x(milestone.iteration)} y1={chart.bottom + 28} y2={chart.bottom + 37 + (index % 2) * 13} /><text x={x(milestone.iteration)} y={chart.bottom + 50 + (index % 2) * 13} text-anchor="middle">{milestone.label}</text></g>)}
+          </g>
+        </svg>
+      </div>
+
+      <button class="drawer-backdrop" type="button" hidden aria-label="Close iteration details"></button>
+      <aside id="fig-23-inspector" class="inspector" hidden aria-live="polite" aria-label="Selected harness evaluation details">
+        <header>
+          <div><small data-inspector-kicker>ITERATION {selectedPoint.iteration} · SELECTED</small><strong data-inspector-title>{selectedPoint.title}</strong></div>
+          <button class="drawer-close" type="button" aria-label="Close iteration details">×</button>
+        </header>
+        <div class="primary-result"><strong data-successes>{selectedPoint.successes} / 80</strong><span>successful trajectories</span><small data-reward>{selectedPoint.reward.toFixed(1)}%</small></div>
+        <dl class="detail-readout">
+          <div><dt>tasks solved</dt><dd data-coverage>{selectedPoint.tasksSolved} / 20</dd></div>
+          <div><dt>vs base</dt><dd data-delta>+{selectedPoint.deltaVsBase.toFixed(1)} pp</dd></div>
+        </dl>
+        <section class="change-list"><small>harness change</small><ul data-changes>{selectedPoint.changes.map((change, index) => <li><span>{change.label}</span><button class="change-info" type="button" aria-expanded="false" aria-describedby={`fig23-change-${selectedPoint.iteration}-${index}`}>?</button><span class="change-tooltip" id={`fig23-change-${selectedPoint.iteration}-${index}`} role="tooltip">{change.explanation}</span></li>)}</ul></section>
+        <section class="task-coverage">
+          <header><small>coverage across the 20 tasks</small><span data-grid-summary>{selectedPoint.tasksSolved} / 20 solved ≥ once</span></header>
+          <p class="task-meta">20 tasks · 4 rollouts each</p>
+          <div class="task-strip" data-task-strip>
+            {initialTaskCounts.map(task => <i title={`${task.id} · ${task.count}/4 successful`} aria-label={`${task.id}: ${task.count} of 4 rollouts successful`}>{[0, 1, 2, 3].map(index => <b class:list={{ filled: index < task.count }}></b>)}</i>)}
+          </div>
+          <p>Filled dots indicate successful rollouts for each task.</p>
+        </section>
+      </aside>
+    </div>
+
+    <div class="takeaway">A few procedural jumps improved the harness. Later search mostly moved sideways.</div>
+    <figcaption><strong>Automated search improved Lead Optimization in discrete jumps rather than through steady accumulation.</strong> Iteration 2 achieved the highest observed trajectory reward, while later harnesses sometimes solved a broader set of tasks without exceeding that reward.</figcaption>
+  </figure>
+  <script is:inline type="application/json" class="search-data" set:html={JSON.stringify({ search, taskMatrix })} />
+</ahe-search-dynamics>
+
+<script>
+  class AheSearchDynamics extends HTMLElement {
+    cleanup?: () => void;
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const controller = new AbortController(); const { signal } = controller;
+      const payload = JSON.parse(this.querySelector('.search-data')!.textContent!);
+      const shell = this.querySelector<HTMLElement>('.figure-shell')!;
+      const drawer = this.querySelector<HTMLElement>('.inspector')!;
+      const backdrop = this.querySelector<HTMLButtonElement>('.drawer-backdrop')!;
+      const close = this.querySelector<HTMLButtonElement>('.drawer-close')!;
+      const points = [...this.querySelectorAll<SVGGElement>('[data-point]')];
+      const strip = this.querySelector<HTMLElement>('[data-task-strip]')!;
+      const fields = {
+        kicker: this.querySelector<HTMLElement>('[data-inspector-kicker]')!,
+        title: this.querySelector<HTMLElement>('[data-inspector-title]')!,
+        successes: this.querySelector<HTMLElement>('[data-successes]')!,
+        reward: this.querySelector<HTMLElement>('[data-reward]')!,
+        coverage: this.querySelector<HTMLElement>('[data-coverage]')!,
+        delta: this.querySelector<HTMLElement>('[data-delta]')!,
+        changes: this.querySelector<HTMLElement>('[data-changes]')!,
+        gridSummary: this.querySelector<HTMLElement>('[data-grid-summary]')!,
+      };
+      let activeIndex: number | null = null;
+
+      const renderStrip = (index: number) => {
+        strip.replaceChildren(...payload.taskMatrix.map((task: { id: string; counts: number[] }) => {
+          const count = task.counts[index]; const cell = document.createElement('i');
+          cell.title = `${task.id} · ${count}/4 successful`; cell.setAttribute('aria-label', `${task.id}: ${count} of 4 rollouts successful`);
+          for (let rollout = 0; rollout < 4; rollout += 1) { const dot = document.createElement('b'); dot.classList.toggle('filled', rollout < count); cell.append(dot); }
+          return cell;
+        }));
+      };
+      const openDrawer = (index: number, focusClose = false) => {
+        const point = payload.search[index]; activeIndex = index;
+        points.forEach((node, nodeIndex) => { const active = nodeIndex === index; node.classList.toggle('active', active); node.setAttribute('aria-expanded', String(active)); });
+        fields.kicker.textContent = `${index === 0 ? 'BASE HARNESS' : `ITERATION ${index}`}${point.selected ? ' · SELECTED' : ''}`;
+        fields.title.textContent = point.title; fields.successes.textContent = `${point.successes} / ${point.totalTrajectories}`; fields.reward.textContent = `${point.reward.toFixed(1)}%`;
+        fields.coverage.textContent = `${point.tasksSolved} / ${point.totalTasks}`; fields.delta.textContent = `${point.deltaVsBase >= 0 ? '+' : ''}${point.deltaVsBase.toFixed(1)} pp`;
+        fields.changes.replaceChildren(...point.changes.map((change: { label: string; explanation: string }, changeIndex: number) => {
+          const item = document.createElement('li'); const label = document.createElement('span'); const button = document.createElement('button'); const tooltip = document.createElement('span');
+          const tooltipId = `fig23-change-${index}-${changeIndex}`; label.textContent = change.label; button.type = 'button'; button.className = 'change-info'; button.textContent = '?'; button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-describedby', tooltipId);
+          tooltip.className = 'change-tooltip'; tooltip.id = tooltipId; tooltip.setAttribute('role', 'tooltip'); tooltip.textContent = change.explanation; item.append(label, button, tooltip); return item;
+        }));
+        fields.gridSummary.textContent = `${point.tasksSolved} / ${point.totalTasks} solved ≥ once`;
+        renderStrip(index); drawer.hidden = false; backdrop.hidden = false; shell.classList.add('drawer-open'); if (focusClose) close.focus();
+      };
+      const closeDrawer = () => {
+        drawer.hidden = true; backdrop.hidden = true; shell.classList.remove('drawer-open');
+        points.forEach(node => { node.classList.remove('active'); node.setAttribute('aria-expanded', 'false'); });
+        if (activeIndex !== null) points[activeIndex].focus(); activeIndex = null;
+      };
+      points.forEach((point, index) => {
+        point.addEventListener('click', () => openDrawer(index, true), { signal });
+        point.addEventListener('keydown', event => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          event.preventDefault(); const next = (index + (event.key === 'ArrowRight' ? 1 : -1) + points.length) % points.length; points[next].focus();
+        }, { signal });
+      });
+      drawer.addEventListener('click', event => {
+        const trigger = (event.target as HTMLElement).closest<HTMLButtonElement>('.change-info');
+        const items = [...drawer.querySelectorAll<HTMLElement>('.change-list li')];
+        if (!trigger) { items.forEach(item => { item.classList.remove('pinned'); item.querySelector('.change-info')?.setAttribute('aria-expanded', 'false'); }); return; }
+        const item = trigger.closest<HTMLElement>('li')!; const shouldPin = !item.classList.contains('pinned');
+        items.forEach(candidate => { candidate.classList.remove('pinned'); candidate.querySelector('.change-info')?.setAttribute('aria-expanded', 'false'); });
+        item.classList.toggle('pinned', shouldPin); trigger.setAttribute('aria-expanded', String(shouldPin));
+      });
+      close.addEventListener('click', closeDrawer, { signal }); backdrop.addEventListener('click', closeDrawer, { signal });
+      this.addEventListener('keydown', event => { if (event.key === 'Escape' && !drawer.hidden) closeDrawer(); }, { signal });
+      this.cleanup = () => controller.abort();
+    }
+    disconnectedCallback() { this.cleanup?.(); }
+  }
+  if (!customElements.get('ahe-search-dynamics')) customElements.define('ahe-search-dynamics', AheSearchDynamics);
+</script>
+
+<style>
+  ahe-search-dynamics{--ahe:#a55a3e;--ahe-soft:#eadbd3;display:block;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:14px/1.5 var(--font-sans)}
+  figure{margin:0}.summary-readout{display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin:2px 0 21px;padding:10px 0;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.summary-readout>span{display:flex;align-items:baseline;gap:8px;min-width:0}.summary-readout small{color:var(--color-ink-soft);font:700 8px/1.35 var(--font-mono);letter-spacing:.06em;text-transform:uppercase}.summary-readout strong{color:var(--ahe);font:600 17px/1.2 var(--font-mono);white-space:nowrap}.summary-readout b{color:var(--color-ink-soft);font:9px/1.35 var(--font-mono);font-weight:400}
+  .figure-shell{position:relative;min-height:0;overflow:hidden}.chart-legend{display:flex;align-items:center;flex-wrap:wrap;gap:8px 17px;min-height:24px;margin-bottom:3px;color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.chart-legend span{display:flex;align-items:center;gap:6px}.chart-legend i{display:block;width:18px}.observed-key{border-top:2px solid var(--ahe)}.best-key{border-top:1px dashed color-mix(in srgb,var(--ahe) 70%,var(--color-ink))}.chart-legend em{margin-left:auto;font-style:normal}.chart-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--color-line) transparent}.search-chart{display:block;width:100%;min-width:760px;height:auto;overflow:visible}
+  .grid line{stroke:var(--color-line);stroke-width:1}.grid text,.x-axis text{fill:var(--color-ink-soft);font:9px var(--font-mono)}.grid .axis-title{font-size:8px;letter-spacing:.045em}.observed-path,.best-path{fill:none;vector-effect:non-scaling-stroke}.observed-path{stroke:var(--ahe);stroke-width:2}.best-path{stroke:color-mix(in srgb,var(--ahe) 72%,var(--color-ink));stroke-width:1.5;stroke-dasharray:6 4}.point{cursor:pointer;outline:none}.point-hit{fill:transparent}.point-mark{fill:var(--color-paper);stroke:var(--ahe);stroke-width:2;vector-effect:non-scaling-stroke;transition:r .15s,fill .15s}.point:hover .point-mark,.point:focus .point-mark,.point.active .point-mark{r:8px;fill:var(--ahe)}.point:focus-visible .point-hit{stroke:var(--ahe);stroke-width:1}.point.selected .point-mark{fill:var(--ahe);stroke:var(--color-paper);stroke-width:3}.selected-label text{fill:var(--ahe);font:700 8px var(--font-mono);letter-spacing:.025em;text-transform:uppercase}.x-axis line,.milestones line{stroke:var(--color-line)}.milestones text{fill:var(--color-ink-soft);font:8px var(--font-mono);text-transform:uppercase}
+  .drawer-backdrop{position:absolute;z-index:8;inset:0;width:100%;border:0;background:color-mix(in srgb,var(--color-paper) 73%,transparent);cursor:pointer}.inspector{position:absolute;z-index:9;top:0;right:0;bottom:0;width:min(430px,39%);box-sizing:border-box;overflow:auto;border-left:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:-18px 0 35px #00000014}.inspector>header{position:sticky;z-index:2;top:0;display:flex;justify-content:space-between;gap:12px;padding:15px;border-bottom:1px solid var(--color-line);background:var(--color-paper-raised)}.inspector>header small{display:block;color:var(--ahe);font:700 9px/1.35 var(--font-mono);letter-spacing:.055em}.inspector>header strong{display:block;margin-top:5px;font:500 18px/1.25 var(--font-serif)}.drawer-close{padding:0 2px;border:0;background:none;color:var(--color-ink-soft);font:22px/1 var(--font-sans);cursor:pointer}.primary-result{padding:15px;border-bottom:1px solid var(--color-line)}.primary-result strong{display:block;color:var(--ahe);font:600 24px/1.1 var(--font-mono)}.primary-result span,.primary-result small{display:inline-block;margin-top:4px;color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.primary-result small{float:right}.detail-readout{display:grid;grid-template-columns:1fr 1fr;margin:0;border-bottom:1px solid var(--color-line)}.detail-readout div{display:flex;justify-content:space-between;gap:8px;padding:10px 12px}.detail-readout div+div{border-left:1px solid var(--color-line)}.detail-readout dt{color:var(--color-ink-soft);font:9px/1.35 var(--font-mono)}.detail-readout dd{margin:0;font:700 9px/1.35 var(--font-mono)}.change-list{padding:13px 15px;border-bottom:1px solid var(--color-line)}.change-list>small,.task-coverage header small{color:var(--color-ink-soft);font:700 8px/1.35 var(--font-mono);letter-spacing:.06em;text-transform:uppercase}.change-list ul{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none}.change-list li{position:relative;font:11px/1.4 var(--font-sans)}.change-list li::before{margin-right:6px;color:var(--ahe);content:'→'}.change-info{display:inline-grid;place-items:center;width:14px;height:14px;margin-left:5px;padding:0;border:1px solid var(--color-ink-soft);border-radius:50%;background:transparent;color:var(--color-ink-soft);font:700 9px/1 var(--font-sans);vertical-align:1px;cursor:pointer;transition:border-color .15s,color .15s,background .15s}.change-info:hover,.change-info:focus-visible,.change-info[aria-expanded="true"]{border-color:var(--ahe);background:var(--ahe-soft);color:var(--ahe);outline:none}.change-tooltip{position:absolute;z-index:4;top:calc(100% + 7px);left:14px;width:min(310px,calc(100vw - 78px));box-sizing:border-box;padding:10px 11px;border:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:0 8px 22px #00000018;color:var(--color-ink);font:11px/1.5 var(--font-sans);opacity:0;pointer-events:none;transform:translateY(-3px);transition:opacity .12s,transform .12s}.change-list li:hover .change-tooltip,.change-info:focus-visible+.change-tooltip,.change-list li.pinned .change-tooltip{opacity:1;pointer-events:auto;transform:translateY(0)}.task-coverage{padding:13px 15px}.task-coverage header{display:flex;justify-content:space-between;gap:10px}.task-coverage header span{color:var(--color-ink-soft);font:8px/1.35 var(--font-mono)}.task-coverage .task-meta{margin:7px 0 0;color:var(--color-ink);font:9px/1.4 var(--font-mono)}.task-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:10px}.task-strip i{display:grid;grid-template-columns:repeat(4,4px);justify-content:center;gap:2px;padding:7px 3px;border:1px solid var(--color-line);font-style:normal}.task-strip b{width:4px;height:4px;border:1px solid color-mix(in srgb,var(--ahe) 42%,var(--color-line));border-radius:50%;box-sizing:border-box}.task-strip b.filled{border-color:var(--ahe);background:var(--ahe)}.task-coverage p:not(.task-meta){margin:8px 0 0;color:var(--color-ink-soft);font:8px/1.4 var(--font-mono)}[hidden]{display:none!important}
+  /* Inspector rows and task dots are rebuilt in JavaScript when a point is selected. */
+  .change-list :global(li){position:relative;font:11px/1.4 var(--font-sans)}
+  .change-list :global(li::before){margin-right:6px;color:var(--ahe);content:'→'}
+  .change-list :global(.change-info){display:inline-grid;place-items:center;width:14px;height:14px;margin-left:5px;padding:0;border:1px solid var(--color-ink-soft);border-radius:50%;background:transparent;color:var(--color-ink-soft);font:700 9px/1 var(--font-sans);vertical-align:1px;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+  .change-list :global(.change-info:hover),.change-list :global(.change-info:focus-visible),.change-list :global(.change-info[aria-expanded="true"]){border-color:var(--ahe);background:var(--ahe-soft);color:var(--ahe);outline:none}
+  .change-list :global(.change-tooltip){position:absolute;z-index:4;top:calc(100% + 7px);left:14px;width:min(310px,calc(100vw - 78px));box-sizing:border-box;padding:10px 11px;border:1px solid var(--color-line);background:var(--color-paper-raised);box-shadow:0 8px 22px #00000018;color:var(--color-ink);font:11px/1.5 var(--font-sans);opacity:0;pointer-events:none;transform:translateY(-3px);transition:opacity .12s,transform .12s}
+  .change-list :global(li:hover .change-tooltip),.change-list :global(.change-info:focus-visible + .change-tooltip),.change-list :global(li.pinned .change-tooltip){opacity:1;pointer-events:auto;transform:translateY(0)}
+  .task-strip :global(i){display:grid;grid-template-columns:repeat(4,4px);justify-content:center;gap:2px;padding:7px 3px;border:1px solid var(--color-line);font-style:normal}
+  .task-strip :global(b){width:4px;height:4px;border:1px solid color-mix(in srgb,var(--ahe) 42%,var(--color-line));border-radius:50%;box-sizing:border-box}
+  .task-strip :global(b.filled){border-color:var(--ahe);background:var(--ahe)}
+  .takeaway{padding:13px 17px;margin-top:14px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);color:var(--ahe);font:600 13px/1.5 var(--font-sans);text-align:center}figcaption{margin:22px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans)}figcaption strong{color:var(--color-ink);font-weight:600}
+  @media(max-width:760px){.summary-readout{align-items:flex-start;flex-direction:column;gap:7px}.summary-readout>span{width:100%}.summary-readout b{margin-left:auto}.inspector{width:min(440px,78%)}.chart-legend em{flex-basis:100%;margin-left:0}}
+  @media(max-width:520px){.inspector{width:100%}.task-strip{grid-template-columns:repeat(4,1fr)}}
+  @media(prefers-reduced-motion:reduce){.point-mark{transition:none}}
+</style>

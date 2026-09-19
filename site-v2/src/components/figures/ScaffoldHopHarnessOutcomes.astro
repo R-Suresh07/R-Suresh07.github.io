@@ -1,0 +1,400 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+interface Props { label?: string; }
+const { label = 'FIG. 18' } = Astro.props;
+
+const total = 52;
+const checkpoints = [
+  {
+    key: 'submission',
+    label: 'Reached submission',
+    note: '',
+    condition: 'A molecule reached final submission.',
+    v1: 39,
+    v2: 51,
+    description: 'The redesigned harness nearly eliminated runs that ended before a molecule could be submitted.',
+  },
+  {
+    key: 'novelty',
+    label: 'Novel scaffold',
+    note: 'scaffold MCS',
+    condition: 'Scaffold MCS < 0.65',
+    v1: 36,
+    v2: 50,
+    description: 'Deterministic novelty checks made structurally distinct submissions substantially more reliable.',
+  },
+  {
+    key: 'binding',
+    label: 'Strong binding',
+    note: 'binding probability',
+    condition: 'Binding probability > 0.70',
+    v1: 14,
+    v2: 28,
+    description: 'Twice as many V2 candidates clear the binding threshold.',
+    mean: 'Mean binding probability: 0.578 → 0.683',
+  },
+  {
+    key: 'interactions',
+    label: 'Same interaction pattern',
+    note: 'reference interactions',
+    condition: 'Reference interaction pattern preserved',
+    v1: 3,
+    v2: 1,
+    description: 'Better binding did not translate into preservation of the reference interactions.',
+    mean: 'Mean interaction similarity: 0.384 → 0.352',
+  },
+  {
+    key: 'solved',
+    label: 'Solved',
+    note: '',
+    condition: 'Every required gate passed.',
+    v1: 2,
+    v2: 1,
+    description: 'The operational improvements did not increase strict terminal success.',
+  },
+].map(checkpoint => ({
+  ...checkpoint,
+  v1Percent: `${(checkpoint.v1 / total * 100).toFixed(1)}%`,
+  v2Percent: `${(checkpoint.v2 / total * 100).toFixed(1)}%`,
+}));
+
+const efficiency = [
+  { key: 'tokens', label: 'Total tokens', v1: 153.46, v2: 92.34, v1Label: '153.5M', v2Label: '92.3M', delta: '−40%' },
+  { key: 'turns', label: 'Total turns', v1: 4035, v2: 3130, v1Label: '4,035', v2Label: '3,130', delta: '−22%' },
+  { key: 'boltz', label: 'Boltz calls', v1: 263, v2: 236, v1Label: '263', v2Label: '236', delta: '−10%' },
+].map(metric => ({ ...metric, max: Math.max(metric.v1, metric.v2) }));
+---
+
+<scaffold-hop-harness-outcomes id="fig-18" data-view="outcome">
+  <figure aria-label="Scaffold Hopping outcomes and efficiency under the original and redesigned harnesses">
+    <FigureHeading
+      label={label}
+      title="The harness got cleaner. The interaction pattern did not."
+      subtitle="Qwen 3.5 9B · same 52 Scaffold Hopping tasks · V1 → V2"
+    />
+
+    <div class="figure-controls">
+      <div class="view-tabs" role="tablist" aria-label="Figure view">
+        <button id="sh-outcome-tab" type="button" role="tab" aria-selected="true" aria-controls="sh-outcome-panel" tabindex="0" data-view="outcome">Outcome</button>
+        <span aria-hidden="true">|</span>
+        <button id="sh-efficiency-tab" type="button" role="tab" aria-selected="false" aria-controls="sh-efficiency-panel" tabindex="-1" data-view="efficiency">Efficiency</button>
+      </div>
+      <div class="terminal-summary">
+        <small>terminal success</small>
+        <p><span>2 / 52</span><i>→</i><strong>1 / 52</strong></p>
+        <em>despite 51 / 52 runs reaching submission</em>
+      </div>
+    </div>
+
+    <section id="sh-outcome-panel" class="view-panel outcome-panel" role="tabpanel" aria-labelledby="sh-outcome-tab" data-panel="outcome">
+      <div class="phase-headings" aria-hidden="true">
+        <span>More of the search works</span>
+        <span>The scientific bottleneck remains</span>
+      </div>
+
+      <div class="checkpoint-grid" aria-label="Five Scaffold Hopping workflow checkpoints, all measured on the same zero-to-52 task scale">
+        {checkpoints.map(checkpoint => (
+          <button
+            type="button"
+            class:list={['checkpoint', checkpoint.key === 'interactions' && 'crossover']}
+            data-key={checkpoint.key}
+            data-label={checkpoint.label}
+            data-condition={checkpoint.condition}
+            data-v1={`${checkpoint.v1} / ${total}`}
+            data-v2={`${checkpoint.v2} / ${total}`}
+            data-description={checkpoint.description}
+            data-mean={checkpoint.mean ?? ''}
+            aria-label={`${checkpoint.label}. V1: ${checkpoint.v1} of ${total}. V2: ${checkpoint.v2} of ${total}. ${checkpoint.description}`}
+          >
+            <span class="checkpoint-title">{checkpoint.label}</span>
+            <span class="checkpoint-note">{checkpoint.note || <>&nbsp;</>}</span>
+            <span class="version-row v1-row">
+              <span class="version">V1</span>
+              <span class="track"><i style={`width:${checkpoint.v1 / total * 100}%`} /></span>
+              <strong>{checkpoint.v1}</strong>
+              <em>{checkpoint.v1Percent}</em>
+            </span>
+            <span class="version-row v2-row">
+              <span class="version">V2</span>
+              <span class="track"><i style={`width:${checkpoint.v2 / total * 100}%`} /></span>
+              <strong>{checkpoint.v2}</strong>
+              <em>{checkpoint.v2Percent}</em>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div class="checkpoint-explainer" aria-live="polite">
+        <div>
+          <strong class="explainer-title">Follow the same 52 tasks through each checkpoint.</strong>
+          <span class="explainer-condition">Hover, tap, or focus a checkpoint for its definition.</span>
+        </div>
+        <div class="explainer-values" hidden><span>V1 <b class="explainer-v1"></b></span><span>V2 <b class="explainer-v2"></b></span></div>
+        <p class="explainer-copy">V2 advances more tasks through submission, novelty, and binding before the interaction-preservation gate reverses the trend.</p>
+        <small class="explainer-mean"></small>
+      </div>
+    </section>
+
+    <section id="sh-efficiency-panel" class="view-panel efficiency-panel" role="tabpanel" aria-labelledby="sh-efficiency-tab" data-panel="efficiency" hidden>
+      <h2>V2 reaches more submissions while using fewer resources</h2>
+      <div class="efficiency-layout">
+        <div class="efficiency-chart">
+          {efficiency.map(metric => (
+            <article class="efficiency-row">
+              <header><h3>{metric.label}</h3><strong>{metric.delta}</strong></header>
+              <div class="paired-bars" aria-label={`${metric.label}: V1 ${metric.v1Label}; V2 ${metric.v2Label}; change ${metric.delta}`}>
+                <div class="bar-line"><span>V1</span><b>{metric.v1Label}</b><i class="v1-bar" style={`width:${metric.v1 / metric.max * 100}%`} /></div>
+                <div class="bar-line"><span>V2</span><b>{metric.v2Label}</b><i class="v2-bar" style={`width:${metric.v2 / metric.max * 100}%`} /></div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <aside class="submission-summary">
+          <small>submissions</small>
+          <p><span>39</span><i>→</i><strong>51</strong></p>
+          <em>of 52 tasks</em>
+          <b class="per-submission">tokens per submission −54%</b>
+        </aside>
+      </div>
+      <p class="efficiency-takeaway"><strong>51/52 trajectories reached submission, up from 39/52, despite using fewer tokens, turns, and Boltz calls overall.</strong></p>
+    </section>
+
+    <figcaption>
+      <span data-caption="outcome"><strong>V2 improves almost every observable part of the Scaffold Hopping workflow without improving terminal success.</strong> More trajectories reach submission, substantially more candidates satisfy the novelty constraints, and twice as many clear the binding threshold. Yet preservation of the reference interaction pattern falls from 3/52 to 1/52, leaving terminal success essentially unchanged.</span>
+      <span data-caption="efficiency" hidden><strong>The cleaner harness also reduced search overhead.</strong> Across the same 52 tasks, V2 used 40% fewer tokens, 22% fewer turns, and 10% fewer Boltz calls, while increasing the number of trajectories that reached submission from 39 to 51. This improved execution efficiency did not translate into higher terminal success, reinforcing that the remaining bottleneck lies elsewhere.</span>
+    </figcaption>
+    <p class="punchline">The cleaner harness made the remaining bottleneck much easier to see, even if it could not solve it.</p>
+  </figure>
+</scaffold-hop-harness-outcomes>
+
+<script>
+  class ScaffoldHopHarnessOutcomes extends HTMLElement {
+    cleanup?: () => void;
+
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const controller = new AbortController();
+      const { signal } = controller;
+      const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+      const panels = [...this.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+      const captions = [...this.querySelectorAll<HTMLElement>('[data-caption]')];
+      const checkpoints = [...this.querySelectorAll<HTMLButtonElement>('.checkpoint')];
+      const title = this.querySelector<HTMLElement>('.explainer-title')!;
+      const condition = this.querySelector<HTMLElement>('.explainer-condition')!;
+      const values = this.querySelector<HTMLElement>('.explainer-values')!;
+      const v1 = this.querySelector<HTMLElement>('.explainer-v1')!;
+      const v2 = this.querySelector<HTMLElement>('.explainer-v2')!;
+      const copy = this.querySelector<HTMLElement>('.explainer-copy')!;
+      const mean = this.querySelector<HTMLElement>('.explainer-mean')!;
+      const defaults = {
+        title: title.textContent!,
+        condition: condition.textContent!,
+        copy: copy.textContent!,
+      };
+      let pinned: HTMLButtonElement | null = null;
+
+      const setView = (view: string, focus = false) => {
+        this.dataset.view = view;
+        tabs.forEach(tab => {
+          const active = tab.dataset.view === view;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+          if (active && focus) tab.focus();
+        });
+        panels.forEach(panel => { panel.hidden = panel.dataset.panel !== view; });
+        captions.forEach(caption => { caption.hidden = caption.dataset.caption !== view; });
+      };
+
+      const clearCheckpoint = () => {
+        checkpoints.forEach(checkpoint => checkpoint.classList.remove('active', 'dimmed'));
+        title.textContent = defaults.title;
+        condition.textContent = defaults.condition;
+        copy.textContent = defaults.copy;
+        values.hidden = true;
+        mean.textContent = '';
+      };
+
+      const showCheckpoint = (checkpoint: HTMLButtonElement) => {
+        checkpoints.forEach(other => {
+          other.classList.toggle('active', other === checkpoint);
+          other.classList.toggle('dimmed', other !== checkpoint);
+        });
+        title.textContent = checkpoint.dataset.label!;
+        condition.textContent = checkpoint.dataset.condition!;
+        v1.textContent = checkpoint.dataset.v1!;
+        v2.textContent = checkpoint.dataset.v2!;
+        copy.textContent = checkpoint.dataset.description!;
+        values.hidden = false;
+        mean.textContent = checkpoint.dataset.mean!;
+      };
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => setView(tab.dataset.view!), { signal });
+        tab.addEventListener('keydown', event => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          event.preventDefault();
+          const offset = event.key === 'ArrowRight' ? 1 : -1;
+          setView(tabs[(index + offset + tabs.length) % tabs.length].dataset.view!, true);
+        }, { signal });
+      });
+
+      checkpoints.forEach(checkpoint => {
+        checkpoint.addEventListener('pointerenter', () => showCheckpoint(checkpoint), { signal });
+        checkpoint.addEventListener('pointerleave', () => pinned ? showCheckpoint(pinned) : clearCheckpoint(), { signal });
+        checkpoint.addEventListener('focus', () => showCheckpoint(checkpoint), { signal });
+        checkpoint.addEventListener('blur', () => pinned ? showCheckpoint(pinned) : clearCheckpoint(), { signal });
+        checkpoint.addEventListener('click', () => {
+          pinned = pinned === checkpoint ? null : checkpoint;
+          pinned ? showCheckpoint(checkpoint) : clearCheckpoint();
+        }, { signal });
+      });
+
+      this.cleanup = () => controller.abort();
+    }
+
+    disconnectedCallback() { this.cleanup?.(); }
+  }
+
+  if (!customElements.get('scaffold-hop-harness-outcomes')) {
+    customElements.define('scaffold-hop-harness-outcomes', ScaffoldHopHarnessOutcomes);
+  }
+</script>
+
+<style>
+  scaffold-hop-harness-outcomes {
+    --accent:#087c83;
+    --accent-soft:#d9ebe9;
+    --rust:#ad4e32;
+    --muted:#aaa79f;
+    display:block;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:14px/1.5 var(--font-sans);
+  }
+  figure { margin:0; }
+  button { color:inherit; font:inherit; }
+  .figure-controls { display:flex; justify-content:space-between; align-items:flex-start; gap:30px; margin:-9px 0 24px; }
+  .view-tabs { display:flex; align-items:center; gap:10px; padding-top:4px; color:var(--color-line); font:13px/1.4 var(--font-mono); }
+  .view-tabs button { padding:2px 0; border:0; border-bottom:1px solid transparent; background:none; color:var(--color-ink-soft); cursor:pointer; }
+  .view-tabs button[aria-selected="true"] { border-bottom-color:var(--accent); color:var(--accent); }
+  .view-tabs button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .view-panel[hidden] { display:none; }
+  .terminal-summary { text-align:right; }
+  .terminal-summary small, .submission-summary small { color:var(--color-ink-soft); font:12px/1.4 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .terminal-summary p, .submission-summary p { display:flex; align-items:baseline; justify-content:flex-end; gap:8px; margin:4px 0 1px; font:23px/1.15 var(--font-serif); }
+  .terminal-summary p span, .submission-summary p span { color:var(--color-ink-soft); }
+  .terminal-summary p i, .submission-summary p i { color:var(--muted); font:13px var(--font-mono); font-style:normal; }
+  .terminal-summary p strong, .submission-summary p strong { color:var(--color-ink); font-weight:500; }
+  .terminal-summary em, .submission-summary em { color:var(--color-ink-soft); font:12px/1.4 var(--font-mono); font-style:normal; }
+
+  .phase-headings { display:grid; grid-template-columns:3fr 2fr; border-top:1px solid var(--color-line); }
+  .phase-headings span { padding:13px 12px 10px; color:var(--accent); font:600 12px/1.4 var(--font-mono); letter-spacing:.06em; text-align:center; text-transform:uppercase; }
+  .phase-headings span:last-child { border-left:1px solid var(--color-line); color:var(--rust); }
+  .checkpoint-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .checkpoint { min-width:0; padding:17px 14px 19px; border:0; border-left:1px solid color-mix(in srgb,var(--color-line) 70%,transparent); background:none; text-align:left; cursor:pointer; transition:opacity .16s ease, background-color .16s ease; }
+  .checkpoint:first-child { border-left:0; }
+  .checkpoint:nth-child(4) { border-left-color:var(--color-line); }
+  .checkpoint:hover, .checkpoint.active { background:color-mix(in srgb,var(--accent) 4%,transparent); }
+  .checkpoint.crossover:hover, .checkpoint.crossover.active { background:color-mix(in srgb,var(--rust) 4%,transparent); }
+  .checkpoint.dimmed { opacity:.3; }
+  .checkpoint:focus-visible { position:relative; z-index:1; outline:2px solid var(--accent); outline-offset:-2px; }
+  .checkpoint.crossover:focus-visible { outline-color:var(--rust); }
+  .checkpoint-title { display:block; min-height:34px; font:600 13px/1.3 var(--font-mono); letter-spacing:.025em; text-transform:uppercase; }
+  .checkpoint-note { display:block; min-height:25px; margin-top:2px; color:var(--color-ink-soft); font:12px/1.3 var(--font-mono); }
+  .version-row { display:grid; grid-template-columns:22px minmax(20px,1fr) 22px; grid-template-rows:auto auto; align-items:center; gap:0 7px; margin-top:10px; }
+  .version-row .version { grid-column:1; grid-row:1; color:var(--color-ink-soft); font:11px/1 var(--font-mono); }
+  .version-row .track { grid-column:2; grid-row:1; display:block; height:7px; background:color-mix(in srgb,var(--color-line) 34%,transparent); }
+  .version-row .track i { display:block; min-width:2px; height:100%; background:var(--muted); transform-origin:left center; }
+  .version-row strong { grid-column:3; grid-row:1; color:var(--color-ink-soft); font:600 13px/1 var(--font-mono); text-align:right; }
+  .version-row em { grid-column:2 / 4; grid-row:2; margin-top:5px; color:var(--color-ink-soft); font:11px/1 var(--font-mono); font-style:normal; text-align:right; }
+  .v1-row .track { height:4px; }
+  .v2-row { margin-top:13px; }
+  .v2-row .track { height:10px; }
+  .v2-row .track i { background:var(--accent); }
+  .v2-row strong { color:var(--accent); }
+  .crossover .v2-row .track i { background:var(--rust); }
+  .crossover .v2-row strong { color:var(--rust); }
+
+  .checkpoint-explainer { display:grid; grid-template-columns:minmax(235px,.9fr) auto minmax(300px,1.45fr); gap:14px 24px; align-items:center; min-height:74px; padding:14px 16px; margin-top:21px; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .checkpoint-explainer > div:first-child { display:grid; gap:3px; }
+  .explainer-title { font:600 13px/1.4 var(--font-sans); }
+  .explainer-condition { color:var(--color-ink-soft); font:11px/1.4 var(--font-mono); }
+  .explainer-values { display:flex; gap:13px; color:var(--color-ink-soft); font:11px/1.4 var(--font-mono); }
+  .explainer-values b { color:var(--color-ink); font-weight:600; }
+  .checkpoint-explainer p { margin:0; color:var(--color-ink-soft); font:13px/1.5 var(--font-sans); }
+  .explainer-mean { grid-column:3; min-height:15px; color:var(--accent); font:11px/1.35 var(--font-mono); }
+
+  .efficiency-panel { padding-top:5px; }
+  .efficiency-panel > h2 { margin:0 0 18px; font:500 20px/1.3 var(--font-serif); }
+  .efficiency-layout { display:grid; grid-template-columns:minmax(0,1fr) 190px; gap:42px; align-items:center; }
+  .efficiency-chart { border-top:1px solid var(--color-line); }
+  .efficiency-row { display:grid; grid-template-columns:170px minmax(0,1fr); gap:24px; align-items:center; padding:17px 0; border-bottom:1px solid var(--color-line); }
+  .efficiency-row header { display:flex; justify-content:space-between; gap:12px; }
+  .efficiency-row h3 { margin:0; font:600 13px/1.4 var(--font-mono); letter-spacing:.03em; text-transform:uppercase; }
+  .efficiency-row header strong { color:var(--accent); font:600 13px/1.4 var(--font-mono); }
+  .paired-bars { display:grid; gap:9px; }
+  .bar-line { display:grid; grid-template-columns:22px 58px minmax(0,1fr); gap:8px; align-items:center; }
+  .bar-line span { color:var(--color-ink-soft); font:11px/1 var(--font-mono); }
+  .bar-line b { font:600 12px/1 var(--font-mono); text-align:right; }
+  .bar-line i { display:block; height:6px; background:var(--muted); }
+  .bar-line .v2-bar { height:9px; background:var(--accent); }
+  .submission-summary { padding:21px 0 21px 28px; border-left:1px solid var(--color-line); text-align:right; }
+  .submission-summary p { margin-top:9px; font-size:32px; }
+  .submission-summary p strong { color:var(--accent); }
+  .submission-summary .per-submission { display:block; margin-top:12px; color:var(--accent); font:600 11px/1.4 var(--font-mono); }
+  .efficiency-takeaway { margin:24px 0 0; color:var(--color-ink); font:500 17px/1.5 var(--font-serif); }
+  .efficiency-takeaway strong { font-weight:500; }
+
+  figcaption { margin:25px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+  .punchline { padding-top:13px; margin:14px 0 0; border-top:1px solid var(--color-line); color:var(--accent); font:600 16px/1.5 var(--font-sans); }
+
+  @media (max-width:850px) {
+    .checkpoint-grid { grid-template-columns:repeat(3,1fr); }
+    .phase-headings { display:none; }
+    .checkpoint:nth-child(4) { border-top:1px solid var(--color-line); border-left:0; }
+    .checkpoint:nth-child(5) { border-top:1px solid var(--color-line); }
+    .checkpoint-explainer { grid-template-columns:1fr auto; }
+    .checkpoint-explainer p { grid-column:1 / -1; }
+    .explainer-mean { grid-column:1 / -1; }
+  }
+  @media (max-width:650px) {
+    .figure-controls { flex-direction:column; gap:15px; }
+    .terminal-summary { text-align:left; }
+    .terminal-summary p { justify-content:flex-start; }
+    .checkpoint-grid { grid-template-columns:1fr; }
+    .checkpoint { display:grid; grid-template-columns:minmax(135px,.8fr) 1fr 1fr; align-items:center; gap:12px; border-top:1px solid var(--color-line); border-left:0; }
+    .checkpoint:first-child { border-top:0; }
+    .checkpoint:nth-child(4), .checkpoint:nth-child(5) { border-left:0; }
+    .checkpoint-title { min-height:0; }
+    .checkpoint-note { grid-column:1; min-height:0; }
+    .version-row { grid-row:1 / 3; margin:0; }
+    .v1-row { grid-column:2; }
+    .v2-row { grid-column:3; }
+    .checkpoint-explainer { grid-template-columns:1fr; }
+    .explainer-values { grid-row:auto; }
+    .checkpoint-explainer p, .explainer-mean { grid-column:1; }
+    .efficiency-layout { grid-template-columns:1fr; gap:22px; }
+    .submission-summary { padding:0; border-left:0; text-align:left; }
+    .submission-summary p { justify-content:flex-start; }
+  }
+  @media (max-width:460px) {
+    .checkpoint { grid-template-columns:1fr 1fr; }
+    .checkpoint-title, .checkpoint-note { grid-column:1 / -1; }
+    .version-row { grid-row:auto; }
+    .v1-row { grid-column:1; }
+    .v2-row { grid-column:2; }
+    .efficiency-row { grid-template-columns:1fr; gap:10px; }
+    .bar-line { grid-template-columns:22px 54px minmax(0,1fr); }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .checkpoint { transition:none; }
+  }
+</style>

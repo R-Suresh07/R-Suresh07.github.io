@@ -1,0 +1,125 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const rows = [
+  {
+    key: 'novelty',
+    label: 'Pass both novelty gates',
+    note: 'structural requirement',
+    v1: { value: 36, total: 39 },
+    v2: { value: 50, total: 50 },
+  },
+  {
+    key: 'interactions',
+    label: 'Preserve interactions',
+    note: 'reference geometry',
+    v1: { value: 3, total: 39 },
+    v2: { value: 1, total: 50 },
+  },
+].map(row => ({
+  ...row,
+  v1Percent: row.v1.value / row.v1.total * 100,
+  v2Percent: row.v2.value / row.v2.total * 100,
+}));
+---
+
+<figure class="scaffold-novelty-interaction" aria-label="Novelty and interaction preservation among evaluable V1 and Manual V2 Scaffold Hopping submissions">
+  <FigureHeading
+    label="FIG. 19"
+    title="V2 makes novelty reliable, but interaction preservation remains the bottleneck"
+    subtitle="Qwen 3.5 9B · 52 Scaffold Hopping tasks · evaluable submissions"
+  />
+
+  <div class="comparison" role="table" aria-label="V1 and Manual V2 comparison">
+    <div class="comparison-head" role="row">
+      <span role="columnheader">Evaluation gate</span>
+      <span role="columnheader">V1</span>
+      <strong role="columnheader">Manual V2</strong>
+    </div>
+
+    {rows.map(row => (
+      <div class:list={['metric-row', row.key]} role="row">
+        <div class="metric-label" role="rowheader">
+          <strong>{row.label}</strong>
+          <small>{row.note}</small>
+        </div>
+        <div class="metric-cell v1" role="cell" aria-label={`V1: ${row.v1.value} of ${row.v1.total}`}>
+          <span><b>{row.v1.value}</b> / {row.v1.total}</span>
+          <i><em style={`width:${row.v1Percent}%`} /></i>
+        </div>
+        <div class="metric-cell v2" role="cell" aria-label={`Manual V2: ${row.v2.value} of ${row.v2.total}`}>
+          <span><b>{row.v2.value}</b> / {row.v2.total}</span>
+          <i><em style={`width:${row.v2Percent}%`} /></i>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <aside class="size-callout" aria-label="Manual V2 failed finalist molecular size">
+    <div>
+      <small>V2 failed finalists</small>
+      <strong>0.73×</strong>
+    </div>
+    <p>the reference<br /><b>heavy-atom count</b></p>
+  </aside>
+
+  <figcaption><strong>Exact novelty does not translate into interaction preservation.</strong> Manual V2 makes novelty universal among evaluable submissions, while fewer candidates preserve the reference interaction pattern. Its failed finalists are also substantially smaller than their reference molecules.</figcaption>
+</figure>
+
+<style>
+  .scaffold-novelty-interaction {
+    --v1:#aaa9a3;
+    --v2:#087c83;
+    --warning:#ad4e32;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:14px/1.5 var(--font-sans);
+  }
+  .comparison { border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .comparison-head, .metric-row { display:grid; grid-template-columns:minmax(220px,1.35fr) repeat(2,minmax(150px,1fr)); }
+  .comparison-head { color:var(--color-ink-soft); font:600 11px/1.4 var(--font-mono); letter-spacing:.06em; text-transform:uppercase; }
+  .comparison-head > * { padding:10px 18px; }
+  .comparison-head > :nth-child(n+2) { border-left:1px solid var(--color-line); text-align:center; }
+  .comparison-head strong { color:var(--v2); font-weight:600; }
+  .metric-row { border-top:1px solid var(--color-line); }
+  .metric-row > * { min-width:0; padding:20px 18px; }
+  .metric-row > :nth-child(n+2) { border-left:1px solid var(--color-line); }
+  .metric-label { display:flex; align-items:flex-start; flex-direction:column; justify-content:center; gap:3px; }
+  .metric-label strong { font:600 13px/1.4 var(--font-mono); letter-spacing:.025em; text-transform:uppercase; }
+  .metric-label small { color:var(--color-ink-soft); font:11px/1.4 var(--font-mono); }
+  .metric-cell { display:grid; align-content:center; gap:12px; }
+  .metric-cell span { font:14px/1 var(--font-mono); text-align:center; }
+  .metric-cell span b { font-size:22px; font-weight:500; }
+  .metric-cell i { display:block; height:6px; background:color-mix(in srgb,var(--color-line) 38%,transparent); }
+  .metric-cell i em { display:block; min-width:2px; height:100%; background:var(--v1); }
+  .metric-cell.v2 { background:color-mix(in srgb,var(--v2) 3%,transparent); }
+  .metric-cell.v2 span b { color:var(--v2); }
+  .metric-cell.v2 i { height:9px; }
+  .metric-cell.v2 i em { background:var(--v2); }
+  .metric-row.interactions .metric-cell.v2 { background:color-mix(in srgb,var(--warning) 4%,transparent); }
+  .metric-row.interactions .metric-cell.v2 span b { color:var(--warning); }
+  .metric-row.interactions .metric-cell.v2 i em { background:var(--warning); }
+  .size-callout { display:flex; align-items:center; justify-content:center; gap:24px; padding:19px 22px; margin-top:22px; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); }
+  .size-callout > div { display:flex; align-items:baseline; gap:14px; }
+  .size-callout small { color:var(--color-ink-soft); font:600 11px/1.4 var(--font-mono); letter-spacing:.06em; text-transform:uppercase; }
+  .size-callout strong { color:var(--warning); font:500 31px/1 var(--font-serif); }
+  .size-callout p { margin:0; padding-left:24px; border-left:1px solid var(--color-line); color:var(--color-ink-soft); font:12px/1.45 var(--font-mono); }
+  .size-callout b { color:var(--color-ink); font-weight:600; }
+  figcaption { margin:22px 0 0; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+
+  @media (max-width:650px) {
+    .comparison-head, .metric-row { grid-template-columns:minmax(125px,1.15fr) repeat(2,minmax(82px,1fr)); }
+    .comparison-head > *, .metric-row > * { padding-right:10px; padding-left:10px; }
+    .metric-label strong { font-size:11px; }
+    .metric-cell span { font-size:11px; }
+    .metric-cell span b { font-size:18px; }
+    .size-callout { align-items:flex-start; flex-direction:column; gap:10px; }
+    .size-callout p { padding-top:10px; padding-left:0; border-top:1px solid var(--color-line); border-left:0; }
+  }
+</style>

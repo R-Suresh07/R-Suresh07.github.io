@@ -1,0 +1,438 @@
+[
+  {
+    "task_id": "smdd_002_O75874_0",
+    "label": "O75874",
+    "attempted_calls": 9,
+    "successful_unique_probes": 8,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.24760021641850471,
+    "binding_probabilities": [
+      0.22444504499435425,
+      0.2682265639305115,
+      0.23473985493183136,
+      0.23923859000205994,
+      0.30296850204467773,
+      0.18688103556632996,
+      0.2030927985906601,
+      0.3212093412876129
+    ]
+  },
+  {
+    "task_id": "smdd_002_P00374_0",
+    "label": "P00374",
+    "attempted_calls": 8,
+    "successful_unique_probes": 8,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.19690741039812565,
+    "binding_probabilities": [
+      0.09085118770599365,
+      0.28001171350479126,
+      0.19938811659812927,
+      0.35236674547195435,
+      0.16630971431732178,
+      0.2261887788772583,
+      0.13803967833518982,
+      0.12210334837436676
+    ]
+  },
+  {
+    "task_id": "smdd_002_P00742_0",
+    "label": "P00742",
+    "attempted_calls": 6,
+    "successful_unique_probes": 5,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.21635398864746094,
+    "binding_probabilities": [
+      0.1739877611398697,
+      0.2057240754365921,
+      0.26979562640190125,
+      0.18348701298236847,
+      0.24877546727657318
+    ]
+  },
+  {
+    "task_id": "smdd_002_P00797_0",
+    "label": "P00797",
+    "attempted_calls": 6,
+    "successful_unique_probes": 6,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.3509731988112132,
+    "binding_probabilities": [
+      0.4000585675239563,
+      0.3353941738605499,
+      0.33566728234291077,
+      0.17525476217269897,
+      0.4826831817626953,
+      0.3767812252044678
+    ]
+  },
+  {
+    "task_id": "smdd_002_P00918_0",
+    "label": "P00918",
+    "attempted_calls": 6,
+    "successful_unique_probes": 5,
+    "failed_calls": 0,
+    "reused_results": 1,
+    "probes_above_0_7": 1,
+    "mean_binding_probability": 0.4511781305074692,
+    "binding_probabilities": [
+      0.5784636735916138,
+      0.778245747089386,
+      0.37247419357299805,
+      0.2852320373058319,
+      0.24147500097751617
+    ]
+  },
+  {
+    "task_id": "smdd_002_P03372_0",
+    "label": "P03372",
+    "attempted_calls": 6,
+    "successful_unique_probes": 6,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.1668374203145504,
+    "binding_probabilities": [
+      0.08832484483718872,
+      0.19527247548103333,
+      0.23417218029499054,
+      0.2128710299730301,
+      0.1908831000328064,
+      0.07950089126825333
+    ]
+  },
+  {
+    "task_id": "smdd_002_P04150_0",
+    "label": "P04150",
+    "attempted_calls": 6,
+    "successful_unique_probes": 6,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.22091724475224814,
+    "binding_probabilities": [
+      0.1668129414319992,
+      0.18876053392887115,
+      0.27480828762054443,
+      0.12180475890636444,
+      0.24410738050937653,
+      0.329209566116333
+    ]
+  },
+  {
+    "task_id": "smdd_002_P07900_0",
+    "label": "P07900",
+    "attempted_calls": 4,
+    "successful_unique_probes": 3,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.3056977341572444,
+    "binding_probabilities": [
+      0.3282003402709961,
+      0.35092344880104065,
+      0.23796941339969635
+    ]
+  },
+  {
+    "task_id": "smdd_002_P08684_0",
+    "label": "P08684",
+    "attempted_calls": 9,
+    "successful_unique_probes": 8,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.2705956753343344,
+    "binding_probabilities": [
+      0.2065545916557312,
+      0.3489096462726593,
+      0.3386751711368561,
+      0.16550371050834656,
+      0.33015090227127075,
+      0.26046478748321533,
+      0.2483852654695511,
+      0.2661213278770447
+    ]
+  },
+  {
+    "task_id": "smdd_002_P10275_0",
+    "label": "P10275",
+    "attempted_calls": 5,
+    "successful_unique_probes": 5,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 3,
+    "mean_binding_probability": 0.6766072273254394,
+    "binding_probabilities": [
+      0.5064376592636108,
+      0.7830466628074646,
+      0.8026606440544128,
+      0.5153912305831909,
+      0.7754999399185181
+    ]
+  },
+  {
+    "task_id": "smdd_002_P11473_0",
+    "label": "P11473",
+    "attempted_calls": 5,
+    "successful_unique_probes": 4,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.30918969213962555,
+    "binding_probabilities": [
+      0.3293802738189697,
+      0.31053775548934937,
+      0.259001225233078,
+      0.3378395140171051
+    ]
+  },
+  {
+    "task_id": "smdd_002_P12821_0",
+    "label": "P12821",
+    "attempted_calls": 11,
+    "successful_unique_probes": 7,
+    "failed_calls": 4,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.32070415147713255,
+    "binding_probabilities": [
+      0.38868018984794617,
+      0.32884299755096436,
+      0.233306422829628,
+      0.25902172923088074,
+      0.2593214809894562,
+      0.2632133960723877,
+      0.5125428438186646
+    ]
+  },
+  {
+    "task_id": "smdd_002_P14061_0",
+    "label": "P14061",
+    "attempted_calls": 7,
+    "successful_unique_probes": 6,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.25302399694919586,
+    "binding_probabilities": [
+      0.14546136558055878,
+      0.3329935073852539,
+      0.2185009866952896,
+      0.2663035988807678,
+      0.27818581461906433,
+      0.2766987085342407
+    ]
+  },
+  {
+    "task_id": "smdd_002_P18031_0",
+    "label": "P18031",
+    "attempted_calls": 7,
+    "successful_unique_probes": 6,
+    "failed_calls": 1,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.28580404072999954,
+    "binding_probabilities": [
+      0.3089746832847595,
+      0.2759900987148285,
+      0.35644814372062683,
+      0.29492008686065674,
+      0.1724698394536972,
+      0.30602139234542847
+    ]
+  },
+  {
+    "task_id": "smdd_002_P22303_0",
+    "label": "P22303",
+    "attempted_calls": 6,
+    "successful_unique_probes": 6,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.2105849583943685,
+    "binding_probabilities": [
+      0.27014726400375366,
+      0.18579691648483276,
+      0.17063148319721222,
+      0.2261609435081482,
+      0.19224508106708527,
+      0.21852806210517883
+    ]
+  },
+  {
+    "task_id": "smdd_002_P24941_0",
+    "label": "P24941",
+    "attempted_calls": 0,
+    "successful_unique_probes": 0,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": null,
+    "binding_probabilities": []
+  },
+  {
+    "task_id": "smdd_002_P28482_0",
+    "label": "P28482",
+    "attempted_calls": 5,
+    "successful_unique_probes": 5,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.43698686063289643,
+    "binding_probabilities": [
+      0.4976380467414856,
+      0.5757073760032654,
+      0.20437708497047424,
+      0.6699700355529785,
+      0.23724175989627838
+    ]
+  },
+  {
+    "task_id": "smdd_002_P42574_0",
+    "label": "P42574",
+    "attempted_calls": 9,
+    "successful_unique_probes": 8,
+    "failed_calls": 0,
+    "reused_results": 1,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.279079956933856,
+    "binding_probabilities": [
+      0.3799702823162079,
+      0.29215213656425476,
+      0.1781364232301712,
+      0.34805312752723694,
+      0.24696631729602814,
+      0.3390760123729706,
+      0.23174916207790375,
+      0.21653619408607483
+    ]
+  },
+  {
+    "task_id": "smdd_002_P45452_0",
+    "label": "P45452",
+    "attempted_calls": 3,
+    "successful_unique_probes": 3,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.36692358553409576,
+    "binding_probabilities": [
+      0.22161541879177094,
+      0.26181304454803467,
+      0.6173422932624817
+    ]
+  },
+  {
+    "task_id": "smdd_002_P55055_0",
+    "label": "P55055",
+    "attempted_calls": 8,
+    "successful_unique_probes": 8,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.20022563356906176,
+    "binding_probabilities": [
+      0.12680315971374512,
+      0.14235912263393402,
+      0.25939321517944336,
+      0.18008169531822205,
+      0.35953760147094727,
+      0.25318247079849243,
+      0.1784980297088623,
+      0.1019497737288475
+    ]
+  },
+  {
+    "task_id": "smdd_002_P56817_0",
+    "label": "P56817",
+    "attempted_calls": 4,
+    "successful_unique_probes": 4,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.27207714691758156,
+    "binding_probabilities": [
+      0.23976942896842957,
+      0.17196787893772125,
+      0.2790047824382782,
+      0.3975664973258972
+    ]
+  },
+  {
+    "task_id": "smdd_002_Q15910_0",
+    "label": "Q15910",
+    "attempted_calls": 7,
+    "successful_unique_probes": 7,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.41942804626056124,
+    "binding_probabilities": [
+      0.2855224609375,
+      0.6216225624084473,
+      0.4997738003730774,
+      0.3236379027366638,
+      0.4904513657093048,
+      0.24658584594726562,
+      0.4684023857116699
+    ]
+  },
+  {
+    "task_id": "smdd_002_Q92769_0",
+    "label": "Q92769",
+    "attempted_calls": 6,
+    "successful_unique_probes": 6,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 1,
+    "mean_binding_probability": 0.47351673742135364,
+    "binding_probabilities": [
+      0.33194437623023987,
+      0.9435161352157593,
+      0.4346744418144226,
+      0.27739080786705017,
+      0.4007708728313446,
+      0.4528037905693054
+    ]
+  },
+  {
+    "task_id": "smdd_002_Q9BY41_0",
+    "label": "Q9BY41",
+    "attempted_calls": 8,
+    "successful_unique_probes": 8,
+    "failed_calls": 0,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": 0.42466582357883453,
+    "binding_probabilities": [
+      0.34970805048942566,
+      0.4119938313961029,
+      0.6771212220191956,
+      0.4678601324558258,
+      0.3957086205482483,
+      0.36342257261276245,
+      0.3473038673400879,
+      0.3842082917690277
+    ]
+  },
+  {
+    "task_id": "smdd_002_Q9Y6K1_0",
+    "label": "Q9Y6K1",
+    "attempted_calls": 9,
+    "successful_unique_probes": 0,
+    "failed_calls": 9,
+    "reused_results": 0,
+    "probes_above_0_7": 0,
+    "mean_binding_probability": null,
+    "binding_probabilities": []
+  }
+]

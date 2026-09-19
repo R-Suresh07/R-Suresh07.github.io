@@ -1,25 +1,33 @@
 ---
+import FigureHeading from './FigureHeading.astro';
+import FigureCaption from './FigureCaption.astro';
 import type { ImageMetadata } from 'astro';
 
 interface Props {
+  title?: string;
+  subtitle?: string;
   mode: 'figure' | 'player';
   webm?: string;
   mp4?: string;
   poster?: ImageMetadata | string;
   label: string;
   width?: 'prose' | 'wide' | 'full';
+  captionLabel?: string;
   caption?: string;
   credit?: string;
   source?: string;
 }
 
 const {
+  title,
+  subtitle,
   mode,
   webm,
   mp4,
   poster,
   label,
   width = 'wide',
+  captionLabel,
   caption,
   credit,
   source,
@@ -30,6 +38,7 @@ const isFigure = mode === 'figure';
 ---
 
 <figure class:list={['video-figure', `video-figure--${width}`]}>
+  <FigureHeading label={captionLabel} title={title ?? caption} subtitle={subtitle} />
   <video
     aria-label={label}
     autoplay={isFigure}
@@ -44,23 +53,16 @@ const isFigure = mode === 'figure';
     {mp4 && <source src={mp4} type="video/mp4" />}
     Your browser does not support embedded video.
   </video>
-  {(caption || credit || source) && (
-    <figcaption>
-      {caption && <span>{caption}</span>}
-      {(credit || source) && (
-        <small>
-          {credit && <span>{credit}</span>}
-          {source && <a href={source}>Source</a>}
-        </small>
-      )}
-    </figcaption>
-  )}
+  <FigureCaption caption={title ? caption : undefined} credit={credit} source={source} />
 </figure>
 
 <style>
   .video-figure {
     --media-width: var(--wide-width);
-    width: min(var(--media-width), calc(100vw - (2 * var(--page-gutter))));
+    width: min(
+      var(--media-width),
+      var(--breakout-max-width, calc(100vw - (2 * var(--page-gutter))))
+    );
     margin-block: var(--space-6);
     margin-inline: 50%;
     transform: translateX(-50%);
@@ -82,27 +84,4 @@ const isFigure = mode === 'figure';
     object-fit: cover;
   }
 
-  figcaption {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-4);
-    margin-top: var(--space-2);
-    color: var(--color-ink-soft);
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    line-height: 1.55;
-  }
-
-  small {
-    display: flex;
-    flex: none;
-    gap: var(--space-2);
-    font: inherit;
-  }
-
-  @media (max-width: 40rem) {
-    figcaption {
-      flex-direction: column;
-    }
-  }
 </style>

@@ -1,47 +1,55 @@
 ---
+import FigureHeading from './FigureHeading.astro';
+import FigureCaption from './FigureCaption.astro';
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
 interface Props {
+  title?: string;
+  subtitle?: string;
   src: ImageMetadata | string;
   alt: string;
   width?: 'prose' | 'wide' | 'full';
+  captionLabel?: string;
+  captionLead?: string;
   caption?: string;
+  emphasizedCaption?: boolean;
+  compactTop?: boolean;
   credit?: string;
   source?: string;
 }
 
 const {
+  title,
+  subtitle,
   src,
   alt,
   width = 'prose',
+  captionLabel,
+  captionLead,
   caption,
+  emphasizedCaption = false,
+  compactTop = false,
   credit,
   source,
 } = Astro.props;
 ---
 
-<figure class:list={['media-figure', `media-figure--${width}`]}>
+<figure class:list={['media-figure', `media-figure--${width}`, { 'media-figure--emphasized-caption': emphasizedCaption, 'media-figure--compact-top': compactTop }]}>
+  <FigureHeading label={captionLabel} title={title ?? caption} subtitle={subtitle} />
   {typeof src === 'string'
     ? <img src={src} alt={alt} loading="lazy" decoding="async" />
     : <Image src={src} alt={alt} loading="lazy" />}
-  {(caption || credit || source) && (
-    <figcaption>
-      {caption && <span>{caption}</span>}
-      {(credit || source) && (
-        <small>
-          {credit && <span>{credit}</span>}
-          {source && <a href={source}>Source</a>}
-        </small>
-      )}
-    </figcaption>
-  )}
+  <FigureCaption captionLead={title ? captionLead : undefined} caption={title ? caption : undefined} credit={credit} source={source} />
 </figure>
 
 <style>
   .media-figure {
     --media-width: var(--measure);
-    width: min(var(--media-width), calc(100vw - (2 * var(--page-gutter))));
+    width: min(
+      var(--media-width),
+      var(--breakout-max-width, calc(100vw - (2 * var(--page-gutter))))
+    );
     margin-block: var(--space-6);
     margin-inline: 50%;
     transform: translateX(-50%);
@@ -49,6 +57,10 @@ const {
 
   .media-figure--wide {
     --media-width: var(--wide-width);
+  }
+
+  .media-figure--compact-top {
+    margin-top: var(--space-4);
   }
 
   .media-figure--full {
@@ -62,27 +74,4 @@ const {
     background: var(--color-paper-raised);
   }
 
-  figcaption {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-4);
-    margin-top: var(--space-2);
-    color: var(--color-ink-soft);
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    line-height: 1.55;
-  }
-
-  small {
-    display: flex;
-    flex: none;
-    gap: var(--space-2);
-    font: inherit;
-  }
-
-  @media (max-width: 40rem) {
-    figcaption {
-      flex-direction: column;
-    }
-  }
 </style>

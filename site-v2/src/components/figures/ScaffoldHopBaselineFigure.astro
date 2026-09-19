@@ -1,0 +1,245 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import metricsCsv from '../../content/writing/data/scaffold_hopping_model_task_metrics.csv?raw';
+
+const parseCsv = (source: string) => {
+  const records: string[][] = [];
+  let record: string[] = [];
+  let field = '';
+  let quoted = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    if (character === '"') {
+      if (quoted && source[index + 1] === '"') { field += '"'; index += 1; }
+      else quoted = !quoted;
+    } else if (character === ',' && !quoted) {
+      record.push(field); field = '';
+    } else if ((character === '\n' || character === '\r') && !quoted) {
+      if (character === '\r' && source[index + 1] === '\n') index += 1;
+      record.push(field);
+      if (record.some(value => value.length)) records.push(record);
+      record = []; field = '';
+    } else field += character;
+  }
+  if (field.length || record.length) { record.push(field); records.push(record); }
+  const [headers, ...rows] = records;
+  return rows.map(values => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])));
+};
+
+const total = 52;
+const sourceRows = parseCsv(metricsCsv);
+const modelOrder = [
+  'Claude Sonnet 4.6',
+  'DeepSeek V3.2',
+  'GPT-5.4',
+  'Qwen 3.5 9B V1',
+  'Kimi K2.5 Thinking',
+  'MiniMax M2.7',
+  'Qwen 3.5 397B-A17B',
+  'Gemini 3.1 Pro',
+];
+const models = modelOrder.map(name => {
+  const rows = sourceRows.filter(row => row.model === name);
+  const solvedTasks = rows
+    .filter(row => row.terminal_pass.toLowerCase() === 'true')
+    .sort((a, b) => Number(a.task_order) - Number(b.task_order))
+    .map(row => row.task_id);
+  return {
+    name,
+    displayName: name.replace(' V1', ''),
+    solved: solvedTasks.length,
+    solvedTasks,
+  };
+});
+
+if (sourceRows.length !== 416 || models.some(model => sourceRows.filter(row => row.model === model.name).length !== total)) {
+  throw new Error('FIG. 17: expected 52 tasks × 8 models.');
+}
+if (Math.max(...models.map(model => model.solved)) !== 2) {
+  throw new Error('FIG. 17: expected the best terminal score to be 2/52.');
+}
+---
+
+<scaffold-hop-baseline id="fig-17">
+  <figure aria-label="Scaffold Hopping tasks solved by eight models on a full zero-to-52 task scale">
+    <FigureHeading
+      label="FIG. 17"
+      title="Different models hit the same Scaffold Hopping wall"
+      subtitle="8 models · 52 tasks each"
+    />
+
+    <div class="best-score" aria-label="Best score: 2 of 52 tasks, or 3.8 percent">
+      <small>best score</small>
+      <p><strong>2 / 52</strong><span>· 3.8%</span></p>
+    </div>
+
+    <div class="plot" aria-label="Tasks solved by model">
+      <div class="plot-heading" aria-hidden="true"><span></span><span>tasks solved</span><span></span></div>
+      <div class="rows">
+        {models.map((model, index) => (
+          <div
+            class="model-row"
+            tabindex="0"
+            data-index={index}
+            style={`--solved:${model.solved / total * 100}%;--row:${index}`}
+            aria-label={`${model.displayName}: ${model.solved} of ${total} tasks solved${model.solvedTasks.length ? `: ${model.solvedTasks.join(', ')}` : ''}.`}
+          >
+            <span class="model-name">{model.displayName}</span>
+            <span class="ruler" aria-hidden="true"><i></i></span>
+            <span class="score"><b>{model.solved}</b><small> / {total}</small></span>
+          </div>
+        ))}
+      </div>
+      <div class="axis" aria-hidden="true"><span></span><span><i>0</i><i>52</i></span><span></span></div>
+    </div>
+
+    <div class="annotation">Scaffold Hopping remains near floor across model scale and family.</div>
+    <figcaption><strong>Model choice barely changes the terminal picture.</strong> Across eight models evaluated on the same 52 Scaffold Hopping tasks, no model solves more than 2/52. Claude Sonnet 4.6, DeepSeek V3.2, GPT-5.4, and Qwen 3.5 9B tie for the best score at 3.8%.</figcaption>
+    <div class="tooltip" role="status" hidden></div>
+  </figure>
+  <script is:inline type="application/json" class="model-data" set:html={JSON.stringify(models)} />
+</scaffold-hop-baseline>
+
+<script>
+  class ScaffoldHopBaseline extends HTMLElement {
+    cleanup?: () => void;
+
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const models = JSON.parse(this.querySelector('.model-data')!.textContent!);
+      const rows = [...this.querySelectorAll<HTMLElement>('.model-row')];
+      const tooltip = this.querySelector<HTMLElement>('.tooltip')!;
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      const hide = () => {
+        tooltip.hidden = true;
+        rows.forEach(row => row.classList.remove('active', 'dimmed'));
+      };
+      const position = (row: HTMLElement) => {
+        const bounds = row.getBoundingClientRect();
+        const origin = this.getBoundingClientRect();
+        const left = Math.max(8, Math.min(bounds.left + Math.min(bounds.width * .44, 390), window.innerWidth - tooltip.offsetWidth - 8));
+        const below = bounds.bottom + 8;
+        const top = below + tooltip.offsetHeight <= window.innerHeight ? below : Math.max(8, bounds.top - tooltip.offsetHeight - 8);
+        tooltip.style.left = `${left - origin.left}px`;
+        tooltip.style.top = `${top - origin.top}px`;
+      };
+      const show = (row: HTMLElement) => {
+        const model = models[Number(row.dataset.index)];
+        rows.forEach(other => {
+          other.classList.toggle('active', other === row);
+          other.classList.toggle('dimmed', other !== row);
+        });
+        tooltip.replaceChildren();
+        const title = document.createElement('strong');
+        title.textContent = model.displayName;
+        tooltip.append(title);
+        const score = document.createElement('p');
+        const count = document.createElement('b');
+        count.textContent = `${model.solved} / 52`;
+        score.append(count, document.createTextNode(' solved'));
+        tooltip.append(score);
+        const tasks = document.createElement('div');
+        tasks.className = 'solved-tasks';
+        if (model.solvedTasks.length) {
+          model.solvedTasks.forEach((task: string) => {
+            const code = document.createElement('code');
+            code.textContent = task.replace('smdd_003_', '');
+            tasks.append(code);
+          });
+        } else tasks.textContent = 'No tasks solved';
+        tooltip.append(tasks);
+        tooltip.hidden = false;
+        position(row);
+      };
+
+      rows.forEach(row => {
+        row.addEventListener('pointerenter', () => show(row), { signal });
+        row.addEventListener('pointerleave', hide, { signal });
+        row.addEventListener('focus', () => show(row), { signal });
+        row.addEventListener('blur', hide, { signal });
+        row.addEventListener('keydown', event => { if (event.key === 'Escape') { hide(); row.blur(); } }, { signal });
+      });
+      window.addEventListener('resize', hide, { signal });
+      window.addEventListener('scroll', hide, { passive: true, signal });
+
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          this.dataset.visible = 'true';
+          observer.disconnect();
+        }
+      }, { threshold: .25 });
+      observer.observe(this);
+      this.cleanup = () => { controller.abort(); observer.disconnect(); };
+    }
+
+    disconnectedCallback() { this.cleanup?.(); }
+  }
+
+  if (!customElements.get('scaffold-hop-baseline')) customElements.define('scaffold-hop-baseline', ScaffoldHopBaseline);
+</script>
+
+<style>
+  scaffold-hop-baseline {
+    --accent:#087c83;
+    display:block;
+    position:relative;
+    width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter))));
+    max-width:calc(100vw - 2 * var(--page-gutter));
+    box-sizing:border-box;
+    margin:var(--space-6) 0;
+    margin-inline:50%;
+    transform:translateX(-50%);
+    color:var(--color-ink);
+    font:13px/1.45 var(--font-sans);
+  }
+  figure { margin:0; }
+  .best-score { display:flex; flex-direction:column; align-items:flex-end; margin:-8px 0 12px; }
+  .best-score small { color:var(--color-ink-soft); font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+  .best-score p { display:flex; align-items:baseline; gap:7px; margin:1px 0 0; }
+  .best-score strong { color:var(--accent); font:650 25px/1.2 var(--font-mono); }
+  .best-score span { color:var(--color-ink-soft); font:12px var(--font-mono); }
+  .plot-heading, .model-row, .axis { display:grid; grid-template-columns:190px minmax(0,1fr) 58px; gap:16px; align-items:center; }
+  .plot-heading { margin-bottom:9px; color:var(--color-ink-soft); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+  .model-row { min-height:50px; cursor:default; transition:opacity .16s; }
+  .model-row:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .model-row.dimmed { opacity:.28; }
+  .model-row.active .model-name { color:var(--accent); }
+  .model-name { font-size:12px; font-weight:580; }
+  .ruler { display:block; position:relative; height:10px; }
+  .ruler::before { content:''; position:absolute; inset:50% 0 auto; height:1px; background:var(--color-line); }
+  .ruler::after { content:''; position:absolute; inset:1px 0 1px auto; width:1px; background:var(--color-line); }
+  .ruler i { display:block; position:relative; width:var(--solved); min-width:var(--minimum, 0); height:10px; background:var(--accent); transform-origin:left center; }
+  .score { color:var(--color-ink-soft); font:11px/1.2 var(--font-mono); text-align:right; }
+  .score b { color:var(--color-ink); font-size:15px; font-weight:600; }
+  .axis { margin-top:5px; color:var(--color-ink-soft); font:10px/1.2 var(--font-mono); }
+  .axis > span:nth-child(2) { display:flex; justify-content:space-between; }
+  .axis i { font-style:normal; }
+  .annotation { border-top:1px solid var(--color-line); padding-top:14px; margin-top:22px; color:var(--accent); font:600 14px/1.5 var(--font-sans); }
+  figcaption { margin-top:18px; color:var(--color-ink-soft); font:14px/1.8 var(--font-sans); }
+  figcaption strong { color:var(--color-ink); font-weight:600; }
+  .tooltip { position:absolute; z-index:100; width:245px; max-width:calc(100vw - 16px); box-sizing:border-box; padding:13px 14px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); box-shadow:0 10px 25px #0002; pointer-events:none; }
+  .tooltip :global(> strong) { display:block; color:var(--accent); font-size:12px; }
+  .tooltip :global(p) { margin:5px 0 8px; color:var(--color-ink-soft); }
+  .tooltip :global(p b) { color:var(--color-ink); font:600 13px var(--font-mono); }
+  .tooltip :global(.solved-tasks) { display:flex; flex-wrap:wrap; gap:5px; color:var(--color-ink-soft); font-size:11px; }
+  .tooltip :global(code) { padding:2px 5px; background:color-mix(in srgb, var(--accent) 8%, transparent); color:var(--color-ink); font:10px var(--font-mono); }
+  [data-visible="true"] .ruler i { animation:bar-in .55s cubic-bezier(.22,1,.36,1) both; animation-delay:calc(var(--row) * 45ms); }
+  @keyframes bar-in { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  @media (max-width:650px) {
+    .best-score { align-items:flex-start; }
+    .plot-heading, .model-row, .axis { grid-template-columns:145px minmax(0,1fr) 42px; gap:10px; }
+    .model-name { font-size:10px; }
+  }
+  @media (max-width:450px) {
+    .plot-heading, .model-row, .axis { grid-template-columns:112px minmax(0,1fr) 34px; gap:7px; }
+    .model-name { line-height:1.25; }
+    .score small { display:none; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    [data-visible="true"] .ruler i { animation:none; }
+    .model-row { transition:none; }
+  }
+</style>

@@ -1,0 +1,351 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import rawTasks from '../../content/writing/data/ipd-probe-confidence.json';
+import { ipdTasks } from './data/ipdTasks';
+
+const reference = .7;
+const plotHeight = 222;
+const rowTop = (row: number) => 25 + row * 326;
+const y = (probability: number, row: number) => rowTop(row) + (1 - probability) * plotHeight;
+const outcomes = new Map(ipdTasks.map(task => [task.id, task]));
+const tasks = rawTasks.map((task, index) => {
+  const probabilities = task.binding_probabilities;
+  const count = probabilities.length;
+  const mean = count ? probabilities.reduce((sum, value) => sum + value, 0) / count : null;
+  const above = probabilities.filter(value => value > reference).length;
+  const outcome = outcomes.get(task.label);
+  if (!outcome || task.task_id !== `smdd_002_${task.label}_0`
+    || probabilities.some(value => !Number.isFinite(value) || value < 0 || value > 1)
+    || count !== task.successful_unique_probes || above !== task.probes_above_0_7
+    || task.attempted_calls !== count + task.failed_calls + task.reused_results
+    || (mean === null ? task.mean_binding_probability !== null : task.mean_binding_probability === null || Math.abs(mean - task.mean_binding_probability) > 1e-12)) {
+    throw new Error(`Invalid probe data for ${task.label}: probabilities, counts, or paired outcome disagree.`);
+  }
+  const row = index < 13 ? 0 : 1;
+  const x = 80 + (index % 13) * 62;
+  // Spread probes on both sides of the centered mean, using a stable preferred
+  // offset per probe. Only adjust horizontally when marks would overlap.
+  const placed: { x: number; y: number }[] = mean === null ? [] : [{ x: 0, y: y(mean, row) }];
+  const jitter = [-12, 9, -3, 18, -18, 3, 12, -9, 0];
+  const offsets = [-21, -18, -15, -12, -9, -6, -3, 0, 3, 6, 9, 12, 15, 18, 21];
+  const probes = probabilities.map((probability, probeIndex) => {
+    const py = y(probability, row);
+    const clearance = (offset: number) => placed.length ? Math.min(...placed.map(point => Math.hypot(offset - point.x, py - point.y))) : Infinity;
+    const preferred = jitter[(probeIndex + index * 3) % jitter.length];
+    const candidates = [...offsets].sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred));
+    const offset = candidates.find(offset => clearance(offset) >= 8) ?? candidates.sort((a, b) => clearance(b) - clearance(a))[0];
+    placed.push({ x: offset, y: py });
+    return { index: probeIndex, probability, above: probability > reference, x: x + offset, y: py };
+  });
+  return {
+    id: task.label, taskId: task.task_id, index, row, x, probes, mean,
+    highest: count ? Math.max(...probabilities) : null, above, count,
+    attempted: task.attempted_calls, failed: task.failed_calls, reused: task.reused_results,
+    noCalls: task.attempted_calls === 0,
+    allFailed: task.attempted_calls > 0 && task.failed_calls === task.attempted_calls,
+    v1: outcome.v1, v2: outcome.v2,
+  };
+});
+const probeCount = tasks.reduce((sum, task) => sum + task.count, 0);
+const aboveCount = tasks.reduce((sum, task) => sum + task.above, 0);
+const attemptedCount = tasks.reduce((sum, task) => sum + task.attempted, 0);
+const failedCount = tasks.reduce((sum, task) => sum + task.failed, 0);
+const reusedCount = tasks.reduce((sum, task) => sum + task.reused, 0);
+if (tasks.length !== ipdTasks.length || new Set(tasks.map(task => task.id)).size !== tasks.length
+  || probeCount !== 138 || aboveCount !== 5 || attemptedCount !== 160 || failedCount !== 20 || reusedCount !== 2) {
+  throw new Error('IPD probe figure: the supplied 25-task dataset no longer matches its expected totals.');
+}
+const taskLabel = (task: typeof tasks[number]) => task.noCalls ? `${task.id}: no Boltz calls were made.`
+  : task.allFailed ? `${task.id}: all ${task.failed} Boltz calls failed; no probability observations.`
+  : `${task.id}: ${task.count} unique probes; mean binding probability ${task.mean!.toFixed(4)}; ${task.above} above the 0.7 reference. Use up and down arrows to inspect individual probes.`;
+---
+
+<ipd-probe-confidence>
+  <figure aria-label="Boltz binding probabilities of synthetic probes across 25 IPD tasks">
+    <FigureHeading label="FIG. 9" title="The harness gives weak and strong probe evidence equal weight" subtitle={`Qwen 3.5 9B · ${tasks.length} IPD tasks`} />
+    <div class="summary-line"><span><strong>{probeCount}</strong> unique probes</span><span><strong class="exceptional">{aboveCount} / {probeCount}</strong> above 0.7 <span class="fraction">· {(aboveCount / probeCount * 100).toFixed(1)}%</span></span></div>
+    <div class="plot-meta"><span>each dot = one probe · ◇ = task mean</span><span class="hint">hover, tap, or focus a task or dot</span></div>
+    <div class="axis-title">Boltz binding probability <span class="mobile-hint">· swipe to see more tasks →</span></div>
+    <div class="plot-scroll" tabindex="0" role="region" aria-label="Probe confidence plot; scroll horizontally on narrow screens">
+      <svg class="plot" viewBox="0 0 1000 645" role="group" aria-label="Two rows of task columns on the same zero-to-one probability scale">
+        {[0, 1].map(row => <g class="rules" aria-hidden="true">
+          {[0, .25, .5, .75, 1].map(value => <g><line class="guide" x1="49" x2="853" y1={y(value, row)} y2={y(value, row)} /><text class="tick" x="33" y={y(value, row) + 4} text-anchor="end">{value === 0 || value === 1 ? value.toFixed(1) : value.toFixed(2)}</text></g>)}
+        </g>)}
+        {[0, 1].map(row => <g class="reference" tabindex="0" role="button" aria-pressed="false" aria-label="About the 0.7 reference used by other SMDD tasks; it is not an IPD requirement.">
+          <line class="reference-line" x1="49" x2="853" y1={y(reference, row)} y2={y(reference, row)} />
+          <rect class="reference-hit" x="865" y={y(reference, row) - 20} width="132" height="42" />
+          <text class="reference-label" x="874" y={y(reference, row) - 3}>0.7 reference only<tspan x="874" dy="16">not an IPD threshold</tspan></text>
+        </g>)}
+        <g class="task-columns">
+          {tasks.map(task => <g class="probe-task" data-index={task.index} data-id={task.id} tabindex="0" role="group" aria-label={taskLabel(task)}>
+            <rect class="column-band" x={task.x - 30} y={rowTop(task.row) - 9} width="60" height={plotHeight + 68} rx="3" />
+            <g class="probe-cloud">
+              {task.probes.map(probe => <g class:list={['probe', { above: probe.above }]} data-probe={probe.index} tabindex="-1" role="button" aria-pressed="false" aria-label={`${task.id}, probe ${probe.index + 1}: binding probability ${probe.probability}`}>
+                <circle class="probe-hit" cx={probe.x} cy={probe.y} r="8" />
+                <circle class="probe-dot" cx={probe.x} cy={probe.y} r="2.9" />
+              </g>)}
+            </g>
+            {task.mean !== null && <polygon class="mean" points={`${task.x},${y(task.mean, task.row) - 5} ${task.x + 5},${y(task.mean, task.row)} ${task.x},${y(task.mean, task.row) + 5} ${task.x - 5},${y(task.mean, task.row)}`} />}
+            {task.count === 0 && <text class="empty-state" x={task.x} y={y(0, task.row) + 20} text-anchor="middle">— no probes</text>}
+            <text class="task-id" x={task.x} y={y(0, task.row) + 46} text-anchor="middle">{task.id}</text>
+          </g>)}
+        </g>
+      </svg>
+    </div>
+    <div class="annotation">Probe recurrence is only as useful as the poses producing it.</div>
+    <figcaption>The redesigned harness aggregates pharmacophore evidence from predicted probe poses without weighting by their Boltz binding probability. Across {probeCount} unique probes, only {aboveCount} exceed 0.7. The dashed line is shown only as a reference used elsewhere in SMDD-Bench; IPD itself does not require probes to cross this threshold.</figcaption>
+    <div class="tooltip" role="status" aria-live="polite" hidden></div>
+  </figure>
+  <script is:inline type="application/json" class="probe-data" set:html={JSON.stringify(tasks)} />
+</ipd-probe-confidence>
+
+<script>
+  type ProbeTask = {
+    id: string; index: number; probes: { index: number; probability: number; above: boolean }[];
+    count: number; mean: number | null; highest: number | null; above: number;
+    attempted: number; failed: number; reused: number; noCalls: boolean; allFailed: boolean; v1: number; v2: number;
+  };
+
+  class IpdProbeConfidence extends HTMLElement {
+    cleanup?: () => void;
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const controller = new AbortController();
+      const { signal } = controller;
+      const tasks: ProbeTask[] = JSON.parse(this.querySelector('.probe-data')!.textContent!);
+      const columns = [...this.querySelectorAll<SVGGElement>('.probe-task')];
+      const references = [...this.querySelectorAll<SVGGElement>('.reference')];
+      const tooltip = this.querySelector<HTMLElement>('.tooltip')!;
+      const scroller = this.querySelector<HTMLElement>('.plot-scroll')!;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const animations: Animation[] = [];
+      let pinned: string | null = null;
+      let currentKey: string | null = null;
+      let tooltipAnchor: Element | null = null;
+      const stopAnimations = () => animations.forEach(animation => animation.cancel());
+      const clear = () => {
+        pinned = null; currentKey = null; tooltipAnchor = null; tooltip.hidden = true;
+        delete this.dataset.active;
+        columns.forEach(column => {
+          column.classList.remove('active');
+          column.querySelectorAll('.probe').forEach(probe => { probe.classList.remove('selected'); probe.setAttribute('aria-pressed', 'false'); });
+        });
+        references.forEach(reference => reference.setAttribute('aria-pressed', 'false'));
+      };
+      const line = (value: string, className = '') => {
+        const element = document.createElement('div');
+        element.className = className;
+        element.textContent = value;
+        tooltip.append(element);
+      };
+      const metric = (label: string, value: string) => {
+        const row = document.createElement('div');
+        row.className = 'tooltip-metric';
+        const strong = document.createElement('b');
+        strong.textContent = value;
+        row.append(document.createTextNode(label), strong);
+        tooltip.append(row);
+      };
+      const positionTooltip = (target: Element, event?: PointerEvent) => {
+        const origin = this.getBoundingClientRect();
+        const bounds = target.getBoundingClientRect();
+        const x = event ? event.clientX : bounds.left + bounds.width / 2;
+        const y = event ? event.clientY : bounds.top;
+        tooltip.style.left = `${Math.max(0, Math.min(x - origin.left + 16, origin.width - tooltip.offsetWidth))}px`;
+        const above = y - tooltip.offsetHeight - 14;
+        tooltip.style.top = `${(above >= 8 ? above : y + 20) - origin.top}px`;
+      };
+      const showTask = (column: SVGGElement, probeIndex: number | null, event?: PointerEvent) => {
+        stopAnimations();
+        const task = tasks[Number(column.dataset.index)];
+        const key = `${task.id}:${probeIndex ?? 'task'}`;
+        if (currentKey !== key || tooltip.hidden) {
+          currentKey = key;
+          this.dataset.active = task.id;
+          columns.forEach(other => other.classList.toggle('active', other === column));
+          this.querySelectorAll<SVGGElement>('.probe').forEach(probe => probe.classList.toggle('selected', probe.closest('.probe-task') === column && Number(probe.dataset.probe) === probeIndex));
+          tooltip.replaceChildren();
+          line(probeIndex === null ? task.id : `${task.id} · probe ${probeIndex + 1}`, 'tooltip-heading');
+          if (probeIndex !== null) {
+            const probability = task.probes[probeIndex].probability;
+            line('Binding probability', 'tooltip-muted');
+            line(String(probability), 'tooltip-probability');
+            line(probability > .7 ? 'Above the 0.7 reference' : 'At or below the 0.7 reference', probability > .7 ? 'tooltip-above' : 'tooltip-muted');
+          } else if (task.count > 0) {
+            line(`${task.count} successful unique ${task.count === 1 ? 'probe' : 'probes'}`, 'tooltip-muted');
+            metric('Mean binding probability', task.mean!.toFixed(4));
+            metric('Highest probability', task.highest!.toFixed(4));
+            metric('Probes above 0.7', `${task.above} / ${task.count}`);
+          } else {
+            line(task.noCalls ? 'No Boltz calls were made.' : task.allFailed ? `All ${task.failed} Boltz calls failed.` : 'No unique probability observations.', 'tooltip-empty');
+            if (!task.noCalls) line('No binding probability was observed.', 'tooltip-muted');
+          }
+          if (probeIndex === null && task.attempted > 0) line(`${task.attempted} attempted · ${task.failed} failed · ${task.reused} reused`, 'tooltip-calls');
+          metric('IPD recovery · V1 → V2', `${task.v1} → ${task.v2} / 3`);
+          line('← / → tasks · ↑ / ↓ probes', 'tooltip-keyboard');
+        }
+        tooltip.hidden = false;
+        const target = probeIndex === null ? column.querySelector('.mean, .task-id')! : column.querySelector(`[data-probe="${probeIndex}"] .probe-dot`)!;
+        tooltipAnchor = target;
+        positionTooltip(target, event);
+      };
+      const probeIndexFor = (target: EventTarget | null) => {
+        const probe = (target as Element | null)?.closest<SVGGElement>('.probe');
+        return probe ? Number(probe.dataset.probe) : null;
+      };
+      const nearestProbe = (column: SVGGElement, event: MouseEvent | PointerEvent) => {
+        if ((event.target as Element | null)?.closest('.mean')) return null;
+        // Enlarged hit areas can overlap. Resolve to the closest visible dot,
+        // so every measurement remains selectable even in a dense ensemble.
+        let nearest: number | null = null;
+        let distance = 10;
+        column.querySelectorAll<SVGCircleElement>('.probe-dot').forEach(dot => {
+          const box = dot.getBoundingClientRect();
+          const candidate = Math.hypot(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height / 2);
+          if (candidate < distance) { distance = candidate; nearest = Number(dot.parentElement!.dataset.probe); }
+        });
+        return nearest;
+      };
+      columns.forEach((column, index) => {
+        column.addEventListener('pointermove', event => { if (!pinned && event.pointerType !== 'touch') showTask(column, nearestProbe(column, event), event); }, { signal });
+        column.addEventListener('pointerleave', () => { if (!pinned) clear(); }, { signal });
+        column.addEventListener('focusin', event => { clear(); showTask(column, probeIndexFor(event.target)); }, { signal });
+        column.addEventListener('focusout', event => { if (!pinned && !column.contains(event.relatedTarget as Node | null)) clear(); }, { signal });
+        const toggle = (probeIndex: number | null) => {
+          const key = `${tasks[index].id}:${probeIndex ?? 'task'}`;
+          if (pinned === key) { clear(); return; }
+          clear(); showTask(column, probeIndex); pinned = key;
+          if (probeIndex !== null) column.querySelector(`[data-probe="${probeIndex}"]`)!.setAttribute('aria-pressed', 'true');
+        };
+        column.addEventListener('click', event => toggle(nearestProbe(column, event)), { signal });
+        column.addEventListener('keydown', event => {
+          const probeIndex = probeIndexFor(event.target);
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(probeIndex); }
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault(); clear();
+            const next = columns[(index + (event.key === 'ArrowRight' ? 1 : -1) + columns.length) % columns.length];
+            next.focus();
+          }
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const probes = [...column.querySelectorAll<SVGGElement>('.probe')];
+            if (!probes.length) return;
+            const next = probeIndex === null ? (event.key === 'ArrowDown' ? 0 : probes.length - 1) : (probeIndex + (event.key === 'ArrowDown' ? 1 : -1) + probes.length) % probes.length;
+            probes[next].focus({ preventScroll: true });
+          }
+        }, { signal });
+      });
+      const showReference = (reference: SVGGElement) => {
+        stopAnimations(); clear(); currentKey = 'reference';
+        tooltip.replaceChildren();
+        line('0.7 reference', 'tooltip-heading');
+        line('Used as a binding-probability threshold in other SMDD task types.', 'tooltip-empty');
+        line('IPD does not require probes to exceed this value.', 'tooltip-empty');
+        tooltip.hidden = false;
+        tooltipAnchor = reference.querySelector('.reference-label')!;
+        positionTooltip(tooltipAnchor);
+      };
+      references.forEach(reference => {
+        reference.addEventListener('pointerenter', event => { if (!pinned && event.pointerType !== 'touch') showReference(reference); }, { signal });
+        reference.addEventListener('pointerleave', () => { if (!pinned) clear(); }, { signal });
+        reference.addEventListener('focus', () => showReference(reference), { signal });
+        reference.addEventListener('blur', () => { if (!pinned) clear(); }, { signal });
+        const toggle = () => { if (pinned === 'reference') clear(); else { showReference(reference); pinned = 'reference'; reference.setAttribute('aria-pressed', 'true'); } };
+        reference.addEventListener('click', toggle, { signal });
+        reference.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); } }, { signal });
+      });
+      this.addEventListener('keydown', event => { if (event.key === 'Escape') clear(); }, { signal });
+      document.addEventListener('pointerdown', event => { if (!this.contains(event.target as Node)) clear(); }, { signal });
+      window.addEventListener('resize', clear, { signal });
+      const followScroll = () => {
+        if (!tooltipAnchor || tooltip.hidden) return;
+        const box = tooltipAnchor.getBoundingClientRect();
+        const viewport = scroller.getBoundingClientRect();
+        if (box.bottom < 0 || box.top > innerHeight || box.right < viewport.left || box.left > viewport.right) clear();
+        else positionTooltip(tooltipAnchor);
+      };
+      window.addEventListener('scroll', followScroll, { signal, passive: true });
+      scroller.addEventListener('scroll', followScroll, { signal, passive: true });
+      const observer = new IntersectionObserver(entries => {
+        if (!entries.some(entry => entry.isIntersecting)) return;
+        observer.disconnect();
+        if (reducedMotion.matches) return;
+        const fade = (selector: string, delay: number, duration: number) => this.querySelectorAll(selector).forEach(node => animations.push(node.animate([{ opacity: 0 }, { opacity: 1 }], { delay, duration, fill: 'backwards', easing: 'cubic-bezier(.22,1,.36,1)' })));
+        fade('.rules', 0, 300);
+        fade('.reference', 100, 350);
+        fade('.probe-cloud', 200, 550);
+        fade('.mean', 450, 450);
+        fade('.annotation', 700, 350);
+      }, { threshold: .15 });
+      observer.observe(this.querySelector('.plot')!);
+      reducedMotion.addEventListener('change', stopAnimations, { signal });
+      this.cleanup = () => { controller.abort(); observer.disconnect(); stopAnimations(); };
+    }
+    disconnectedCallback() { this.cleanup?.(); delete this.dataset.ready; }
+  }
+  if (!customElements.get('ipd-probe-confidence')) customElements.define('ipd-probe-confidence', IpdProbeConfidence);
+</script>
+
+<style>
+  ipd-probe-confidence { display:block; position:relative; width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); font:13px/1.5 var(--font-sans); --teal:#087c83; --probe:#348f89; --rust:#b96545; }
+  figure { margin:0; }
+  .summary-line { display:flex; flex-wrap:wrap; gap:8px 30px; margin:25px 0 20px; color:var(--color-ink-soft); font-size:12px; }
+  .summary-line strong { color:var(--color-ink); font:600 20px/1.4 var(--font-mono); }
+  .summary-line .exceptional { color:var(--rust); }
+  .fraction { color:var(--rust); font:13px var(--font-mono); }
+  .plot-meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:20px; color:var(--color-ink-soft); font:12px/1.6 var(--font-mono); }
+  .hint { font:13px/1.6 var(--font-sans); }
+  .axis-title { margin-bottom:6px; color:var(--color-ink-soft); font-size:13px; }
+  .mobile-hint { display:none; font-size:12px; }
+  .plot-scroll { overflow-x:auto; overflow-y:hidden; }
+  .plot-scroll:focus-visible { outline:2px solid var(--teal); outline-offset:4px; }
+  .plot { display:block; width:100%; height:auto; -webkit-tap-highlight-color:transparent; user-select:none; }
+  .guide { stroke:rgba(38,45,42,.10); stroke-width:.7; }
+  .tick { fill:var(--color-ink-soft); font:12px var(--font-mono); }
+  .reference { outline:none; cursor:help; }
+  .reference-line { stroke:rgba(38,45,42,.45); stroke-width:1; stroke-dasharray:3 4; }
+  .reference-hit { fill:transparent; }
+  .reference-label { fill:var(--color-ink-soft); font:12px var(--font-mono); }
+  .reference-label tspan { font:12px var(--font-sans); }
+  .reference:focus-visible .reference-label, .reference:hover .reference-label { fill:var(--teal); }
+  .reference:focus-visible .reference-line { stroke:var(--teal); stroke-width:1.5; }
+  .probe-task { cursor:pointer; outline:none; transition:opacity .15s; }
+  .column-band { fill:var(--teal); fill-opacity:0; }
+  .probe-task.active .column-band, .probe-task:focus-visible .column-band { fill-opacity:.045; }
+  [data-active] .probe-task:not(.active) { opacity:.12; }
+  .probe { outline:none; }
+  .probe-hit { fill:transparent; }
+  .probe-dot { fill:var(--probe); fill-opacity:.72; pointer-events:none; }
+  .above .probe-dot { fill:var(--rust); fill-opacity:1; }
+  .active .probe-dot { fill-opacity:1; r:3.3px; }
+  .probe.selected .probe-dot, .probe:focus-visible .probe-dot { r:4px; stroke:var(--color-paper); stroke-width:1.2; }
+  .probe.selected .probe-hit, .probe:focus-visible .probe-hit { stroke:var(--teal); stroke-width:1; r:6px; }
+  .probe.above.selected .probe-hit, .probe.above:focus-visible .probe-hit { stroke:var(--rust); }
+  .mean { fill:var(--color-paper); stroke:#28322f; stroke-width:1.1; }
+  .active .mean { stroke-width:1.8; }
+  .task-id { fill:var(--color-ink-soft); font:12px var(--font-mono); }
+  .active .task-id, .probe-task:focus-visible .task-id { fill:var(--teal); font-weight:600; }
+  .empty-state { fill:#8a8c81; font:11px var(--font-sans); }
+  .annotation { border-top:1px solid var(--color-line); padding-top:16px; color:var(--teal); font-size:12px; }
+  figcaption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
+  .tooltip { position:absolute; z-index:100; width:300px; max-width:100%; box-sizing:border-box; padding:14px 16px; border:1px solid var(--color-line); border-radius:5px; background:var(--color-paper-raised); color:var(--color-ink); box-shadow:0 10px 25px #0002; font:12px/1.6 var(--font-sans); pointer-events:none; }
+  .tooltip[hidden] { display:none; }
+  .tooltip :global(.tooltip-heading) { color:var(--teal); font-weight:650; margin-bottom:7px; }
+  .tooltip :global(.tooltip-muted) { color:var(--color-ink-soft); font-size:13px; }
+  .tooltip :global(.tooltip-metric) { display:flex; justify-content:space-between; gap:12px; margin-top:5px; font-size:13px; }
+  .tooltip :global(.tooltip-metric b) { color:var(--color-ink); font:12px var(--font-mono); white-space:nowrap; }
+  .tooltip :global(.tooltip-probability) { font:17px/1.8 var(--font-mono); overflow-wrap:anywhere; }
+  .tooltip :global(.tooltip-above) { color:var(--rust); font-size:13px; }
+  .tooltip :global(.tooltip-calls) { color:var(--color-ink-soft); font-size:12px; margin-top:9px; }
+  .tooltip :global(.tooltip-empty) { margin:5px 0 9px; }
+  .tooltip :global(.tooltip-keyboard) { color:var(--color-ink-soft); font:11px/1.6 var(--font-mono); margin-top:9px; }
+  @media (max-width:800px) {
+    .plot { min-width:960px; }
+    .mobile-hint { display:inline; }
+    .plot-meta { gap:6px; }
+    .hint { flex-basis:100%; }
+  }
+  @media (hover:none) { .tooltip :global(.tooltip-keyboard) { display:none; } }
+  @media (prefers-reduced-motion:reduce) { .probe-task { transition:none; } }
+</style>

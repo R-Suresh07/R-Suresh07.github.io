@@ -1,0 +1,255 @@
+{
+  "boltz": {
+    "co_ligands": [],
+    "diffusion_samples": 10,
+    "pocket_residues": [
+      [
+        "A",
+        22
+      ],
+      [
+        "A",
+        23
+      ],
+      [
+        "A",
+        31
+      ],
+      [
+        "A",
+        44
+      ],
+      [
+        "A",
+        45
+      ],
+      [
+        "A",
+        46
+      ],
+      [
+        "A",
+        57
+      ],
+      [
+        "A",
+        58
+      ],
+      [
+        "A",
+        59
+      ],
+      [
+        "A",
+        60
+      ],
+      [
+        "A",
+        61
+      ],
+      [
+        "A",
+        62
+      ],
+      [
+        "A",
+        63
+      ],
+      [
+        "A",
+        65
+      ],
+      [
+        "A",
+        74
+      ],
+      [
+        "A",
+        76
+      ],
+      [
+        "A",
+        87
+      ],
+      [
+        "A",
+        88
+      ],
+      [
+        "A",
+        89
+      ],
+      [
+        "A",
+        90
+      ],
+      [
+        "A",
+        91
+      ],
+      [
+        "A",
+        92
+      ],
+      [
+        "A",
+        93
+      ],
+      [
+        "A",
+        94
+      ],
+      [
+        "A",
+        95
+      ],
+      [
+        "A",
+        96
+      ],
+      [
+        "A",
+        97
+      ],
+      [
+        "A",
+        100
+      ],
+      [
+        "A",
+        145
+      ],
+      [
+        "A",
+        146
+      ],
+      [
+        "A",
+        156
+      ],
+      [
+        "A",
+        157
+      ],
+      [
+        "A",
+        158
+      ]
+    ],
+    "requirements": {
+      "binding_affinity": {
+        "baseline": -1.5297076106071472,
+        "comparator": "<=",
+        "direction": "increase",
+        "threshold": -1.2297076106071472,
+        "tolerance": 0.3
+      },
+      "binding_probability": {
+        "comparator": ">",
+        "threshold": 0.7
+      }
+    }
+  },
+  "hard_constraints": {
+    "formal_charge": {
+      "comparator": "between_inclusive",
+      "lower": -2,
+      "upper": 2
+    },
+    "hba": {
+      "comparator": "<=",
+      "threshold": 10
+    },
+    "hbd": {
+      "comparator": "<=",
+      "threshold": 5
+    },
+    "logp": {
+      "comparator": "between_inclusive",
+      "lower": -1.0,
+      "upper": 5.0
+    },
+    "molecular_weight": {
+      "comparator": "<",
+      "threshold": 600.0
+    },
+    "pains": {
+      "comparator": "eq",
+      "threshold": "clean"
+    },
+    "rotatable_bonds": {
+      "comparator": "<=",
+      "threshold": 10
+    },
+    "sa_score": {
+      "comparator": "<",
+      "threshold": 4.5
+    },
+    "smiles_validity": {
+      "comparator": "eq",
+      "threshold": true
+    },
+    "structural_alerts": {
+      "comparator": "eq",
+      "threshold": "clean"
+    },
+    "tanimoto_similarity": {
+      "comparator": ">=",
+      "threshold": 0.7
+    },
+    "tpsa": {
+      "comparator": "<",
+      "threshold": 140.0
+    }
+  },
+  "hold_constant": {
+    "bbb": {
+      "baseline": 0.9585,
+      "comparator": "between_inclusive",
+      "direction": "change",
+      "lower": 0.8585,
+      "tolerance": 0.1,
+      "upper": 1.0585
+    },
+    "binding_affinity": {
+      "baseline": -1.5297076106071472,
+      "comparator": "<=",
+      "direction": "increase",
+      "threshold": -1.2297076106071472,
+      "tolerance": 0.3
+    },
+    "herg": {
+      "baseline": 0.5419,
+      "comparator": "<=",
+      "direction": "increase",
+      "threshold": 0.6419,
+      "tolerance": 0.1
+    },
+    "solubility": {
+      "baseline": -5.237,
+      "comparator": ">=",
+      "direction": "decrease",
+      "threshold": -5.737,
+      "tolerance": 0.5
+    }
+  },
+  "optimization_objectives": {
+    "clearance": {
+      "baseline": 58.7621,
+      "comparator": "<=",
+      "direction": "minimize",
+      "required_improvement": 5.0,
+      "threshold": 53.7621
+    },
+    "ppb": {
+      "baseline": 103.2211,
+      "comparator": "<=",
+      "direction": "minimize",
+      "required_improvement": 5.0,
+      "threshold": 98.2211
+    }
+  },
+  "schema_version": "smdd_taskspec_v2.0.0",
+  "spec_hash": "30a221e0d405903c77cb97ee778cc28c02fac80a84a5c5ce88e8a8e1656a43b1",
+  "task_type": "lead_optimization"
+}

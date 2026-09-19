@@ -1,0 +1,572 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import Sidenote from '../Sidenote.astro';
+import c000 from '../../assets/figures/cathepsin-k/c000.svg';
+import c005 from '../../assets/figures/cathepsin-k/c005.svg';
+import c009 from '../../assets/figures/cathepsin-k/c009.svg';
+import c033 from '../../assets/figures/cathepsin-k/c033.svg';
+
+const stages = [
+  {
+    short: 'Reference', id: 'C000', image: c000, group: '–CN', groupName: 'nitrile',
+    ames: 0.6508, binding: null, bbb: 0.8955, caco2: -5.0649, cyp3a4: 0.5322, herg: 0.9739, similarity: 1.0000, hardConstraints: 12,
+    hypothesis: 'The starting molecule has a CN group (nitrile) which is commonly flagged in Ames assays.',
+    hypothesisTurn: 2,
+    interpretation: null,
+    interpretationTurn: null,
+    rationale: 'Replace the nitrile while trying to preserve the properties the reference already satisfies.',
+    summary: 'The target property fails.',
+    results: [{ label: 'Ames', value: '0.6508', state: 'bad', context: 'required ≤ 0.5508' }],
+  },
+  {
+    short: 'C01', id: 'C005', image: c005, group: '–NMe₂', groupName: 'dimethylamino',
+    ames: 0.5118, binding: 0.4656, bbb: 0.9213, caco2: -5.0361, cyp3a4: 0.5787, herg: 0.9808, similarity: 0.7647, hardConstraints: 12,
+    hypothesis: 'The starting molecule has a CN group (nitrile) which is commonly flagged in Ames assays.',
+    hypothesisTurn: 2,
+    interpretation: 'C005 fails binding probability (0.466 < 0.7). The Ames score is good … improve binding probability while maintaining Ames reduction.',
+    interpretationTurn: 15,
+    rationale: 'Replace the nitrile while preserving the rest of the scaffold.',
+    summary: 'Ames is fixed, but binding is lost.',
+    results: [
+      { label: 'Ames', value: '0.6508 → 0.5118', state: 'ok', context: 'target repaired' },
+      { label: 'BBB', value: '0.9213', state: 'ok', context: 'within target range' },
+      { label: 'Binding probability', value: '0.4656', state: 'bad', context: 'required > 0.70' },
+    ],
+  },
+  {
+    short: 'C02', id: 'C009', image: c009, group: '–CH₂OH', groupName: 'hydroxymethyl',
+    ames: 0.4425, binding: 0.8510, bbb: 0.7899, caco2: -5.0713, cyp3a4: 0.4834, herg: 0.9646, similarity: 0.7647, hardConstraints: 12,
+    hypothesis: 'I need to find modifications that won’t worsen binding too much but improve things marginally.',
+    hypothesisTurn: 23,
+    interpretation: 'C009 has binding_probability = 0.8509 which is > 0.7! But bbb = 0.78985 which is below 0.7955 threshold.',
+    interpretationTurn: 26,
+    rationale: 'The model responds to C005’s binding failure with another nitrile replacement.',
+    summary: 'Binding is restored, but BBB becomes the next bottleneck.',
+    results: [
+      { label: 'Binding probability', value: '0.8510', state: 'ok', context: 'required > 0.70' },
+      { label: 'Ames', value: '0.4425', state: 'ok', context: 'required ≤ 0.5508' },
+      { label: 'BBB', value: '0.7899', state: 'bad', context: 'required ≥ 0.7955', nearMiss: true },
+    ],
+  },
+  {
+    short: 'C03', id: 'C033', image: c033, group: '–CH₂CH₂OH', groupName: 'hydroxyethyl',
+    ames: 0.4640, binding: 0.8492, bbb: 0.8264, caco2: -5.1095, cyp3a4: 0.6134, herg: 0.9643, similarity: 0.7429, hardConstraints: 12,
+    hypothesis: 'The key insight: I need a molecule that combines good binding (like C009) with better BBB (like C005).',
+    hypothesisTurn: 55,
+    interpretation: 'C033 has passed all gates and is marked as “safe_to_submit”: true.',
+    interpretationTurn: 59,
+    rationale: 'Add one methylene to C009’s hydroxymethyl group and reevaluate the narrow BBB miss.',
+    summary: 'All gates pass.',
+    relative: 'relative to C02: +CH₂',
+    results: [
+      { label: 'Ames', value: '0.4640', state: 'ok', context: 'pass' },
+      { label: 'Binding probability', value: '0.8492', state: 'ok', context: 'pass' },
+      { label: 'BBB', value: '0.8264', state: 'ok', context: 'pass' },
+    ],
+    pass: true,
+  },
+];
+
+const properties = [
+  { key: 'ames', label: 'Ames ↓', range: [0.4, 0.68], rule: '≤ 0.5508', allowed: [0.4, 0.5508], reference: 0.6508 },
+  { key: 'binding', label: 'Binding ↑', range: [0.4, 0.9], rule: '> 0.70', allowed: [0.7, 0.9], reference: null },
+  { key: 'bbb', label: 'BBB', range: [0.76, 1.0], rule: '0.7955–0.9955', allowed: [0.7955, 0.9955], reference: 0.8955 },
+  { key: 'caco2', label: 'Caco-2', range: [-5.45, -4.95], rule: '≥ −5.3649', allowed: [-5.3649, -4.95], reference: -5.0649 },
+  { key: 'cyp3a4', label: 'CYP3A4', range: [0.44, 0.68], rule: '≤ 0.6322', allowed: [0.44, 0.6322], reference: 0.5322 },
+  { key: 'herg', label: 'hERG', range: [0.94, 1.10], rule: '≤ 1.0739', allowed: [0.94, 1.0739], reference: 0.9739 },
+  { key: 'similarity', label: 'Similarity', range: [0.65, 1.02], rule: '≥ 0.70', allowed: [0.7, 1.02], reference: 1.0000 },
+  { key: 'hardConstraints', label: 'Hard constraints', range: [0, 12], rule: 'all 12', allowed: [12, 12], reference: 12 },
+] as const;
+
+const position = (value: number, range: readonly number[]) => `${Math.max(0, Math.min(100, (value - range[0]) / (range[1] - range[0]) * 100))}%`;
+type PropertyKey = typeof properties[number]['key'];
+const valueFor = (stage: typeof stages[number], key: PropertyKey) => stage[key];
+const stateFor = (stage: typeof stages[number], key: PropertyKey) => {
+  const value = valueFor(stage, key);
+  if (value === null) return null;
+  if (key === 'ames') return value <= 0.5508;
+  if (key === 'binding') return value > 0.7;
+  if (key === 'bbb') return value >= 0.7955 && value <= 0.9955;
+  if (key === 'caco2') return value >= -5.3649;
+  if (key === 'cyp3a4') return value <= 0.6322;
+  if (key === 'herg') return value <= 1.0739;
+  if (key === 'similarity') return value >= 0.7;
+  return value === 12;
+};
+const formatValue = (value: number | null, key: PropertyKey) => value === null ? '—' : key === 'hardConstraints' ? `${value} / 12` : value.toFixed(4);
+const resultLabel = (stage: typeof stages[number], key: PropertyKey) => {
+  const value = valueFor(stage, key);
+  const passed = stateFor(stage, key);
+  if (passed === null || value === null) return 'not evaluated';
+  if (passed) return '✓ Pass';
+  if (key === 'binding') return `× Fail −${(0.7 - value).toFixed(4)}`;
+  if (key === 'bbb') return `× Fail −${(0.7955 - value).toFixed(4)}`;
+  return '× Fail';
+};
+const measurementStages = stages.slice(1).map((stage, candidateIndex) => ({
+  index: candidateIndex + 1,
+  short: stage.short,
+  id: stage.id,
+  group: stage.group,
+  summary: stage.summary,
+  measurements: Object.fromEntries(properties.map(property => {
+    const value = valueFor(stage, property.key);
+    const state = stateFor(stage, property.key);
+    return [property.key, {
+      point: value === null ? '0%' : position(value, property.range),
+      value: formatValue(value, property.key),
+      state: state === null ? 'na' : state ? 'ok' : 'bad',
+      result: resultLabel(stage, property.key),
+    }];
+  })),
+}));
+const initialMeasurementStage = stages[1];
+---
+
+<lo-candidate-story data-view="story" data-stage="1">
+  <figure aria-label="Selected optimization milestones from a Cathepsin K Lead Optimization trajectory">
+    <FigureHeading
+      label="FIG. 12"
+      title="A successful trajectory follows the moving bottleneck"
+    />
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="Figure view">
+        <span class="eyebrow">View</span>
+        <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="story-view" data-view="story">Optimization Path</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="measurements-view" data-view="measurements">Measurements</button>
+      </div>
+      <span class="hint">select a milestone</span>
+    </div>
+
+    <nav class="timeline" aria-label="Selected trajectory milestones">
+      {stages.map((stage, index) => (
+        index === 0 ? (
+          <div class="timeline-anchor reference">
+            <i></i><span>{stage.short}</span><small>baseline</small>
+          </div>
+        ) : (
+          <button type="button" class:list={{ active: index === 1 }} data-stage-button={index} aria-current={index === 1 ? 'step' : undefined}>
+            <i></i><span>{stage.short}</span><small>{stage.id}</small>
+          </button>
+        )
+      ))}
+    </nav>
+    <p class="milestone-note">Milestones C01 through C03 mark the key steps selected for this visualization, corresponding to positions C005, C009, and C033 in the model sequence of generated candidates.</p>
+
+    <section id="story-view" class="story-view" role="tabpanel">
+      {stages.map((stage, index) => (
+        <div class="stage-scene" data-scene={index} hidden={index !== 1}>
+          {index === 0 ? (
+            <div class="reference-opening">
+              <div class="molecule-panel reference-panel">
+                <span class="panel-kicker">Reference · {stage.id}</span>
+                <span class="panel-role">optimization anchor</span>
+                <span class="large-group">{stage.group}</span>
+                <span class="molecule"><img src={stage.image.src} alt="2D structure of reference candidate C000" loading="eager" decoding="sync" /></span>
+              </div>
+              <div class="opening-task">
+                <span class="task-label">The task</span>
+                <div class="active-objective">
+                  <span>Optimize</span>
+                  <strong><b>Ames</b><em>0.6508</em><i>→ ≤ 0.5508</i><small>×</small></strong>
+                </div>
+                <div class="preserve-list">
+                  <span>While preserving</span>
+                  <dl>
+                    <div class="baseline-value"><dt>BBB</dt><dd><b>0.8955</b><small>pass</small></dd></div>
+                    <div class="baseline-value"><dt>Caco-2</dt><dd><b>−5.0649</b><small>pass</small></dd></div>
+                    <div class="baseline-value"><dt>CYP3A4</dt><dd><b>0.5322</b><small>pass</small></dd></div>
+                    <div class="baseline-value"><dt>hERG</dt><dd><b>0.9739</b><small>pass</small></dd></div>
+                    <div class="baseline-value"><dt>Binding</dt><dd><b>&gt; 0.70</b><small>pass</small></dd></div>
+                    <div class="baseline-value"><dt>Similarity</dt><dd><b>1.0000</b><small>pass</small></dd></div>
+                    <div class="baseline-value"><dt>Hard constraints</dt><dd><b>12 / 12</b><small>pass</small></dd></div>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div class="comparison">
+              <div class="molecule-panel reference-panel">
+                <span class="panel-kicker">Reference · C000</span>
+                <span class="panel-role">optimization anchor</span>
+                <span class="large-group">–CN</span>
+                <span class="molecule"><img src={c000.src} alt="2D structure of reference candidate C000" loading="eager" decoding="sync" /></span>
+                <span class="anchor-result">Ames <b>0.6508</b> ×</span>
+              </div>
+              <div class="transformation" aria-label={`Changed group: nitrile to ${stage.groupName}`}>
+                <span><b>–CN</b><i>→</i><strong>{stage.group}</strong></span>
+                <small class="transformation-roles"><span>reference</span><span>selected candidate</span></small>
+                <p>nitrile → {stage.groupName}</p>
+                {stage.relative && <em>{stage.relative}</em>}
+              </div>
+              <div class="molecule-panel candidate-panel">
+                <span class="panel-kicker">{stage.short} · {stage.id}</span>
+                <span class="panel-role">selected milestone</span>
+                <span class="large-group">{stage.group}</span>
+                <span class="molecule"><img src={stage.image.src} alt={`2D structure of candidate ${stage.id}`} loading="eager" decoding="sync" /></span>
+                <span class="candidate-summary">
+                  {stage.pass ? stage.summary : stage.id === 'C005' ? <>Ames is fixed, but <em>binding is lost.</em></> : stage.id === 'C009' ? <>Binding is restored, but <em>BBB becomes the next bottleneck.</em></> : stage.summary}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div class:list={['transition-story', { opening: index === 0 }]}>
+            <article class="trace-card hypothesis">
+              <header><b>Model · {index === 0 ? 'identifies problem' : `before ${stage.id}`}</b><small>turn {stage.hypothesisTurn}</small></header>
+              <q>{stage.hypothesis}</q>
+              <div class="why"><span>{index === 0 ? 'Model’s plan' : 'Why this candidate?'}</span><p>{stage.rationale}</p></div>
+            </article>
+
+            {index !== 0 && <article class="result-card">
+              <span class="section-label">{index === 0 ? 'Task requirement' : 'Evaluation result'}</span>
+              <dl>
+                {stage.results.map(result => (
+                  <div class:list={[result.state, { 'near-miss': 'nearMiss' in result && result.nearMiss }]}>
+                    <dt>{result.label}<small>{result.context}</small></dt>
+                    <dd>{result.value}<i>{result.state === 'ok' ? '✓ pass' : '× fail'}</i></dd>
+                    {'nearMiss' in result && result.nearMiss && <p>missed by <b>0.0056</b></p>}
+                  </div>
+                ))}
+              </dl>
+              <strong class:list={['editorial-summary', { success: stage.pass }]}>
+                {stage.pass ? stage.summary : stage.id === 'C005' ? <>Ames is fixed, but <em>binding is lost.</em></> : stage.id === 'C009' ? <>Binding is restored, but <em>BBB becomes the next bottleneck.</em></> : stage.summary}
+              </strong>
+              {stage.pass && <p class="remaining">Ames ✓ · Binding ✓ · BBB ✓ · Caco-2 ✓ · CYP3A4 ✓ · hERG ✓ · similarity ✓ · hard constraints ✓</p>}
+            </article>}
+
+            {stage.interpretation && (
+              <article class="trace-card interpretation">
+                <header><b>Model · after {stage.id}</b><small>turn {stage.interpretationTurn}</small></header>
+                <q>{stage.interpretation}</q>
+                <div class="next-bottleneck"><span>{stage.pass ? 'Decision' : 'Next bottleneck'}</span><p>{stage.summary}</p></div>
+              </article>
+            )}
+          </div>
+        </div>
+      ))}
+
+      <div class="story-controls">
+        <button type="button" class="previous">← Previous</button>
+        <span class="progress">2 / 4</span>
+        <button type="button" class="next">Next: C02 →</button>
+      </div>
+    </section>
+
+    <section id="measurements-view" class="measurements-view" role="tabpanel" hidden>
+      <p class="measurement-intro"><i></i> Reference baseline <span></span> selected candidate · shaded regions satisfy the task requirement</p>
+      <div class="measurement-panels">
+        <div class="measurement-panel">
+          <header class="measurement-candidate">
+            <div><strong data-measurement-title>{initialMeasurementStage.short} · {initialMeasurementStage.group} · {initialMeasurementStage.id}</strong><small>selected milestone</small></div>
+            <p data-measurement-summary>{initialMeasurementStage.summary}</p>
+          </header>
+          <div class="constraint-head" aria-hidden="true">
+            <span>Constraint</span><span>Reference</span><span>Shared scale</span><span data-measurement-short>{initialMeasurementStage.short}</span><span>Requirement</span><span>Result</span>
+          </div>
+          <div class="constraint-rows">
+            {properties.map(property => {
+              const value = valueFor(initialMeasurementStage, property.key);
+              const state = stateFor(initialMeasurementStage, property.key);
+              return (
+                <div class="constraint-row" data-measurement-key={property.key}>
+                  <strong>{property.label}</strong>
+                  <span class="reference-value">{formatValue(property.reference, property.key)}</span>
+                  <span class="constraint-axis" style={`--allowed-start:${position(property.allowed[0], property.range)};--allowed-end:${position(property.allowed[1], property.range)};--reference:${property.reference === null ? '0%' : position(property.reference, property.range)};--point:${value === null ? '0%' : position(value, property.range)}`}>
+                    <i class="allowed"></i>
+                    {property.reference !== null && <i class="reference-marker"></i>}
+                    {value !== null && <i class:list={['candidate-marker', state ? 'ok' : 'bad']}></i>}
+                  </span>
+                  <span class:list={['candidate-value', state === null ? 'na' : state ? 'ok' : 'bad']}>{formatValue(value, property.key)}</span>
+                  <span class="requirement">{property.rule}</span>
+                  <span class:list={['constraint-result', state === null ? 'na' : state ? 'ok' : 'bad']}>{resultLabel(initialMeasurementStage, property.key)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div class="boundary-note" data-boundary-note hidden><b>C02</b> misses the BBB lower bound by <b>0.0056</b>.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="annotation">The model repairs one requirement, reads the new evidence, and shifts to the next bottleneck.</div>
+    <figcaption class="editorial-figure-caption">
+      <span class="caption-lead">This successful trajectory repeatedly identifies and repairs the current bottleneck.</span> In this structure–activity relationship (SAR)<Sidenote number="7">Structure–activity relationship (SAR) describes how changes to a molecule’s chemical structure affect its measured or predicted properties.</Sidenote> sequence for Cathepsin K<Sidenote number="8">Cathepsin K is the protein target in this example.</Sidenote>, replacing the reference nitrile with dimethylamino reduced predicted mutagenicity (<b>Ames</b>) but disrupted binding. A hydroxymethyl analog restored binding but narrowly missed the <b>blood–brain barrier (BBB) permeability</b> window. One-carbon homologation crossed the BBB boundary while retaining the earlier gains, producing a candidate that passed every requirement.
+    </figcaption>
+  </figure>
+  <script is:inline type="application/json" class="stage-data" set:html={JSON.stringify(stages.map(({ image, ...stage }) => stage))} />
+  <script is:inline type="application/json" class="measurement-data" set:html={JSON.stringify(measurementStages)} />
+</lo-candidate-story>
+
+<script>
+  class LoCandidateStory extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready) return;
+      this.dataset.ready = 'true';
+      const stages = JSON.parse(this.querySelector('.stage-data')!.textContent!);
+      const measurementData = JSON.parse(this.querySelector('.measurement-data')!.textContent!);
+      const timelineButtons = [...this.querySelectorAll<HTMLButtonElement>('[data-stage-button]')];
+      const timelineAnchor = this.querySelector<HTMLElement>('.timeline-anchor')!;
+      const scenes = [...this.querySelectorAll<HTMLElement>('[data-scene]')];
+      const measurementRows = [...this.querySelectorAll<HTMLElement>('[data-measurement-key]')];
+      const measurementTitle = this.querySelector<HTMLElement>('[data-measurement-title]')!;
+      const measurementSummary = this.querySelector<HTMLElement>('[data-measurement-summary]')!;
+      const measurementShort = this.querySelector<HTMLElement>('[data-measurement-short]')!;
+      const boundaryNote = this.querySelector<HTMLElement>('[data-boundary-note]')!;
+      const tabs = [...this.querySelectorAll<HTMLButtonElement>('.tab')];
+      const story = this.querySelector<HTMLElement>('.story-view')!;
+      const measurements = this.querySelector<HTMLElement>('.measurements-view')!;
+      const previous = this.querySelector<HTMLButtonElement>('.previous')!;
+      const next = this.querySelector<HTMLButtonElement>('.next')!;
+      const progress = this.querySelector<HTMLElement>('.progress')!;
+      let selected = 1;
+
+      const setStage = (index: number) => {
+        selected = Math.max(0, Math.min(stages.length - 1, index));
+        this.dataset.stage = String(selected);
+        timelineAnchor.classList.toggle('active', selected === 0);
+        timelineButtons.forEach(button => {
+          const active = Number(button.dataset.stageButton) === selected;
+          button.classList.toggle('active', active);
+          if (active) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
+        });
+        scenes.forEach((scene, sceneIndex) => scene.hidden = sceneIndex !== selected);
+        const measurement = measurementData.find((item: { index: number }) => item.index === selected);
+        if (measurement) {
+          measurementTitle.textContent = `${measurement.short} · ${measurement.group} · ${measurement.id}`;
+          measurementSummary.textContent = measurement.summary;
+          measurementShort.textContent = measurement.short;
+          measurementRows.forEach(row => {
+            const key = row.dataset.measurementKey!;
+            const update = measurement.measurements[key];
+            row.querySelector<HTMLElement>('.constraint-axis')!.style.setProperty('--point', update.point);
+            const marker = row.querySelector<HTMLElement>('.candidate-marker');
+            if (marker) {
+              marker.classList.remove('ok', 'bad', 'na');
+              marker.classList.add(update.state);
+            }
+            const value = row.querySelector<HTMLElement>('.candidate-value')!;
+            value.textContent = update.value;
+            value.classList.remove('ok', 'bad', 'na');
+            value.classList.add(update.state);
+            const result = row.querySelector<HTMLElement>('.constraint-result')!;
+            result.textContent = update.result;
+            result.classList.remove('ok', 'bad', 'na');
+            result.classList.add(update.state);
+          });
+          boundaryNote.hidden = measurement.id !== 'C009';
+        }
+        previous.disabled = selected === 0;
+        next.disabled = selected === stages.length - 1;
+        next.textContent = selected === 0 ? 'Begin optimization →' : selected === stages.length - 1 ? 'Complete' : `Next: ${stages[selected + 1].short} →`;
+        progress.textContent = `${selected + 1} / ${stages.length}`;
+      };
+
+      timelineButtons.forEach(button => {
+        const stageIndex = Number(button.dataset.stageButton);
+        button.addEventListener('click', () => setStage(stageIndex));
+        button.addEventListener('keydown', event => {
+          if (event.key === 'ArrowRight') { event.preventDefault(); const nextIndex = Math.min(stageIndex + 1, stages.length - 1); setStage(nextIndex); timelineButtons.find(item => Number(item.dataset.stageButton) === nextIndex)?.focus(); }
+          if (event.key === 'ArrowLeft') { event.preventDefault(); const previousIndex = Math.max(stageIndex - 1, 1); setStage(previousIndex); timelineButtons.find(item => Number(item.dataset.stageButton) === previousIndex)?.focus(); }
+        });
+      });
+      previous.addEventListener('click', () => setStage(selected - 1));
+      next.addEventListener('click', () => setStage(selected + 1));
+      tabs.forEach(tab => tab.addEventListener('click', () => {
+        const showStory = tab.dataset.view === 'story';
+        if (!showStory && selected === 0) setStage(1);
+        tabs.forEach(item => {
+          const active = item === tab;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-selected', String(active));
+        });
+        story.hidden = !showStory;
+        measurements.hidden = showStory;
+        this.dataset.view = showStory ? 'story' : 'measurements';
+      }));
+      setStage(1);
+    }
+
+    disconnectedCallback() { delete this.dataset.ready; }
+  }
+  if (!customElements.get('lo-candidate-story')) customElements.define('lo-candidate-story', LoCandidateStory);
+</script>
+
+<style>
+  lo-candidate-story { --reference-color:#ba7866; --failure-color:#a64234; display:block; width:min(var(--wide-width), var(--breakout-max-width, calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); font:13px/1.5 var(--font-sans); }
+  figure { margin:0; }
+  button { color:inherit; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 22px; }
+  .tabs { display:flex; align-items:center; gap:15px; }
+  .eyebrow { color:var(--color-ink-soft); font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
+  .tab { padding:0 0 4px; border:0; border-bottom:1px solid transparent; background:none; color:var(--color-ink-soft); font:12px/1.4 var(--font-sans); cursor:pointer; }
+  .tab.active { border-color:#087c83; color:#087c83; }
+  .tab:focus-visible, .timeline button:focus-visible, .story-controls button:focus-visible { outline:2px solid #087c83; outline-offset:4px; }
+  .hint { color:var(--color-ink-soft); font-size:13px; }
+  .timeline { display:grid; grid-template-columns:repeat(4,1fr); margin:0 8% 7px; }
+  .timeline button, .timeline-anchor { position:relative; display:flex; min-width:0; flex-direction:column; align-items:center; border:0; padding:0; background:none; color:var(--color-ink-soft); font:11px/1.2 var(--font-mono); }
+  .timeline button { cursor:pointer; }
+  .timeline button:not(:last-child)::after, .timeline-anchor:not(:last-child)::after { position:absolute; z-index:-1; top:4px; left:50%; width:100%; border-top:1px dashed #b8b4aa; content:''; }
+  .timeline i { width:7px; height:7px; border:1px solid #9c998f; border-radius:50%; background:var(--color-paper); }
+  .timeline i { transition:border-color .45s ease, background-color .45s ease, box-shadow .45s ease; }
+  .timeline span { margin-top:5px; }
+  .timeline small { margin-top:2px; color:#aaa69c; font:10px/1 var(--font-mono); }
+  .timeline .active { color:#087c83; }
+  .timeline .active i { border-color:#087c83; background:#087c83; box-shadow:0 0 0 3px var(--color-paper), 0 0 0 4px #087c8355; }
+  .timeline .reference { color:var(--reference-color); }
+  .timeline .reference i, .timeline .reference.active i { border-color:var(--reference-color); background:var(--reference-color); box-shadow:0 0 0 3px var(--color-paper), 0 0 0 4px color-mix(in srgb, var(--reference-color) 34%, transparent); }
+  .milestone-note { margin:0 0 13px; color:var(--color-ink-soft); font:9.5px/1.45 var(--font-mono); text-align:center; opacity:.8; }
+  .story-view { border-top:1px solid var(--color-line); }
+  .story-view[hidden], .measurements-view[hidden], .stage-scene[hidden], .measurement-panel[hidden] { display:none; }
+  .comparison { display:grid; grid-template-columns:minmax(260px,1fr) 150px minmax(260px,1fr); gap:18px; align-items:center; min-height:302px; }
+  .reference-opening { display:grid; grid-template-columns:minmax(340px,1.1fr) minmax(300px,.9fr); gap:44px; align-items:center; max-width:920px; min-height:340px; margin:0 auto; }
+  .molecule-panel { position:relative; min-width:0; padding:16px; }
+  .reference-panel { background:color-mix(in srgb, var(--reference-color) 3%, transparent); }
+  .candidate-panel { animation:candidate-in .3s ease both; }
+  .panel-kicker { display:flex; align-items:center; gap:7px; color:#087c83; font:700 12px/1.4 var(--font-mono); text-transform:uppercase; }
+  .panel-kicker::before { width:5px; height:5px; flex:0 0 auto; background:currentColor; content:''; }
+  .reference-panel .panel-kicker { color:var(--reference-color); }
+  .panel-role { display:block; margin-top:2px; color:var(--color-ink-soft); font:10px/1.3 var(--font-mono); }
+  .large-group { display:block; position:absolute; top:17px; right:16px; color:#087c83; font:650 21px/1 var(--font-mono); }
+  .reference-panel .large-group { color:var(--reference-color); }
+  .molecule { display:flex; height:218px; align-items:center; justify-content:center; }
+  .molecule img { display:block; width:100%; max-width:355px; height:auto; }
+  .anchor-result, .candidate-summary { display:block; border-top:1px solid var(--color-line); padding-top:8px; font-size:12px; }
+  .anchor-result { color:var(--failure-color); }
+  .anchor-result b { font:550 12px/1 var(--font-mono); }
+  .candidate-summary { color:var(--color-ink); font-weight:650; }
+  .candidate-summary em { color:var(--failure-color); font-style:normal; }
+  .transformation { text-align:center; }
+  .transformation > span { display:flex; align-items:center; justify-content:center; gap:10px; font:650 18px/1.2 var(--font-mono); }
+  .transformation b { color:var(--reference-color); }
+  .transformation strong { color:#087c83; font:inherit; }
+  .transformation i { color:var(--color-ink-soft); font-style:normal; }
+  .transformation-roles { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:6px; color:var(--color-ink-soft); font:10px/1.3 var(--font-mono); }
+  .transformation-roles span:first-child { text-align:right; }
+  .transformation-roles span:last-child { text-align:left; }
+  .transformation p { margin:8px 0 0; color:var(--color-ink-soft); font:10px/1.4 var(--font-mono); }
+  .transformation em { display:block; margin-top:12px; color:#087c83; font:11px/1.4 var(--font-mono); font-style:normal; }
+  .opening-task { padding:7px 0; }
+  .task-label { display:block; margin-bottom:14px; color:var(--color-ink); font:700 11px/1.3 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+  .active-objective { padding-bottom:15px; border-bottom:1px solid var(--color-line); }
+  .active-objective > span, .preserve-list > span { display:block; margin-bottom:6px; color:var(--failure-color); font:700 10px/1.3 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .active-objective strong { display:grid; grid-template-columns:auto auto 1fr auto; gap:8px; align-items:baseline; color:var(--failure-color); }
+  .active-objective strong > b { font:24px/1.15 var(--font-serif); }
+  .active-objective strong > em { font:650 17px/1 var(--font-mono); font-style:normal; }
+  .active-objective strong > i { font:12px/1.3 var(--font-mono); font-style:normal; }
+  .active-objective strong > small { font:700 13px/1 var(--font-sans); }
+  .preserve-list { padding-top:14px; }
+  .preserve-list > span { color:var(--color-ink-soft); }
+  .preserve-list dl { display:grid; gap:2px; margin:0; }
+  .preserve-list dl > div { display:grid; grid-template-columns:96px minmax(0,1fr); gap:10px; padding:2px 0; }
+  .preserve-list dt, .preserve-list dd { margin:0; font-size:11px; }
+  .preserve-list dt { color:var(--color-ink); }
+  .preserve-list dd { color:var(--color-ink-soft); text-align:right; }
+  .preserve-list .baseline-value dd { display:flex; justify-content:flex-end; gap:7px; align-items:baseline; }
+  .preserve-list .baseline-value dd b { color:var(--color-ink); font:500 11px/1 var(--font-mono); }
+  .preserve-list .baseline-value dd small { color:var(--color-ink-soft); font:10px/1 var(--font-mono); text-transform:uppercase; }
+  .preserve-list .baseline-value dd small::before { content:'✓ '; }
+  .transition-story { display:grid; box-sizing:border-box; grid-template-columns:minmax(0,1fr) minmax(250px,.8fr) minmax(0,1fr); gap:20px; border-top:1px solid var(--color-line); padding:18px 10px 8px; animation:story-in .28s ease both; }
+  .transition-story.opening { grid-template-columns:minmax(0,1fr); }
+  .transition-story.opening .trace-card { max-width:720px; }
+  .trace-card { border-top:1px solid var(--color-line); padding:9px 0 7px; }
+  .trace-card header { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; }
+  .trace-card header b, .section-label, .why span, .next-bottleneck span { color:#087c83; font:700 10px/1.3 var(--font-mono); letter-spacing:.07em; text-transform:uppercase; }
+  .trace-card header b::before { display:inline-block; width:7px; margin:0 6px 2px 0; border-top:1px solid #087c83; content:''; }
+  .trace-card header small { color:var(--color-ink-soft); font:10px/1.3 var(--font-mono); }
+  .trace-card q { display:block; font:12px/1.55 var(--font-serif); }
+  .why, .next-bottleneck { border-top:1px solid var(--color-line); padding-top:7px; margin-top:10px; }
+  .why p, .next-bottleneck p { margin:3px 0 0; color:var(--color-ink-soft); font-size:11px; }
+  .result-card { min-width:0; }
+  .section-label { display:block; margin-bottom:7px; }
+  .result-card dl { display:grid; gap:1px; margin:0; }
+  .result-card dl > div { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:4px 0; }
+  .result-card dt, .result-card dd { margin:0; }
+  .result-card dt { font-size:11px; }
+  .result-card dt small { display:block; color:var(--color-ink-soft); font:10px/1.3 var(--font-mono); }
+  .result-card dd { text-align:right; font:550 12px/1.4 var(--font-mono); }
+  .result-card dd i { display:block; font:700 10px/1.2 var(--font-sans); font-style:normal; text-transform:uppercase; }
+  .result-card .ok dd { color:#087c83; }
+  .result-card .bad dd { color:var(--failure-color); }
+  .result-card .near-miss p { grid-column:1 / -1; margin:0; color:var(--failure-color); font:11px/1.3 var(--font-mono); }
+  .editorial-summary { display:block; border-top:1px solid var(--color-line); padding-top:9px; margin-top:8px; color:var(--color-ink); font:17px/1.25 var(--font-serif); }
+  .editorial-summary em { color:var(--failure-color); font-style:normal; }
+  .editorial-summary.success { color:var(--color-ink); letter-spacing:0; }
+  .remaining { margin:5px 0 0; color:#087c83; font:10px/1.4 var(--font-mono); }
+  .story-controls { box-sizing:border-box; display:flex; justify-content:flex-end; align-items:center; gap:14px; padding:12px 10px 0; }
+  .story-controls button { min-width:95px; border:1px solid var(--color-line); border-radius:4px; padding:7px 10px; background:var(--color-paper-raised); color:var(--color-ink); font:12px/1.2 var(--font-sans); cursor:pointer; }
+  .story-controls button:disabled { opacity:.4; cursor:default; }
+  .progress { color:var(--color-ink-soft); font:11px/1 var(--font-mono); }
+  .measurements-view { box-sizing:border-box; border-top:1px solid var(--color-line); padding:14px 12px 0; animation:story-in .28s ease both; }
+  .measurement-intro { display:flex; align-items:center; gap:6px; margin:0 0 14px; color:var(--color-ink-soft); font:11px/1.4 var(--font-mono); }
+  .measurement-intro i { width:6px; height:6px; margin:0 2px; border:1px solid var(--reference-color); transform:rotate(45deg); }
+  .measurement-intro span { width:7px; height:7px; margin-left:10px; border-radius:50%; background:#087c83; }
+  .measurement-panel { animation:candidate-in .28s ease both; }
+  .measurement-candidate { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; border-block:1px solid var(--color-line); padding:10px 0; margin-bottom:13px; }
+  .measurement-candidate strong { display:flex; align-items:center; gap:8px; color:#087c83; font:650 16px/1.2 var(--font-mono); }
+  .measurement-candidate strong::before { width:5px; height:5px; flex:0 0 auto; background:#087c83; content:''; }
+  .measurement-candidate small { display:block; margin-top:3px; color:var(--color-ink-soft); font:10px/1.3 var(--font-mono); }
+  .measurement-candidate p { margin:0; color:var(--color-ink); font:15px/1.3 var(--font-serif); text-align:right; }
+  .constraint-head, .constraint-row { display:grid; grid-template-columns:110px 74px minmax(180px,1fr) 72px 112px 104px; gap:12px; align-items:center; }
+  .constraint-head { padding:0 8px 6px; color:var(--color-ink-soft); font:10px/1.2 var(--font-mono); letter-spacing:.05em; text-transform:uppercase; }
+  .constraint-head span:nth-child(2), .constraint-head span:nth-child(4), .constraint-head span:nth-child(6) { text-align:right; }
+  .constraint-row { min-height:31px; border-top:1px solid var(--color-line); padding:3px 8px; }
+  .constraint-row > strong { color:var(--color-ink); font-size:12px; }
+  .reference-value, .candidate-value, .requirement, .constraint-result { font:10px/1.25 var(--font-mono); }
+  .reference-value { color:var(--reference-color); text-align:right; opacity:.78; }
+  .candidate-value, .constraint-result { text-align:right; transition:color .45s ease; }
+  .requirement { color:var(--color-ink-soft); }
+  .constraint-result { font-weight:700; white-space:nowrap; text-transform:uppercase; }
+  .constraint-axis { position:relative; height:20px; }
+  .constraint-axis::before { position:absolute; right:0; bottom:7px; left:0; border-top:1px solid #bdb9af; content:''; }
+  .constraint-axis .allowed { position:absolute; left:var(--allowed-start); right:calc(100% - var(--allowed-end)); bottom:6px; min-width:2px; height:4px; background:#a6ceca; opacity:.72; }
+  .reference-marker { position:absolute; z-index:1; left:var(--reference); bottom:7px; width:6px; height:6px; border:1px solid var(--reference-color); background:var(--color-paper); transform:translate(-50%, 50%) rotate(45deg); }
+  .candidate-marker { position:absolute; z-index:2; left:var(--point); bottom:7px; width:7px; height:7px; border:1px solid var(--color-paper); border-radius:50%; background:currentColor; box-shadow:0 0 0 1px currentColor; transform:translate(-50%, 50%); transition:left .58s cubic-bezier(.22,.75,.22,1), color .35s ease, background-color .35s ease, box-shadow .35s ease; }
+  .ok { color:#087c83; }
+  .bad { color:var(--failure-color); }
+  .na { color:#96928a; }
+  .boundary-note { border-top:1px solid var(--color-line); padding-top:10px; margin-top:16px; color:var(--failure-color); font-size:12px; }
+  .boundary-note b { font-family:var(--font-mono); }
+  .annotation { border-top:1px solid var(--color-line); padding-top:14px; margin-top:22px; color:#087c83; font-size:12px; }
+  .editorial-figure-caption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
+  .caption-lead { color:var(--color-ink); font-weight:650; }
+  @keyframes candidate-in { from { opacity:.1; transform:translateY(3px); } to { opacity:1; transform:none; } }
+  @keyframes story-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  @media (max-width:820px) {
+    .comparison { grid-template-columns:1fr 92px 1fr; gap:8px; }
+    .molecule-panel { padding:12px 8px; }
+    .large-group { top:14px; right:8px; font-size:16px; }
+    .molecule { height:190px; }
+    .transition-story { grid-template-columns:1fr 1fr; }
+    .interpretation { grid-column:1 / -1; }
+    .constraint-head, .constraint-row { grid-template-columns:90px 66px minmax(130px,1fr) 66px 100px 94px; gap:8px; }
+  }
+  @media (max-width:580px) {
+    .timeline { margin:0 0 7px; }
+    .timeline small { display:none; }
+    .comparison, .reference-opening { grid-template-columns:1fr; gap:10px; }
+    .reference-opening { min-height:0; }
+    .comparison .reference-panel { display:none; }
+    .transformation { grid-row:1; padding:13px 0 4px; }
+    .molecule { height:195px; }
+    .transition-story, .transition-story.opening { grid-template-columns:1fr; }
+    .interpretation { grid-column:auto; }
+    .story-controls { justify-content:space-between; }
+    .story-controls button { min-width:0; }
+    .measurement-candidate { align-items:flex-start; flex-direction:column; gap:5px; }
+    .measurement-candidate p { text-align:left; }
+    .constraint-head { display:none; }
+    .constraint-row { grid-template-columns:95px 1fr 78px; gap:5px 8px; padding:8px 4px; }
+    .constraint-row > strong { grid-column:1; }
+    .reference-value { grid-column:2; text-align:left; }
+    .candidate-value { grid-column:3; }
+    .constraint-axis { grid-column:1 / -1; grid-row:2; }
+    .requirement { grid-column:1 / 3; grid-row:3; }
+    .constraint-result { grid-column:3; grid-row:3; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .candidate-panel, .transition-story, .measurements-view, .measurement-panel { animation:none; }
+    .candidate-marker, .candidate-value, .constraint-result, .timeline i { transition:none; }
+  }
+</style>

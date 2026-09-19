@@ -1,0 +1,134 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+
+const outcomes = [
+  { label: 'Coordinate-only matches', v1: 19, v2: 47, interpretation: 'Spatial recovery' },
+  { label: 'Type-compatible matches', v1: 10, v2: 30, interpretation: 'Full benchmark match' },
+  { label: 'Wrong-region points', v1: 46, v2: 16, interpretation: 'Lower is better' },
+];
+
+const supportGroups = [
+  { label: 'No supporting probe', note: '0 probes', matched: 3, total: 13, kind: 'baseline' },
+  { label: 'One supporting probe', note: '1 probe', matched: 3, total: 16, kind: 'baseline' },
+  { label: 'Two or more probes', note: '2+ probes', matched: 24, total: 46, kind: 'recurrent' },
+].map(group => ({ ...group, rate: group.matched / group.total * 100 }));
+
+const totalPoints = supportGroups.reduce((sum, group) => sum + group.total, 0);
+const totalMatched = supportGroups.reduce((sum, group) => sum + group.matched, 0);
+if (totalPoints !== 75 || totalMatched !== 30) {
+  throw new Error('FIG. 9 recurrence counts no longer match the audited 75-point endpoint run.');
+}
+---
+
+<ipd-recurrence-figure data-view="recurrence">
+  <figure aria-label="How V2 changes interaction-point recovery and why repeated probe support matters">
+    <FigureHeading
+      label="FIG. 9"
+      title="Points supported by multiple probes are much more likely to match"
+      subtitle="Qwen 3.5 9B · 25 IPD tasks · 75 submitted points"
+    />
+
+    <div class="view-controls">
+      <span>VIEW</span>
+      <div role="tablist" aria-label="Choose interaction-point mechanism view">
+        <button type="button" role="tab" id="ipd-location-tab" aria-selected="false" aria-controls="ipd-location-panel" tabindex="-1" data-target="location">Where V2 helps</button>
+        <button type="button" role="tab" id="ipd-recurrence-tab" aria-selected="true" aria-controls="ipd-recurrence-panel" data-target="recurrence">Why recurrence matters</button>
+      </div>
+    </div>
+
+    <section id="ipd-location-panel" class="view-panel location-panel" role="tabpanel" aria-labelledby="ipd-location-tab" hidden>
+      <div class="method-key" aria-label="Method legend"><span class="v1-key">V1</span><span class="v2-key">V2</span></div>
+      <div class="outcome-chart" aria-label="V1 and V2 point outcomes out of 75">
+        {outcomes.map(outcome => (
+          <article>
+            <header><strong>{outcome.label}</strong><small>{outcome.interpretation}</small></header>
+            <div class="paired-bars">
+              <div class="bar-row v1-row">
+                <span>V1</span><div class="bar-track"><i style={`width:${outcome.v1 / 75 * 100}%`}></i></div><b>{outcome.v1} / 75</b>
+              </div>
+              <div class="bar-row v2-row">
+                <span>V2</span><div class="bar-track"><i style={`width:${outcome.v2 / 75 * 100}%`}></i></div><b>{outcome.v2} / 75</b>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="takeaway">V2 produces a large spatial gain; feature typing accounts for much of the remaining gap.</p>
+      <figcaption><strong>V2 mainly improves where the predicted points land.</strong> It more than doubles coordinate-level recovery and cuts wrong-region predictions from 46 to 16. The remaining gap between 47 coordinate hits and 30 fully compatible matches is largely feature typing.</figcaption>
+    </section>
+
+    <section id="ipd-recurrence-panel" class="view-panel recurrence-panel" role="tabpanel" aria-labelledby="ipd-recurrence-tab">
+      <div class="radius-note"><span>SUPPORT RADIUS</span><strong>1.5 Å</strong></div>
+      <div class="support-comparison" aria-label="Match rate by distinct probe support">
+        <header><span>Support for the submitted point</span><span>Matched hidden interaction point</span></header>
+        {supportGroups.map(group => (
+          <article class={group.kind}>
+            <div class="group-label"><strong>{group.label}</strong><small>{group.note}</small></div>
+            <div class="bar-cell" aria-label={`${group.matched} of ${group.total} predictions matched, ${group.rate.toFixed(1)} percent`}>
+              <div class="bar-track"><i style={`width:${group.rate}%`}></i></div>
+              <span><b>{group.matched} / {group.total}</b><em>{group.rate.toFixed(1)}%</em></span>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="support-definition">Support counts distinct probe molecules with a compatible extracted ligand feature near the submitted point.</p>
+      <p class="takeaway">A feature repeated across probes is more informative than a feature from any single predicted pose.</p>
+      <figcaption><strong>Spatial recurrence, rather than probe count alone, is the useful signal.</strong> At a 1.5 Å support radius, 24/46 points supported by at least two distinct probes matched a hidden point, compared with 3/16 single-probe points and 3/13 unsupported points. These are descriptive counts from one archived endpoint run; they show association, not a controlled causal effect.</figcaption>
+    </section>
+  </figure>
+</ipd-recurrence-figure>
+
+<script>
+  class IpdRecurrenceFigure extends HTMLElement {
+    cleanup?: () => void;
+    connectedCallback() {
+      this.cleanup?.();
+      const controller = new AbortController();
+      const { signal } = controller;
+      const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+      const panels = [...this.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+      const title = this.querySelector<HTMLElement>('.editorial-figure-heading .title');
+      const titles = {
+        location: 'V2 mainly improves where the predicted points land',
+        recurrence: 'Points supported by multiple probes are much more likely to match',
+      };
+
+      const selectView = (view: 'location' | 'recurrence', focus = false) => {
+        this.dataset.view = view;
+        if (title) title.textContent = titles[view];
+        tabs.forEach(tab => {
+          const active = tab.dataset.target === view;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+          if (active && focus) tab.focus();
+        });
+        panels.forEach(panel => { panel.hidden = panel.id !== `ipd-${view}-panel`; });
+      };
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => selectView(tab.dataset.target as 'location' | 'recurrence'), { signal });
+        tab.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const next = event.key === 'Home' || event.key === 'ArrowLeft' ? 0 : tabs.length - 1;
+          selectView(tabs[next].dataset.target as 'location' | 'recurrence', true);
+        }, { signal });
+      });
+      this.cleanup = () => controller.abort();
+    }
+    disconnectedCallback() { this.cleanup?.(); }
+  }
+  if (!customElements.get('ipd-recurrence-figure')) customElements.define('ipd-recurrence-figure', IpdRecurrenceFigure);
+</script>
+
+<style>
+  ipd-recurrence-figure :global(.editorial-figure-heading){row-gap:4px}
+  ipd-recurrence-figure :global(.editorial-figure-heading .subtitle){flex-basis:100%}
+  ipd-recurrence-figure{--accent:#087c83;--accent-soft:#d8ebe8;--baseline:#aaa9a3;display:block;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));max-width:calc(100vw - 2 * var(--page-gutter));box-sizing:border-box;margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:14px/1.5 var(--font-sans)}
+  figure{margin:0}[hidden]{display:none!important}.view-controls{display:flex;align-items:center;gap:12px;margin:-7px 0 24px}.view-controls>span{color:var(--color-ink-soft);font:700 8px/1 var(--font-mono);letter-spacing:.08em}.view-controls [role="tablist"]{display:flex;border:1px solid var(--color-line)}.view-controls button{padding:7px 13px;border:0;background:transparent;color:var(--color-ink-soft);font:600 9px/1.2 var(--font-mono);cursor:pointer}.view-controls button+button{border-left:1px solid var(--color-line)}.view-controls button[aria-selected="true"]{background:var(--color-ink);color:var(--color-paper)}.view-controls button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.view-panel{animation:reveal .15s ease-out}@keyframes reveal{from{opacity:.35}to{opacity:1}}
+  .method-key{display:flex;justify-content:flex-end;gap:18px;margin:0 4px 10px;color:var(--color-ink-soft);font:700 9px/1 var(--font-mono);letter-spacing:.05em}.method-key span::before{display:inline-block;width:18px;height:6px;margin-right:6px;content:'';vertical-align:1px}.v1-key::before{background:var(--baseline)}.v2-key::before{background:var(--accent)}
+  .outcome-chart{border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.outcome-chart>article{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(330px,1.5fr);gap:28px;align-items:center;padding:17px}.outcome-chart>article+article{border-top:1px solid var(--color-line)}.outcome-chart header strong,.outcome-chart header small{display:block}.outcome-chart header strong{font:600 12px/1.4 var(--font-mono);letter-spacing:.025em;text-transform:uppercase}.outcome-chart header small{margin-top:3px;color:var(--color-ink-soft);font:10px/1.4 var(--font-mono)}.paired-bars{display:grid;gap:8px}.bar-row{display:grid;grid-template-columns:22px minmax(120px,1fr) 56px;gap:11px;align-items:center}.bar-row>span{color:var(--color-ink-soft);font:700 9px/1 var(--font-mono)}.bar-row b{font:600 11px/1 var(--font-mono);text-align:right}.bar-track{height:8px;background:color-mix(in srgb,var(--color-line) 40%,transparent)}.bar-track i{display:block;min-width:2px;height:100%;background:var(--baseline)}.v2-row .bar-track i{background:var(--accent)}.v2-row b{color:var(--accent)}
+  .radius-note{display:flex;align-items:center;gap:9px;margin:0 0 10px;color:var(--color-ink-soft);font:700 8px/1 var(--font-mono);letter-spacing:.06em}.radius-note strong{padding:5px 8px;background:var(--accent-soft);color:var(--accent);font-size:9px}.support-comparison{border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}.support-comparison>header,.support-comparison article{display:grid;grid-template-columns:minmax(190px,.85fr) minmax(260px,1.5fr);gap:28px;align-items:center}.support-comparison>header{padding:9px 17px;color:var(--color-ink-soft);font:600 10px/1.4 var(--font-mono);letter-spacing:.05em;text-transform:uppercase}.support-comparison>header span:last-child{text-align:right}.support-comparison article{padding:17px;border-top:1px solid var(--color-line)}.group-label strong{display:block;font:600 12px/1.4 var(--font-mono);letter-spacing:.025em;text-transform:uppercase}.group-label small{color:var(--color-ink-soft);font:10px/1.4 var(--font-mono)}.bar-cell{display:grid;grid-template-columns:minmax(90px,1fr) 105px;gap:16px;align-items:center}.bar-cell>span{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:11px/1 var(--font-mono)}.bar-cell b{color:var(--color-ink);font-size:13px;font-weight:600}.bar-cell em{color:var(--color-ink-soft);font-style:normal}.recurrent{background:color-mix(in srgb,var(--accent) 3%,transparent)}.recurrent .bar-track{height:11px}.recurrent .bar-track i{background:var(--accent)}.recurrent .bar-cell b,.recurrent .bar-cell em{color:var(--accent)}
+  .support-definition{margin:9px 17px 0;color:var(--color-ink-soft);font:9px/1.5 var(--font-mono)}.takeaway{padding:13px 17px;margin:20px 0 0;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);color:var(--accent);font:600 13px/1.5 var(--font-sans);text-align:center}figcaption{margin:22px 0 0;color:var(--color-ink-soft);font:14px/1.8 var(--font-sans)}figcaption strong{color:var(--color-ink);font-weight:600}
+  @media(max-width:650px){.view-controls{align-items:flex-start;flex-direction:column}.view-controls [role="tablist"]{width:100%}.view-controls button{flex:1}.outcome-chart>article,.support-comparison article{grid-template-columns:1fr;gap:12px}.support-comparison>header{display:none}.bar-cell{grid-template-columns:minmax(80px,1fr) 100px}}
+</style>

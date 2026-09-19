@@ -1,0 +1,18 @@
+{
+  "id": "smdd_002_P08684_0",
+  "name": "Pharmacophore_CYP3A4",
+  "receptor": "receptor.pdb",
+  "groundTruth": "ground_truth.json",
+  "pocket": {
+    "center": {
+      "x": -15.519975662231445,
+      "y": -22.015836715698242,
+      "z": -11.069441795349121
+    },
+    "radius": 12
+  },
+  "output": {
+    "count": 3,
+    "allowedTypes": ["Donor", "Acceptor", "Aromatic", "Hydrophobic", "Cation", "Anion"]
+  }
+}
