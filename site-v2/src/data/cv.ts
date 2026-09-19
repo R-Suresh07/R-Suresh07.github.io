@@ -24,21 +24,21 @@ export interface CvPublicationDetail {
 
 export const cvExperience: CvExperience[] = [
   {
-    organization: 'Carnegie Mellon University – Language Technologies Institute – Looni Lab',
+    organization: 'Looni Lab, Carnegie Mellon University — Language Technologies Institute',
     organizationUrl: 'https://mireshghallah.github.io/looni-lab.html',
     location: 'Remote',
-    role: 'Independent Research Collaborator – LLM Agents for Scientific Discovery',
+    role: 'Independent Research Collaborator · Scientific Agents for Drug Discovery',
     dates: 'July 2026 – Present',
     highlights: [
-      'Scientific Agent Harnesses: Audited and redesigned SMDD-Bench agents for long-horizon drug design, adding structured state, evaluator-aligned checks, and task-bound RDKit, ADMET-AI, and Boltz2 tools; improved Qwen3.5-9B lead-optimization success from 16.3% to 51.0%.',
-      'RL Environment for Scientific Agents: Building a Harbor + Prime Env environment for reproducible agent rollouts with budgeted scientific tools, evaluator-backed rewards, and trajectory logging for training open-source LLM agents.',
+      'Scientific Agent Harnesses: Researching agent-environment design for SMDD-Bench, including structured candidate state, task-specific scientific tools, and long-horizon search for small-molecule drug design.',
+      'Training & Evaluation Infrastructure: Building Harbor and Prime environments for reproducible agent rollouts and training with budgeted scientific tools, evaluator-backed rewards, and trajectory logging.',
     ],
   },
   {
     organization: 'VFS Global',
     organizationUrl: 'https://www.vfsglobal.com',
     location: 'New Delhi, India',
-    role: 'Senior Manager – AI (Founding Lead, AI Research Engineering)',
+    role: 'Senior Manager – AI (Founding Lead, AI Engineering)',
     dates: 'May 2024 – Present',
     highlights: [
       'Adaptive Query Routing: Architected the document-extraction pipeline around an adaptive router that sends deterministic documents to lightweight parsers and ambiguous ones to reasoning VLMs, reaching 99.1% field-level extraction accuracy.',

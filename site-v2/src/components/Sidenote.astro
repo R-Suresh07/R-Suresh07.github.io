@@ -42,11 +42,11 @@ const { number, align = 'marker' } = Astro.props;
 
   .sidenote-content.is-margin {
     position: absolute;
-    left: calc(100% + var(--space-5));
     width: 14rem;
     margin: 0;
     padding: 0;
     border: 0;
+    scroll-margin-top: var(--space-4);
   }
 
   .sidenote-label {
@@ -54,7 +54,7 @@ const { number, align = 'marker' } = Astro.props;
     font-weight: 700;
   }
 
-  @media (max-width: 75rem) {
+  @media (max-width: 80rem) {
     .sidenote-content {
       position: static;
       width: auto;
@@ -68,16 +68,32 @@ const { number, align = 'marker' } = Astro.props;
     document.querySelectorAll<HTMLElement>('.sidenote-content').forEach((note) => {
       const marker = note.parentElement?.querySelector('sup');
       const prose = note.closest<HTMLElement>('.prose');
-      const useMargin = window.matchMedia('(min-width: 75rem)').matches;
+      const useMargin = window.matchMedia('(min-width: 80.0625rem)').matches;
 
       note.classList.toggle('is-margin', Boolean(marker && prose && useMargin));
       if (!marker || !prose || !useMargin) {
         note.style.removeProperty('top');
+        note.style.removeProperty('left');
         return;
       }
 
+      const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const marginGap = rootFontSize * 3.25;
+      const proseRect = prose.getBoundingClientRect();
+      const offsetParentRect = note.offsetParent?.getBoundingClientRect();
+      const desiredLeft = proseRect.right + marginGap;
+      const fitsViewport = desiredLeft + note.offsetWidth <= document.documentElement.clientWidth - 8;
+
+      if (!offsetParentRect || !fitsViewport) {
+        note.classList.remove('is-margin');
+        note.style.removeProperty('top');
+        note.style.removeProperty('left');
+        return;
+      }
+
+      note.style.left = `${desiredLeft - offsetParentRect.left}px`;
       const markerTop = marker.getBoundingClientRect().top;
-      const offsetParentTop = note.offsetParent?.getBoundingClientRect().top ?? 0;
+      const offsetParentTop = offsetParentRect.top;
       let desiredTop: number;
       const paragraph = note.closest('p');
       if (note.dataset.align === 'paragraph' && paragraph) {
