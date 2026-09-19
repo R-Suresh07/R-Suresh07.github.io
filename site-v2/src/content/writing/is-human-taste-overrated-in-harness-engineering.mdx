@@ -171,7 +171,7 @@ The harness still did not choose which probes to generate or which recurring fea
 
 <IpdHarnessFigure />
 
-The two complete successes still compress a lot of partial progress into a single number. Each submitted point can fail in two different ways: it can be in the **wrong part of the pocket**, or it can land near the right region but predict the **wrong ligand-side feature type**. Separating those two errors lets us see what the new representation actually changed.
+**V2 solved 2/25 complete tasks, but that terminal score compresses a lot of partial progress into a single number.** Each submitted point can fail in two different ways: it can be in the **wrong part of the pocket**, or it can land near the right region but predict the **wrong ligand-side feature type**. Separating those two errors lets us see what the new representation actually changed.
 
 We therefore look at point recovery in two ways. A **coordinate-only match** asks only whether the prediction lands within 2.5 Å of a hidden interaction point, ignoring its pharmacophore label. A **type-compatible match** uses the full benchmark criterion: the prediction must be close enough **and** specify a compatible ligand-side feature such as Donor, Acceptor, or Hydrophobic.<Sidenote number="5">The benchmark also matches submitted and hidden points one-to-one, so the same hidden hotspot cannot receive credit for multiple predictions.</Sidenote>
 
@@ -389,7 +389,7 @@ The hard novelty gate may also make the search more conservative. Because candid
 
 ## What Was the Human Doing All This Time?
 
-Looking back, the final interventions are easy to summarize. IPD needed better ligand-side evidence. Lead Optimization needed durable candidate state. Scaffold Hopping needed easier access to predicted binding geometry.
+Looking back, the final interventions are easy to summarize. **IPD needed ligand-side evidence. Lead Optimization needed durable candidate state. Scaffold Hopping made novelty and pose access reliable, but still left the molecular redesign strategy unresolved.**
 
 <HarnessOptimizationLoop />
 
@@ -399,7 +399,7 @@ The manual process was almost always the same: run agents, inspect failed trajec
 
 The difficult part was rarely implementing the eventual fix. It was deciding **what kind of failure we were looking at.**
 
-In IPD, the model was reasoning from the wrong kind of evidence for an ensemble-derived target. In Lead Optimization, useful chemistry was often already present, but the search state degraded across a long trajectory. In Scaffold Hopping, the relevant structural information existed, but the interface made the scalar binding score much easier to use than the predicted poses needed to inspect the interaction pattern.
+In IPD, the model was trying to infer an ensemble-derived target from a single receptor. In Lead Optimization, a long multi-candidate search required the model to continually reconstruct candidate identity, measurements, and task status from its trajectory. In Scaffold Hopping, making novelty reliable and exposing predicted poses still left the model responsible for deciding **what molecular architecture to preserve while changing the scaffold.**
 
 Those are very different diagnoses. None follows from a generic rule like “add more tools” or “write a better prompt.” The human contribution was deciding **what the harness should represent explicitly, what it should make persistent, and what should remain part of the model’s scientific policy.**
 
@@ -455,15 +455,15 @@ So did automated harness engineering recover the same improvements?
 
 <HumanVsAHEFigure />
 
-The clearest gap was in **Lead Optimization.** The original harness solved **13/68** tasks, and the best harness found by automated search also solved **13/68**. Manual V2 reached **33/68**. The automated optimizer therefore explored the harness space without recovering the state-management intervention that produced the large manual gain.
+The clearest endpoint gap was in **Lead Optimization.** The original harness solved **13/68** tasks, the selected AHE harness also solved **13/68**, and Manual V2 reached **33/68**. Automated search did discover much of the same high-level state-management problem: it added candidate registration, persistent notes, staged measurement, budget tracking, and finalist verification. The difference was how much of that state remained Qwen's responsibility, and how much search the resulting system could reliably sustain.
 
 **Interaction Point Discovery** showed the same pattern more clearly at the point level. The original harness recovered **10/75** hidden interaction points, automated search recovered **12/75**, and Manual V2 recovered **30/75**. Complete solutions remained rare, but the manual redesign produced a much broader shift in partial recovery rather than improving only a small number of tasks.
 
 **Scaffold Hopping was the exception.** Automated search reached **5/52**, compared with **2/52** under V1 and **1/52** under Manual V2. The absolute numbers remain small, so this is not evidence that Scaffold Hopping is solved. But it is the one task family where automated search found an intervention that moved terminal performance beyond both the starting harness and our manual redesign.
 
-The interesting result is therefore not that one approach simply beats the other. **They are good at different kinds of harness change.**
+The interesting result is therefore not that one approach simply beats the other. **Under this setup, the two search processes found different kinds of harness changes.**
 
-Our largest manual gains came when the main problem was the structure of the agent’s environment. In IPD, we changed **what evidence the model could observe.** In Lead Optimization, we changed **what state the environment remembered for it.** Automated search made only small gains on those tasks.
+Our largest manual gains came when the main problem was the structure of the agent’s environment. In IPD, we changed **what evidence the model could observe.** In Lead Optimization, we made **candidate state authoritative enough to support a much broader staged search.** Automated search made only small gains on those tasks.
 
 Scaffold Hopping was different. By the time we had cleaned up the representation and exposed the relevant geometry, the remaining problem was increasingly about **how to search the chemistry itself.** That was also the one setting where automated harness search did better than our manual redesign.
 
@@ -472,8 +472,6 @@ This split gave us a more useful question than “human or automated?”: **what
 The endpoint comparison tells us that manual and automated harness search produced different outcomes across the three tasks. It does not yet tell us **what kinds of changes each process discovered.** To understand that difference, we inspected the selected AHE harnesses and the trajectories they produced.
 
 ## What Did the Automated Optimizer Actually Learn?
-
-The endpoint scores tell us where AHE helped, but not what changed inside the harness. Looking at the selected harnesses and their trajectories reveals three different stories.
 
 ### Lead Optimization
 
@@ -501,7 +499,7 @@ Both systems converted every fully passing molecule they discovered into a succe
 
 **The performance gap therefore appears in how much search each harness can sustain, not in a large improvement in the quality of any individual proposal.** Manual V2 carries many more candidates through the search while keeping their identities, measurements, and current status consistent.
 
-The ledger makes that larger search easier to execute reliably. Known measurements can be reused, evidence stays attached to the correct molecule, and cheap failures can be rejected before spending expensive evaluation budget. Its role is therefore not to preserve a single winning candidate until submission, but to keep a large multi-candidate search coherent as it expands.
+The ledger makes that larger search easier to execute reliably. Known measurements can be reused, evidence stays attached to the correct molecule, and deterministic structural failures can be rejected before spending expensive evaluation budget. Its role is therefore not to preserve a single winning candidate until submission, but to keep a large multi-candidate search coherent as it expands.
 
 Submission control played a different role. Manual V2 could block a failed or incompletely evaluated normal submission, but none of those blocked trajectories later became a success. The additional passing molecules were discovered **during candidate generation and evaluation**, not recovered at the final submission step.
 
@@ -581,7 +579,7 @@ Not entirely. But these experiments suggest that its value depends heavily on **
 
 Automated search was quite capable of improving workflows inside an existing interface. It could add procedures, restructure tools, introduce memory, tighten submission logic, and even shape how the model searched the chemistry. But our largest manual gains came when the intervention changed the abstraction itself: **what evidence the model could observe, what state the environment maintained for it, and what work the model should have to reconstruct at all.**
 
-Lead Optimization improved when candidate identity and evidence stopped living implicitly inside the trajectory. Interaction Point Discovery improved when the harness stopped asking the model to infer conserved ligand behavior from a single receptor and instead gave it a way to gather ligand-side evidence. Scaffold Hopping provided the counterexample: once the interface was cleaner but the remaining difficulty was increasingly about which chemistry to try, automated search was more willing to shape that policy and produced the stronger harness.
+**Lead Optimization improved when candidate identity and experimental evidence became authoritative enough to support a much broader multi-candidate search. Interaction Point Discovery improved when the harness stopped asking the model to infer conserved ligand behavior from a single receptor and instead exposed ligand-side features that could be compared for recurrence.** Scaffold Hopping provided the counterexample: once novelty and execution were reliable, the remaining bottleneck was increasingly which chemistry to propose.
 
 That suggests a useful division of labor. Human judgment still matters when deciding **what should be represented explicitly, what should be enforced by the environment, and what should remain the model’s responsibility.** Once those choices are sensible, automated optimization can search over workflows, instructions, heuristics, and control policies far more cheaply than repeatedly running the same loop by hand.
 
