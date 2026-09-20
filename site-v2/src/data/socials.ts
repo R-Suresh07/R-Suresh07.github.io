@@ -22,8 +22,8 @@ export const socials: SocialLink[] = [
   },
   {
     label: 'X',
-    href: 'https://x.com/SureshR1044398',
-    username: '@SureshR1044398',
+    href: 'https://x.com/SureshRaghu07',
+    username: '@SureshRaghu07',
   },
   {
     label: 'Google Scholar',
