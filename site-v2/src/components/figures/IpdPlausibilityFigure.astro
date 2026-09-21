@@ -37,7 +37,7 @@ const midpoint = { x: (site.x + hotspot.x) / 2, y: (site.y + hotspot.y) / 2 };
 
         <circle class="site-underlay" cx={site.x} cy={site.y} r="16" />
         <circle class="site" cx={site.x} cy={site.y} r="16" />
-        {panel === 'a' && probes.map((point, index) => <circle class="probe" cx={point.x} cy={point.y} r="4"><title>{index === 0 ? 'P007' : 'P008'} predicted probe observation</title></circle>)}
+        {panel === 'a' && probes.map((point, index) => <circle class="probe" cx={point.x} cy={point.y} r="4.8"><title>{index === 0 ? 'P007' : 'P008'} predicted probe observation</title></circle>)}
 
         {panel === 'a' ? <g class="annotations">
           <path class="leader orange-leader" d={`M 88 108 L 88 137 L ${site.x - 23} ${site.y - 8}`} />
@@ -78,7 +78,7 @@ const midpoint = { x: (site.x + hotspot.x) / 2, y: (site.y + hotspot.y) / 2 };
   .hotspot { fill:#198f8a; stroke:var(--color-paper); stroke-width:2; }
   .site-underlay { fill:var(--color-paper); fill-opacity:.7; stroke:var(--color-paper); stroke-width:6; }
   .site { fill:none; stroke:#e6862e; stroke-width:3; }
-  .probe { fill:#e6862e; fill-opacity:.45; stroke:#e6862e; stroke-opacity:.6; stroke-width:.8; }
+  .probe { fill:#df761b; fill-opacity:1; stroke:var(--color-paper); stroke-width:1.4; }
   .measurement-underlay { stroke:var(--color-paper); stroke-width:4; }
   .measurement { stroke:#7b817c; stroke-width:1.4; }
   .distance { fill:var(--color-ink); stroke:var(--color-paper); stroke-width:6; paint-order:stroke; font:600 18px var(--font-sans); }
