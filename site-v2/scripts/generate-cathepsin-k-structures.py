@@ -21,7 +21,8 @@ SMILES = {
     "C009": "Cn1cnc2c(CO)nc(-c3ccc(OCCC4CCNCC4)c(C(F)(F)F)c3)cc21",
     "C033": "Cn1cnc2c(CCO)nc(-c3ccc(OCCC4CCNCC4)c(C(F)(F)F)c3)cc21",
 }
-TEAL = (0.035, 0.49, 0.51)
+# Match the pale edit highlight used by Fig. 10 (#B7E0DB at full SVG opacity).
+TEAL = (0.72, 0.88, 0.86)
 RUST = (0.73, 0.47, 0.40)
 
 

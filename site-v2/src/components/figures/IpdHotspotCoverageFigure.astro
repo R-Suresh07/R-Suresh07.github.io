@@ -1,0 +1,257 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import FigureCaption from '../FigureCaption.astro';
+import cdk2 from '../../assets/figures/ipd-hotspot-coverage/cdk2.json';
+
+// Deliberately schematic positions. Exact 3D coordinates and the authoritative
+// evaluator output are retained in cdk2.json; screen distances are not measurements.
+const hidden = [
+  { x:195, y:148, label:'H1', opacity:1, conservation:'82.9%', support:'403 / 486 aligned structures' },
+  { x:117, y:207, label:'H2', opacity:.6, conservation:'60.5%' },
+  { x:302, y:246, label:'H3', opacity:.35, conservation:'40.1%' },
+  { x:391, y:270, label:'H4', opacity:.35, conservation:'16.5%' },
+];
+const ideal = [
+  { x:105, y:112, px:77, py:80 },
+  { x:325, y:112, px:352, py:145 },
+  { x:215, y:251, px:248, py:227 },
+];
+const separation = cdk2.prediction_separation.toFixed(3);
+const distanceToH1 = (i: number) => Math.hypot(...cdk2.predictions[i].coords.map((v, j) => v - cdk2.hotspots[0].coords[j])).toFixed(2);
+---
+
+<figure id="ipd-hotspot-coverage" class="coverage" data-coverage-figure data-selected="" aria-label="One-to-one hotspot matching, a real CDK2 failure and an idealized success">
+  <FigureHeading label="FIG. 6" title="Three guesses only help if they cover different hotspots" />
+  <div class="legend" aria-label="Figure legend">
+    <span><i class="legend-hotspot"></i>Hidden hotspot</span>
+    <span><i class="legend-prediction"></i>Submitted prediction</span>
+    <span><i class="legend-region"></i>2.5 Å match region</span>
+    <span><i class="legend-line"></i>Successful match</span>
+  </div>
+  <div class="panels">
+    <section class="panel real-panel">
+      <h3><span class="letter">a</span><span>Two guesses cover one hotspot</span></h3>
+      <p class="context">CDK2 · GPT-5.4 submission</p>
+      <svg viewBox="0 0 440 335" role="img" aria-labelledby="coverage-a-title coverage-a-desc">
+        <title id="coverage-a-title">Three CDK2 predictions recover only one hidden hotspot</title>
+        <desc id="coverage-a-desc">P1, a Donor, and P2, an Acceptor, are both compatible with H1 and within its strict 2.5 angstrom radius. Only P1 scores a match. P3, an Aromatic prediction, misses. Four hidden hotspots are shown. Positions are simplified for legibility, not drawn to scale.</desc>
+        <circle class="region h1-region" cx="195" cy="148" r="75" />
+        <line class="assignment real-assignment" x1="135" y1="121" x2="195" y2="148" />
+        {hidden.map(h => <g class:list={['inspectable', h.label.toLowerCase()]} data-inspect={h.label.toLowerCase()} role="button" tabindex="0" aria-pressed="false" aria-label={`Inspect ${h.label}`} opacity={h.opacity}>
+          <title>{h.label}, {h.conservation} conservation{h.support ? `, ${h.support}` : ''}</title>
+          <circle class="hotspot" cx={h.x} cy={h.y} r="8" />
+          <text class:list={['hotspot-label', { primary:h.label === 'H1' }]} x={h.x} y={h.y + 26} text-anchor="middle">{h.label}</text>
+        </g>)}
+        <g class="inspectable p1" data-inspect="p1" role="button" tabindex="0" aria-pressed="false" aria-label="Inspect P1">
+          <title>P1, Donor, 2.13 angstroms from H1, compatible and inside threshold</title>
+          <circle class="prediction" cx="135" cy="121" r="10" />
+          <text class="prediction-label" x="108" y="106" text-anchor="end">P1</text>
+        </g>
+        <g class="inspectable p2" data-inspect="p2" role="button" tabindex="0" aria-pressed="false" aria-label="Inspect P2">
+          <title>P2, Acceptor, 1.60 angstroms from H1, compatible but H1 is already assigned</title>
+          <circle class="prediction" cx="239" cy="115" r="10" />
+          <text class="prediction-label" x="278" y="111">P2</text>
+        </g>
+        <path class="cross" d="M 253 96 l 10 10 m -10 0 l 10 -10" />
+        <text class="small" x="278" y="130">no match</text>
+        <g class="inspectable p3" data-inspect="p3" role="button" tabindex="0" aria-pressed="false" aria-label="Inspect P3">
+          <title>P3, Aromatic, nearest compatible target 3.66 angstroms away, outside threshold</title>
+          <circle class="prediction" cx="65" cy="49" r="10" />
+          <text class="small p3-label" x="65" y="24" text-anchor="middle">P3 · miss</text>
+        </g>
+        <path class="cross" d="M 79 30 l 10 10 m -10 0 l 10 -10" />
+
+        <g class="tooltip" data-tooltip="p1" aria-hidden="true">
+          <rect x="12" y="156" width="194" height="74" rx="5" />
+          <text x="25" y="177"><tspan class="tip-title">P1 · Donor</tspan><tspan x="25" dy="19">H1 distance 2.13 Å</tspan><tspan x="25" dy="19">Compatible and inside threshold</tspan></text>
+        </g>
+        <g class="tooltip" data-tooltip="p2" aria-hidden="true">
+          <rect x="238" y="145" width="194" height="94" rx="5" />
+          <text x="251" y="166"><tspan class="tip-title">P2 · Acceptor</tspan><tspan x="251" dy="19">H1 distance 1.60 Å</tspan><tspan x="251" dy="19">Compatible and inside threshold</tspan><tspan x="251" dy="19">H1 already assigned</tspan></text>
+        </g>
+        <g class="tooltip" data-tooltip="p3" aria-hidden="true">
+          <rect x="104" y="9" width="220" height="74" rx="5" />
+          <text x="117" y="30"><tspan class="tip-title">P3 · Aromatic</tspan><tspan x="117" dy="19">Nearest compatible target 3.66 Å</tspan><tspan x="117" dy="19">Outside threshold</tspan></text>
+        </g>
+        <g class="tooltip" data-tooltip="h1" aria-hidden="true">
+          <rect x="229" y="166" width="203" height="94" rx="5" />
+          <text x="242" y="187"><tspan class="tip-title">H1</tspan><tspan x="242" dy="19">Donor · Cation · Acceptor</tspan><tspan x="242" dy="19">82.9% conservation</tspan><tspan x="242" dy="19">403 / 486 aligned structures</tspan></text>
+        </g>
+        {hidden.slice(1).map((h, i) => <g class="tooltip" data-tooltip={h.label.toLowerCase()} aria-hidden="true">
+          <rect x={i === 0 ? 12 : 222} y="275" width="184" height="53" rx="5" />
+          <text x={i === 0 ? 25 : 235} y="297"><tspan class="tip-title">{h.label}</tspan><tspan x={i === 0 ? 25 : 235} dy="19">{h.conservation} conservation</tspan></text>
+        </g>)}
+        <g class="same-hotspot-note" aria-hidden="true">
+          <path d="M 137 91 Q 187 67 237 85" />
+          <text x="187" y="64" text-anchor="middle">2.757 Å apart, same hotspot</text>
+        </g>
+      </svg>
+      <p class="panel-note">P1 and P2 both reach H1.<br /><strong>Only one can score.</strong></p>
+      <p class="result">3 predictions, <strong>1 recovered hotspot</strong></p>
+      <p class="inspect-hint">Hover, tap, or focus a prediction or hotspot.</p>
+      <span class="sr-only" aria-live="polite" data-inspection-live></span>
+    </section>
+    <section class="panel">
+      <h3><span class="letter">b</span><span>Three guesses cover three hotspots</span></h3>
+      <p class="context">Idealized comparison</p>
+      <svg viewBox="0 0 440 335" role="img" aria-labelledby="coverage-b-title coverage-b-desc">
+        <title id="coverage-b-title">Three distinct hotspots, three successful matches</title>
+        <desc id="coverage-b-desc">An idealized schematic shows three separate teal hotspots, each surrounded by a faint 2.5 angstrom radius disc. Each orange prediction has a compatible feature type and lies within the radius of a different hotspot. Three assignment lines show three recovered hotspots.</desc>
+        {ideal.map(h => <g class="ideal-match">
+          <circle class="region" cx={h.x} cy={h.y} r="75" />
+          <line class="assignment" x1={h.px} y1={h.py} x2={h.x} y2={h.y} />
+          <circle class="hotspot" cx={h.x} cy={h.y} r="8" />
+          <circle class="prediction" cx={h.px} cy={h.py} r="10" />
+        </g>)}
+      </svg>
+      <p class="panel-note">Each prediction reaches a different hotspot.<br /><strong>All three can score.</strong></p>
+      <p class="result">3 predictions, <strong>3 recovered hotspots</strong></p>
+    </section>
+  </div>
+  <p class="takeaway">Prediction spacing is not enough. The three guesses must cover different hotspots.</p>
+  <FigureCaption captionLead="In CDK2,"
+    caption={`two submitted predictions fell within the same hidden hotspot H1. P1 and P2 were ${distanceToH1(0)} Å and ${distanceToH1(1)} Å from H1, respectively, and both had compatible feature types. Only P1 scored because each hidden hotspot can count at most once. P3 missed the remaining hotspots, leaving ${cdk2.evaluation.n_correct} of 3 points recovered. Notably, P1 and P2 were themselves ${separation} Å apart, so spacing predictions more than 2.5 Å apart does not guarantee distinct hotspot coverage. Panel a simplifies the real 3D geometry, while panel b shows the idealized alternative.`} />
+</figure>
+
+<style>
+  .coverage { display:block; width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); }
+  .legend { display:flex; flex-wrap:wrap; gap:12px 24px; margin:-5px 0 28px; color:var(--color-ink-soft); font:12px/1.5 var(--font-sans); }
+  .legend span { display:inline-flex; align-items:center; gap:8px; }
+  .legend i { display:inline-block; flex:none; width:10px; height:10px; border-radius:50%; }
+  .legend-hotspot { background:#198f8a; }
+  .legend .legend-prediction { border:2px solid #df822b; width:12px; height:12px; }
+  .legend .legend-region { width:16px; height:16px; background:rgb(25 143 138 / .07); border:1px solid rgb(25 143 138 / .24); }
+  .legend .legend-line { width:22px; height:0; border-top:1.5px solid #777f7c; border-radius:0; }
+  .panels { display:grid; grid-template-columns:1fr 1fr; gap:26px; width:min(100%,940px); margin-inline:auto; }
+  .panel { min-width:0; }
+  h3 { display:flex; align-items:baseline; gap:10px; margin:0; font:20px/1.3 var(--font-serif); }
+  .letter { color:var(--color-ink-soft); font:600 13px/1.3 var(--font-sans); }
+  .context { margin:9px 0 14px 21px; color:var(--color-ink-soft); font:12px/1.5 var(--font-sans); }
+  svg { display:block; width:100%; height:auto; overflow:visible; }
+  svg text { font:14px var(--font-sans); fill:#66736e; }
+  .region { fill:#198f8a; fill-opacity:.065; stroke:#198f8a; stroke-opacity:.22; stroke-width:1; transition:fill-opacity .16s ease,stroke-opacity .16s ease,stroke-width .16s ease; }
+  .hotspot { fill:#198f8a; stroke:var(--color-paper); stroke-width:2; transform-box:fill-box; transform-origin:center; transition:transform .16s ease,stroke-width .16s ease; }
+  .prediction { fill:var(--color-paper); stroke:#df822b; stroke-width:2.6; transform-box:fill-box; transform-origin:center; transition:transform .16s ease,fill .16s ease,stroke-width .16s ease; }
+  .assignment { stroke:#777f7c; stroke-width:1.6; transition:stroke .16s ease,stroke-width .16s ease,opacity .16s ease; }
+  .cross { stroke:#a75d26; stroke-width:2; fill:none; }
+  svg .prediction-label { fill:#a85d20; font-weight:600; }
+  svg .hotspot-label { fill:#137a76; font-size:13px; }
+  svg .primary { font-weight:600; font-size:16px; }
+  svg .small { font-size:12px; }
+  .inspectable { cursor:pointer; transition:opacity .16s ease,filter .16s ease; }
+  .inspectable:focus { outline:none; }
+  .inspectable:focus-visible .prediction,.inspectable:focus-visible .hotspot { stroke:#14231e; stroke-width:3; }
+  .coverage[data-selected]:not([data-selected=""]) .real-panel .inspectable:not(.selected):not(.related) { opacity:.24; }
+  .inspectable.selected,.inspectable.related { opacity:1 !important; filter:drop-shadow(0 0 3px rgb(25 143 138 / .25)); }
+  .inspectable.selected .prediction,.inspectable.related .prediction,.inspectable.selected .hotspot,.inspectable.related .hotspot { transform:scale(1.16); }
+  .inspectable.selected .prediction { fill:#fff8ef; stroke-width:3.1; }
+  [data-selected="p1"] .h1-region,[data-selected="p2"] .h1-region,[data-selected="h1"] .h1-region { fill-opacity:.12; stroke-opacity:.6; stroke-width:1.5; }
+  [data-selected="p1"] .real-assignment,[data-selected="p2"] .real-assignment,[data-selected="h1"] .real-assignment { stroke:#46534f; stroke-width:2.2; }
+  .tooltip { visibility:hidden; opacity:0; pointer-events:none; transform:translateY(-3px); transition:opacity .12s ease,transform .12s ease,visibility .12s ease; }
+  .tooltip rect { fill:#17312e; fill-opacity:.96; stroke:#31504b; stroke-width:1; }
+  .tooltip text { fill:#f3f1eb; font-size:11px; }
+  .tooltip .tip-title { fill:#fff; font-weight:600; }
+  .tooltip.is-visible { visibility:visible; opacity:1; transform:translateY(0); }
+  .same-hotspot-note { visibility:hidden; opacity:0; pointer-events:none; transition:opacity .14s ease,visibility .14s ease; }
+  .same-hotspot-note path { fill:none; stroke:#b66b2b; stroke-width:1.25; stroke-dasharray:3 3; }
+  .same-hotspot-note text { fill:#a85d20; font-size:11px; font-weight:600; }
+  [data-selected="p2"] .same-hotspot-note { visibility:visible; opacity:1; }
+  [data-selected="p2"] .p1,[data-selected="p2"] .p2,[data-selected="p2"] .h1 { filter:drop-shadow(0 0 3px rgb(223 130 43 / .35)); }
+  .ideal-match .hotspot,.ideal-match .prediction { transition:transform .16s ease,fill .16s ease,stroke-width .16s ease; }
+  .ideal-match:hover .hotspot,.ideal-match:hover .prediction { transform:scale(1.16); }
+  .ideal-match:hover .prediction { fill:#fff8ef; stroke-width:3.1; }
+  .ideal-match:hover .assignment { stroke:#46534f; stroke-width:2.2; }
+  .panel-note { margin:8px 0 16px; text-align:center; color:var(--color-ink-soft); font:14px/1.6 var(--font-sans); }
+  .panel-note strong { color:var(--color-ink); font-weight:500; }
+  .result { margin:0; text-align:center; font:18px/1.45 var(--font-serif); }
+  .result strong { color:#137a76; font-weight:500; }
+  .inspect-hint { margin:10px 0 0; text-align:center; color:var(--color-ink-soft); font:11px/1.4 var(--font-sans); }
+  .takeaway { margin:28px 0 0; padding:20px 12px; border-block:1px solid var(--color-line); text-align:center; font:19px/1.45 var(--font-serif); }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  @media(max-width:740px) {
+    .panels { grid-template-columns:1fr; gap:26px; }
+    .panel + .panel { padding-top:24px; border-top:1px solid var(--color-line); }
+    .takeaway { font-size:18px; }
+    .result { font-size:18px; }
+  }
+  @media(prefers-reduced-motion:reduce) {
+    .region,.hotspot,.prediction,.assignment,.inspectable,.tooltip,.same-hotspot-note { transition:none; }
+  }
+</style>
+
+<script>
+  const inspectionText = {
+    p1:'P1. Donor. H1 distance 2.13 angstroms. Compatible and inside threshold.',
+    p2:'P2. Acceptor. H1 distance 1.60 angstroms. Compatible and inside threshold. H1 already assigned. P1 and P2 are 2.757 angstroms apart but cover the same hotspot.',
+    p3:'P3. Aromatic. Nearest compatible target 3.66 angstroms away. Outside threshold.',
+    h1:'H1. Donor, Cation, or Acceptor. 82.9 percent conservation. 403 of 486 aligned structures.',
+    h2:'H2. 60.5 percent conservation.',
+    h3:'H3. 40.1 percent conservation.',
+    h4:'H4. 16.5 percent conservation.',
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-coverage-figure]').forEach(figure => {
+    const live = figure.querySelector<HTMLElement>('[data-inspection-live]');
+    const targets = [...figure.querySelectorAll<SVGGElement>('[data-inspect]')];
+    let pinned: string | null = null;
+    const clearInspection = () => {
+      figure.dataset.selected = '';
+      targets.forEach(target => {
+        target.classList.remove('selected','related');
+        target.setAttribute('aria-pressed','false');
+      });
+      figure.querySelectorAll('.tooltip').forEach(tip => tip.classList.remove('is-visible'));
+      if (live) live.textContent = '';
+    };
+    const show = (target: SVGGElement) => {
+      const key = target.dataset.inspect ?? '';
+      clearInspection();
+      if (!key) return;
+      figure.dataset.selected = key;
+      target.classList.add('selected');
+      const related: Record<string,string[]> = {
+        p1:['h1'], p2:['p1','h1'], h1:['p1','p2'],
+      };
+      (related[key] ?? []).forEach(id => figure.querySelector<SVGGElement>(`[data-inspect="${id}"]`)?.classList.add('related'));
+      figure.querySelector<SVGGElement>(`.tooltip[data-tooltip="${key}"]`)?.classList.add('is-visible');
+      if (live) live.textContent = inspectionText[key as keyof typeof inspectionText] ?? '';
+    };
+
+    targets.forEach(target => {
+      target.addEventListener('pointerenter', event => {
+        if (!pinned && event.pointerType !== 'touch') show(target);
+      });
+      target.addEventListener('pointerleave', () => {
+        if (!pinned) clearInspection();
+      });
+      target.addEventListener('focus', () => {
+        if (!pinned) show(target);
+      });
+      target.addEventListener('blur', () => {
+        if (!pinned) clearInspection();
+      });
+      const toggle = () => {
+        const key = target.dataset.inspect ?? '';
+        if (pinned === key) {
+          pinned = null;
+          clearInspection();
+          return;
+        }
+        pinned = key;
+        show(target);
+        target.setAttribute('aria-pressed','true');
+      };
+      target.addEventListener('click', toggle);
+      target.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggle();
+        }
+        if (event.key === 'Escape') {
+          pinned = null;
+          clearInspection();
+        }
+      });
+    });
+  });
+</script>

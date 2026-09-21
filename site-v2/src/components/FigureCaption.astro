@@ -1,13 +1,16 @@
 ---
 interface Props { captionLead?: string; caption?: string; credit?: string; source?: string; }
 const { captionLead, caption, credit, source } = Astro.props;
+const hasCaptionSlot = Astro.slots.has('default');
+const hasCaption = Boolean(captionLead || caption || hasCaptionSlot);
 ---
-{(captionLead || caption || credit || source) && <figcaption class="editorial-figure-caption">
-  {(captionLead || caption) && <span>{captionLead && <strong>{captionLead}</strong>}{captionLead && caption && ' '}{caption}</span>}
+{(hasCaption || credit || source) && <figcaption class="editorial-figure-caption">
+  {hasCaption && <span>{captionLead && <strong>{captionLead}</strong>}{captionLead && (caption || hasCaptionSlot) && ' '}{hasCaptionSlot ? <slot /> : caption}</span>}
   {(credit || source) && <small>{credit && <span>{credit}</span>}{source && <a href={source}>Source</a>}</small>}
 </figcaption>}
 <style>
   .editorial-figure-caption { margin:24px 0 0; color:var(--color-ink-soft); font:13px/1.8 var(--font-sans); }
   strong { color:var(--color-ink); font-weight:600; }
+  :global(.editorial-figure-caption .caption-emphasis) { color:var(--color-ink); font-weight:600; }
   small { display:flex; flex-wrap:wrap; gap:12px; margin-top:6px; font:inherit; }
 </style>

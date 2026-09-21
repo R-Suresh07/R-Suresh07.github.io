@@ -1,6 +1,9 @@
 ---
 import FigureHeading from '../FigureHeading.astro';
 
+interface Props { label?: string; }
+const { label = 'FIG. 8' } = Astro.props;
+
 const outcomes = [
   { label: 'Coordinate-only matches', v1: 19, v2: 47, interpretation: 'Spatial recovery' },
   { label: 'Type-compatible matches', v1: 10, v2: 30, interpretation: 'Full benchmark match' },
@@ -16,14 +19,14 @@ const supportGroups = [
 const totalPoints = supportGroups.reduce((sum, group) => sum + group.total, 0);
 const totalMatched = supportGroups.reduce((sum, group) => sum + group.matched, 0);
 if (totalPoints !== 75 || totalMatched !== 30) {
-  throw new Error('FIG. 9 recurrence counts no longer match the audited 75-point endpoint run.');
+  throw new Error('IPD recurrence counts no longer match the audited 75-point endpoint run.');
 }
 ---
 
 <ipd-recurrence-figure data-view="recurrence">
   <figure aria-label="How V2 changes interaction-point recovery and why repeated probe support matters">
     <FigureHeading
-      label="FIG. 9"
+      label={label}
       title="Points supported by multiple probes are much more likely to match"
       subtitle="Qwen 3.5 9B · 25 IPD tasks · 75 submitted points"
     />

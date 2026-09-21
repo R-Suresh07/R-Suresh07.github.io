@@ -18,10 +18,14 @@ import ResponsiveVideo from '../../components/ResponsiveVideo.astro';
 import Sidenote from '../../components/Sidenote.astro';
 import InteractionPointExplorer from '../../components/figures/InteractionPointExplorer.astro';
 import IpdBaselineFigure from '../../components/figures/IpdBaselineFigure.astro';
+import IpdPlausibilityFigure from '../../components/figures/IpdPlausibilityFigure.astro';
+import IpdReceptorSideFigure from '../../components/figures/IpdReceptorSideFigure.astro';
+import IpdHotspotCoverageFigure from '../../components/figures/IpdHotspotCoverageFigure.astro';
 import IpdHarnessFigure from '../../components/figures/IpdHarnessFigure.astro';
 import IpdRecurrenceFigure from '../../components/figures/IpdRecurrenceFigure.astro';
 import LoBaselineFigure from '../../components/figures/LoBaselineFigure.astro';
 import LoCandidateStory from '../../components/figures/LoCandidateStory.astro';
+import LoTaskContractFigure from '../../components/figures/LoTaskContractFigure.astro';
 import LoFailureMap from '../../components/figures/LoFailureMap.astro';
 import LoStateHarnessFigure from '../../components/figures/LoStateHarnessFigure.astro';
 import LoHarnessOutcomes from '../../components/figures/LoHarnessOutcomes.astro';
@@ -120,45 +124,19 @@ This gap between point-level recovery and full-task success suggests that the mo
 
 ### What are the agents getting wrong?
 
-One common strategy was to inspect the receptor structure, identify chemically plausible interaction sites around the pocket, and treat those as likely conserved hotspots. **But plausibility is not the same as conservation.** A binding pocket can contain many reasonable places for a ligand to interact, while the task asks which of those interactions actually recur across different molecules binding to the same protein. A site can therefore look perfectly sensible from the receptor structure and still be a poor prediction of the hidden ensemble.
+The first problem is that the visible receptor does not directly reveal the quantity being evaluated. Agents often inspected the binding pocket, identified chemically reasonable interaction sites, and treated them as likely conserved hotspots. But **conservation is an ensemble property**. The benchmark asks which ligand-side interactions recur across many different binders, not simply which interactions are plausible in a single receptor structure. A site can therefore make perfect chemical sense and still be a poor prediction of the hidden target.
 
-{/* TODO: Insert figure of problem 1. */}
+A second failure was more basic. Models sometimes represented the interaction on the **wrong side**. The evaluator expects ligand-side pharmacophore points in empty pocket space, yet many trajectories instead selected receptor atoms themselves. This can also reverse the required interaction type. A hydrogen-bond donor on the protein, for example, implies a nearby ligand **acceptor**, not another donor placed on the receptor atom. In one audited AChE trajectory, the agent did exactly that.
 
-<Figure
-  src={figurePlaceholder}
-  alt="Placeholder for problem 1: plausible interactions versus conserved hotspots."
-  captionLabel="FIG. 5"
-  title="Plausibility versus conservation"
-  caption="Plausibility versus conservation. A chemically plausible interaction site may rarely recur across real binders; the task targets hotspots shared by diverse ligands."
-/>
+<IpdReceptorSideFigure />
 
-Agents also frequently reasoned about the wrong side of the interaction. The submitted points are supposed to describe **ligand-side features in empty pocket space**, not receptor atoms themselves. If the protein exposes a hydrogen-bond donor, for example, the relevant prediction is where a ligand acceptor would sit nearby. The model therefore has to reason about the **complementary feature a ligand would place in the pocket**, rather than simply identifying chemically interesting atoms on the protein.
+A separate problem appeared during final selection. Some trajectories spent more than one of their three predictions on the same hidden hotspot. Because each hidden point can be matched only once, a second prediction covering that region cannot earn another match. The CDK2 example below shows why simply spacing predictions apart is not enough. Two predictions were 2.757 Å apart, yet both still fell within the same hidden hotspot. With only three guesses available, the model needs to cover **three distinct spatial hypotheses** and localize each one accurately.
 
-{/* TODO: Insert figure of problem 2. */}
+<IpdHotspotCoverageFigure />
 
-<Figure
-  src={figurePlaceholder}
-  alt="Placeholder for problem 2: ligand interaction points versus receptor atoms."
-  captionLabel="FIG. 6"
-  title="Ligand points versus receptor atoms"
-  caption="Ligand points versus receptor atoms. The agent must predict where a complementary ligand feature would sit in the pocket, rather than report the protein atom it interacts with."
-/>
+There was also a simpler interface problem. The original harness exposed the same generic drug-design tools across tasks, even though IPD ultimately requires only three 3D points in a strict CSV format.<Sidenote number="3" align="paragraph">Each row must contain four comma-separated fields: the x, y, and z coordinates followed by the pharmacophore type. The evaluator reads only the first three valid rows.</Sidenote> The agent still had to choose tools, construct `solution.csv`, format it correctly, and submit the file manually. Those extra steps occasionally caused failures that had nothing to do with the scientific prediction. In `smdd_002_Q92769_0`, for example, the model produced three intended points but separated the values with spaces rather than commas, so the evaluator could not parse the submission.
 
-Even when agents found sensible regions of the pocket, they could still waste their three predictions on the same interaction. The evaluator matches submitted points one-to-one against distinct hidden hotspots, so several nearby guesses around one region can still recover only a single point. With only three predictions available, the agent has to choose three distinct hypotheses and localize each one accurately.
-
-{/* TODO: Insert figure of problem 3. */}
-
-<Figure
-  src={figurePlaceholder}
-  alt="Placeholder for problem 3: interaction type, spatial accuracy, and unique matches."
-  captionLabel="FIG. 7"
-  title="Precision with only three guesses"
-  caption="Precision with only three guesses. Each prediction needs a compatible interaction type and a location within 2.5 Å of a hidden point; repeated guesses around one hotspot count only once."
-/>
-
-There was also a simpler interface problem. The original harness exposed the same generic drug-design tools across tasks, even though the required IPD output was only three 3D points in a strict CSV format.<Sidenote number="3" align="paragraph">The original harness required the agent to manually construct `solution.csv` and submit its path. This occasionally failed for reasons unrelated to the scientific prediction itself. In `smdd_002_Q92769_0`, for example, the model produced three intended points but separated the values with spaces rather than commas, leaving the evaluator unable to parse the file.</Sidenote> This added tool-selection, file-writing, and formatting work that was separate from the scientific problem itself.
-
-The important distinction is that these failures sit at different levels. **Inferring conservation from a single receptor is part of the scientific challenge. Confusing receptor atoms with ligand-side points, duplicating the same hotspot, or losing an otherwise valid answer to file formatting are not.** That gave us a natural place to start. 
+These failures sit at different levels. **Inferring conservation from a single receptor is part of the scientific challenge. Predicting receptor atoms instead of ligand-side features, covering the same hotspot twice, or losing an otherwise valid answer to file formatting are not.** That distinction gave us a natural place to start improving the harness.
 
 ### Fixing the representation
 
@@ -170,7 +148,7 @@ So we changed what the agent could observe. Instead of asking it to infer conser
 
 The harness still did not choose which probes to generate or which recurring features to trust. Its role was to expose evidence that was closer to what the task actually asks about, while leaving the scientific decisions to the model.
 
-<IpdHarnessFigure />
+<IpdHarnessFigure label="FIG. 7" />
 
 **V2 solved 2/25 complete tasks, but that terminal score compresses a lot of partial progress into a single number.** Each submitted point can fail in two different ways: it can be in the **wrong part of the pocket**, or it can land near the right region but predict the **wrong ligand-side feature type**. Separating those two errors lets us see what the new representation actually changed.
 
@@ -180,7 +158,7 @@ On the same 25 Qwen 3.5 9B tasks, coordinate-only recovery rises from **19/75 un
 
 The larger change is therefore spatial. **V2 makes Qwen much better at finding regions that actually contain hidden interaction points.** The remaining gap between 47 coordinate matches and 30 fully correct matches tells us that locating the hotspot and identifying the correct ligand feature are still separate problems.
 
-<IpdRecurrenceFigure />
+<IpdRecurrenceFigure label="FIG. 8" />
 
 ### Repeated evidence across probes identifies better hotspots
 
@@ -192,9 +170,13 @@ The signal becomes much stronger when **multiple different probes place the same
 
 We refer to this agreement across probes as **spatial recurrence**. The value of the probe interface is therefore not simply that Boltz generates another set of coordinates. It gives Qwen a way to ask which ligand-side features keep reappearing across several independently predicted molecules.
 
-That makes the computational experiment resemble the hidden task more closely. The benchmark target is constructed from interactions recurring across an ensemble of real binders. V2 lets Qwen construct a small, noisy ligand ensemble of its own.
+That makes the computational experiment resemble the hidden task more closely. The benchmark target is constructed from interactions recurring across an ensemble of real binders, while V2 lets Qwen construct a small, noisy **predicted** ligand ensemble of its own.
 
-The probes themselves were already chemically diverse, with a mean within-task Morgan similarity of **0.159**, but more probes or more distinct scaffolds did not predict better task performance. The two fully solved tasks actually used fewer probes on average than the failed tasks. **What mattered more was spatial convergence across those probes, not simply how many molecules were generated.**
+<IpdPlausibilityFigure />
+
+**The CYP3A4 example shows the limit of that proxy.** Two independently predicted poses supported the same accessible aromatic region, yet that region did not correspond to a conserved hotspot in the aligned experimental ligand ensemble.
+
+The probes themselves were already chemically diverse, with a mean within-task Morgan similarity of **0.159**, but neither probe count nor scaffold diversity predicted better task performance. The two fully solved tasks actually used fewer probes on average than the failed tasks. **What mattered more was spatial convergence across those probes, not simply how many molecules were generated.**
 
 Boltz binding probability was also only a weak guide to which individual feature was correct.<Sidenote number="6">Across extracted features, the correlation between the parent probe's binding probability and feature correctness was 0.106. Mean binding probability was 0.347 for feature hits and 0.316 for misses. A binding score can help identify a broadly plausible pose, but every feature in that pose shares the same score, so it cannot identify which individual ligand feature corresponds to a conserved hotspot.</Sidenote>
 
@@ -212,25 +194,17 @@ This also makes the role of the other V2 changes clearer. The redesigned harness
 
 ## Lead Optimization
 
-IPD showed how much performance can depend on the representation exposed by the harness. But not every task failed for the same reason.
+IPD showed how much performance can depend on the representation exposed by the harness. Lead Optimization (LO) presents a different kind of problem. Instead of predicting three points in a binding pocket, the agent searches through a sequence of related molecules, repeatedly proposing candidates, testing them, and deciding what to change next.
 
-Lead Optimization (LO) presents a different kind of problem. Instead of predicting a small set of 3D points, the agent runs a longer search over many related molecules, repeatedly proposing candidates, testing them, and deciding what to try next.
+Each task begins with a protein-bound reference molecule. The agent must improve one or more target properties while keeping the rest within specified ranges. A successful molecule must also preserve binding, satisfy the chemical constraints, and remain sufficiently similar to the reference. We measure this last requirement using Tanimoto similarity, which compares molecular fingerprints and gives higher values to more structurally similar molecules.
 
-In an LO task, the agent starts from a protein-bound reference molecule and modifies it to improve specific properties while keeping others within required ranges. A successful candidate must also preserve binding, satisfy hard chemical constraints, and remain sufficiently similar to the starting molecule. Here, similarity is measured using Tanimoto similarity, a fingerprint-based measure of how much two molecular structures overlap.
+<LoTaskContractFigure />
 
-{/* TODO: Insert animation of how an LO task is formed. */}
+The important part is that these requirements are coupled. An edit can fix the property being optimized while pushing something else out of range. In the example above, shortening both N-alkyl groups repairs CYP3A4 but causes binding affinity to fail. A different local edit, replacing the para-methyl group with fluorine, improves CYP3A4 while keeping the remaining requirements inside their allowed ranges.
 
-<Figure
-  src={figurePlaceholder}
-  alt="Placeholder animation showing how a Lead Optimization task is formed."
-  captionLabel="FIG. 10"
-  title="How a Lead Optimization task is formed"
-  caption="How a Lead Optimization task is formed. The agent starts from a protein-bound reference molecule and must optimize target properties while preserving binding, satisfying hard constraints, and maintaining similarity to the reference."
-/>
+The agent uses several tools to navigate these tradeoffs. RDKit performs deterministic checks such as molecular validity, structural constraints, and similarity. ADMET-AI predicts properties such as toxicity and permeability, while Boltz estimates whether a candidate is likely to preserve binding. Both ADMET and Boltz calls are limited, so the agent also has to decide which molecules are worth evaluating.
 
-The agent has several tools to guide this search. RDKit handles deterministic chemistry checks such as molecular validity and similarity, ADMET-AI predicts properties such as toxicity and permeability, and Boltz estimates whether a candidate is likely to maintain binding. Both ADMET and Boltz calls are limited, so the agent has to decide which candidates are worth spending those evaluations on.
-
-The evaluator checks several requirements, or **gates**, each of which a candidate must pass.
+We refer to each requirement as a **gate**. A candidate succeeds only when every required gate passes.
 
 ### How well do current agents perform?
 

@@ -1,0 +1,126 @@
+{
+  "task": "smdd_002_P24941_0",
+  "model": "GPT-5.4",
+  "sources": {
+    "solution": "results/gpt_54_med_full/smdd_002_P24941_0/solution.csv",
+    "ground_truth": "smdd-harbor/tasks/smdd_002_P24941_0/tests/private/ground_truth.json",
+    "evaluator": "metrics/pharmacophore_3d.py"
+  },
+  "predictions": [
+    {
+      "coords": [
+        0.245,
+        31.038,
+        6.566
+      ],
+      "type": "Donor"
+    },
+    {
+      "coords": [
+        2.856,
+        30.154,
+        6.603
+      ],
+      "type": "Acceptor"
+    },
+    {
+      "coords": [
+        -2.271,
+        31.688,
+        10.472
+      ],
+      "type": "Aromatic"
+    }
+  ],
+  "hotspots": [
+    {
+      "coords": [
+        1.5378389458272306,
+        29.455044655929715,
+        7.166089311859444
+      ],
+      "types": [
+        "Donor",
+        "Cation",
+        "Acceptor"
+      ],
+      "conservation": 0.8292181069958847
+    },
+    {
+      "coords": [
+        -0.38117303822937604,
+        29.268772635814866,
+        8.481883299798788
+      ],
+      "types": [
+        "Hydrophobic"
+      ],
+      "conservation": 0.6049382716049383
+    },
+    {
+      "coords": [
+        4.976574561403509,
+        25.78365350877194,
+        6.704736842105263
+      ],
+      "types": [
+        "Hydrophobic"
+      ],
+      "conservation": 0.4012345679012346
+    },
+    {
+      "coords": [
+        7.589949999999997,
+        24.3248875,
+        8.2936625
+      ],
+      "types": [
+        "Donor",
+        "Acceptor"
+      ],
+      "conservation": 0.1646090534979424
+    }
+  ],
+  "evaluation": {
+    "score": 0.3333333333333333,
+    "matches": [
+      {
+        "pred_idx": 0,
+        "true_idx": 0,
+        "distance": 2.1300909237345436,
+        "pred_type": "Donor",
+        "true_types": [
+          "Donor",
+          "Cation",
+          "Acceptor"
+        ],
+        "success": true
+      },
+      {
+        "pred_idx": 1,
+        "true_idx": 3,
+        "distance": 7.697218642409899,
+        "pred_type": "Acceptor",
+        "true_types": [
+          "Donor",
+          "Acceptor"
+        ],
+        "success": false
+      },
+      {
+        "pred_idx": 2,
+        "true_idx": 1,
+        "distance": 3.6585067261762814,
+        "pred_type": "Aromatic",
+        "true_types": [
+          "Hydrophobic"
+        ],
+        "success": false
+      }
+    ],
+    "n_correct": 1,
+    "n_required": 3,
+    "n_ground_truth": 4
+  },
+  "prediction_separation": 2.7568362301740015
+}

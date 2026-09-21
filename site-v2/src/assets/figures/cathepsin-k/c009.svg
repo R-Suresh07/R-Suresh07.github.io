@@ -6,10 +6,10 @@
                   xml:space='preserve'
 width='420px' height='270px' viewBox='0 0 420 270'>
 <!-- END OF HEADER -->
-<path class='bond-5 atom-5 atom-6' d='M 348.8,48.3 L 339.6,83.8 L 334.3,82.5 L 342.7,49.9 Z' style='fill:#087C82;fill-rule:evenodd;fill-opacity:1;stroke:#087C82;stroke-width:0.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
-<path class='bond-6 atom-6 atom-7' d='M 322.6,22.5 L 348.8,48.3 L 342.7,49.9 L 318.8,26.4 Z' style='fill:#087C82;fill-rule:evenodd;fill-opacity:1;stroke:#087C82;stroke-width:0.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
-<ellipse cx='345.8' cy='49.1' rx='5.2' ry='5.2' class='atom-6'  style='fill:#087C82;fill-rule:evenodd;stroke:#087C82;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='315.5' cy='24.5' rx='14.3' ry='7.7' class='atom-7'  style='fill:#087C82;fill-rule:evenodd;stroke:#087C82;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<path class='bond-5 atom-5 atom-6' d='M 348.8,48.3 L 339.6,83.8 L 334.3,82.5 L 342.7,49.9 Z' style='fill:#B7E0DB;fill-rule:evenodd;fill-opacity:1;stroke:#B7E0DB;stroke-width:0.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<path class='bond-6 atom-6 atom-7' d='M 322.6,22.5 L 348.8,48.3 L 342.7,49.9 L 318.8,26.4 Z' style='fill:#B7E0DB;fill-rule:evenodd;fill-opacity:1;stroke:#B7E0DB;stroke-width:0.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;' />
+<ellipse cx='345.8' cy='49.1' rx='5.2' ry='5.2' class='atom-6'  style='fill:#B7E0DB;fill-rule:evenodd;stroke:#B7E0DB;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='315.5' cy='24.5' rx='14.3' ry='7.7' class='atom-7'  style='fill:#B7E0DB;fill-rule:evenodd;stroke:#B7E0DB;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-0 atom-0 atom-1' d='M 384.9,195.9 L 383.2,167.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.4px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-1 atom-2' d='M 388.0,156.5 L 409.9,138.4' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.4px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-2 atom-2 atom-3' d='M 409.9,138.4 L 399.6,112.2' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.4px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />

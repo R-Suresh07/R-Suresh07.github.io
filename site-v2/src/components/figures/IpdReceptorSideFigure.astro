@@ -1,0 +1,101 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import FigureCaption from '../FigureCaption.astro';
+import residue from '../../assets/figures/ipd-receptor-side/residue.png';
+import scene from '../../assets/figures/ipd-receptor-side/projection.json';
+
+const donor = scene.projected['350:ND2'];
+const acceptor = scene.projected.target;
+const cg = scene.projected['350:CG'];
+const od1 = scene.projected['350:OD1'];
+const distance = scene.distance.toFixed(2);
+const midpoint = { x:(donor.x + acceptor.x)/2, y:(donor.y + acceptor.y)/2 };
+---
+
+<figure id="ipd-receptor-side" class="receptor-side" aria-label="AChE: correcting a receptor-side donor prediction to a ligand-side acceptor">
+  <FigureHeading label="FIG. 5" title="The target is a ligand-side feature, not a receptor atom" />
+  <p class="context">Human acetylcholinesterase (AChE)</p>
+  <div class="panels">
+    {['a', 'b'].map(panel => <section class="panel">
+      <h3><span class="panel-letter">{panel}</span>{panel === 'a' ? 'What the agent predicted' : 'What the task asks for'}</h3>
+      <svg viewBox="0 0 480 390" role="img" aria-labelledby={`receptor-side-${panel}-title receptor-side-${panel}-description`}>
+        <title id={`receptor-side-${panel}-title`}>{panel === 'a' ? 'A Donor prediction placed exactly on Asn350 ND2' : 'The complementary ligand Acceptor lies 2.55 Å away in pocket space'}</title>
+        <desc id={`receptor-side-${panel}-description`}>{panel === 'a'
+          ? 'Asn350 is shown as gray sticks, with ND2 highlighted in orange. An orange submission ring is centered exactly on that receptor atom: a distance of zero angstroms. The agent submitted its feature type as Donor.'
+          : 'The same Asn350 sticks and receptor donor appear in the same camera view. A dashed line spans 2.55 angstroms from ND2 to the teal ligand-side Acceptor target in empty pocket space. That target occurs in 50 of 73 aligned structures.'}</desc>
+        <g transform="translate(48 -28)">
+          <image href={residue.src} width="480" height="380" opacity="0.7" />
+          <g class="atom-labels" aria-hidden="true">
+            <text x={cg.x + 18} y={cg.y - 14}>CG</text>
+            <text x={od1.x - 1} y={od1.y - 17} text-anchor="middle">OD1</text>
+            <text class="residue-name" x="43" y="270">Asn350</text>
+          </g>
+
+          {panel === 'b' && <g>
+            <line class="distance-line" x1={donor.x} y1={donor.y} x2={acceptor.x} y2={acceptor.y} />
+            <text class="distance" x={midpoint.x - 12} y={midpoint.y - 18} text-anchor="middle">{distance} Å</text>
+            <circle class="acceptor-halo" cx={acceptor.x} cy={acceptor.y} r="15" />
+            <circle class="acceptor" cx={acceptor.x} cy={acceptor.y} r="8" />
+            <path class="leader teal-leader" d={`M ${acceptor.x} ${acceptor.y - 17} V 124 H 312`} />
+            <text class="callout teal-text" x="312" y="77" text-anchor="middle">ligand acceptor</text>
+            <text class="detail teal-text" x="312" y="99" text-anchor="middle">50 / 73 aligned structures</text>
+          </g>}
+
+          <circle class="donor" cx={donor.x} cy={donor.y} r="8" />
+          {panel === 'a' && <circle class="submission-ring" cx={donor.x} cy={donor.y} r="17" />}
+          {panel === 'a'
+            ? <text class="atom-label orange-text" x={donor.x + 20} y={donor.y + 7}>ND2</text>
+            : <text class="pair-label" x={donor.x + 19} y={donor.y + 7}><tspan class="emphasis">ND2</tspan><tspan> · receptor donor</tspan></text>}
+        </g>
+
+        {panel === 'a' && <g>
+          <path class="leader orange-leader" d={`M ${donor.x + 39} ${donor.y - 6} L 188 256 H 78`} />
+          <text class="callout orange-text" x="78" y="282">submitted directly on receptor atom</text>
+          <text class="detail" x="78" y="304">Asn350 ND2</text>
+          <text class="detail" x="78" y="325">submitted as <tspan class="emphasis">Donor</tspan></text>
+          <text class="detail" x="78" y="346">distance to atom: <tspan class="emphasis">0.00 Å</tspan></text>
+        </g>}
+      </svg>
+    </section>)}
+  </div>
+  <p class="takeaway">A receptor donor implies a nearby ligand acceptor, not a donor on the receptor atom itself.</p>
+  <FigureCaption
+    captionLead="In human acetylcholinesterase,"
+    caption="the agent placed a Donor prediction exactly on the receptor atom Asn350 ND2. The hidden target instead lies 2.55 Å away in pocket space and is a complementary ligand Acceptor, supported by 50 of 73 aligned structures (68.5%). Because the submitted type was incompatible, the evaluator paired it with a farther donor-compatible target 3.10 Å away, outside the strict < 2.5 Å matching threshold. The prediction therefore failed."
+  />
+</figure>
+
+<style>
+  .receptor-side { display:block; width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); }
+  .context { margin:-12px 0 24px; color:var(--color-ink-soft); font:12px/1.5 var(--font-sans); }
+  .panels { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:min(100%,900px); margin-inline:auto; }
+  .panel { min-width:0; position:relative; }
+  h3 { display:flex; align-items:baseline; gap:10px; margin:0; font:20px/1.35 var(--font-serif); }
+  .panel-letter { color:var(--color-ink-soft); font:600 13px/1.3 var(--font-sans); }
+  svg { display:block; width:100%; height:auto; }
+  svg text { fill:#666; stroke:var(--color-paper); stroke-width:4; stroke-linejoin:round; paint-order:stroke; }
+  .atom-labels,.atom-label { font:12px var(--font-sans); }
+  .residue-name { font:15px var(--font-serif); }
+  .callout { font:600 15px var(--font-sans); }
+  .detail { font:14px var(--font-sans); }
+  .emphasis { font-weight:600; }
+  svg .orange-text { fill:#a55b1b; }
+  svg .teal-text { fill:#137a76; }
+  .pair-label { fill:#a8794e; font:12px var(--font-sans); }
+  .donor { fill:#e6862e; }
+  .submission-ring { fill:none; stroke:#e6862e; stroke-width:3; }
+  .acceptor { fill:#198f8a; stroke:var(--color-paper); stroke-width:2; }
+  .acceptor-halo { fill:#198f8a; fill-opacity:.1; }
+  .distance-line { stroke:#747c76; stroke-width:1.5; stroke-dasharray:4 4; }
+  .distance { fill:var(--color-ink); font:600 18px var(--font-sans); stroke-width:6; }
+  .leader { fill:none; stroke-width:1; }
+  .orange-leader { stroke:#c78547; }
+  .teal-leader { stroke:#198f8a; }
+  .takeaway { margin:14px 0 0; padding:20px 12px; border-block:1px solid var(--color-line); text-align:center; font:19px/1.45 var(--font-serif); }
+  @media(max-width:740px) {
+    .panels { grid-template-columns:1fr; gap:20px; }
+    .panel + .panel { padding-top:20px; border-top:1px solid var(--color-line); }
+    h3 { font-size:21px; }
+    .takeaway { font-size:18px; }
+  }
+</style>

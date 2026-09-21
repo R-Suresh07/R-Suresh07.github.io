@@ -1,0 +1,60 @@
+{
+  "task": "smdd_004_A2A_Adenosine_0",
+  "protein": "Adenosine A2A receptor",
+  "version": "V2.2",
+  "source": "User-supplied evaluator contract and candidate records",
+  "taskSpecHash": "8a40de7739b3b95a6158d64fa913d4e624af667ec7b14c2006bcd469f48aad0a",
+  "diffusionSamples": 10,
+  "fingerprint": { "method": "Morgan", "radius": 2, "bits": 2048 },
+  "gates": [
+    { "key": "cyp3a4", "label": "CYP3A4", "group": "Must improve", "rule": "≤ 0.5862", "max": 0.5862, "range": [0.35, 0.75] },
+    { "key": "herg", "label": "hERG", "group": "Must stay in range", "rule": "≤ 0.8627", "max": 0.8627, "range": [0.5, 0.95] },
+    { "key": "bbb", "label": "BBB", "group": "Must stay in range", "rule": "0.7375 to 0.9375", "min": 0.7375, "max": 0.9375, "range": [0.70, 0.98] },
+    { "key": "solubility", "label": "Solubility", "group": "Must stay in range", "rule": "≥ −6.2312", "min": -6.2312, "range": [-6.5, -4.8] },
+    { "key": "affinity", "label": "Binding affinity", "group": "Must stay in range", "rule": "≤ −0.4193", "max": -0.41927987039089204, "range": [-1, -0.25] },
+    { "key": "binding", "label": "Binding probability", "group": "Must still pass", "rule": "> 0.7000", "min": 0.7, "strict": true, "range": [0.6, 0.9] },
+    { "key": "similarity", "label": "Similarity", "group": "Must still pass", "rule": "≥ 0.7000", "min": 0.7, "range": [0.6, 1.02] }
+  ],
+  "chemistry": [
+    { "key": "valid", "label": "Sanitized SMILES", "rule": "valid" },
+    { "key": "mw", "label": "Molecular weight", "rule": "< 600" },
+    { "key": "logp", "label": "LogP", "rule": "−1 to 5" },
+    { "key": "tpsa", "label": "TPSA", "rule": "< 140 Å²" },
+    { "key": "hbd", "label": "H-bond donors", "rule": "≤ 5" },
+    { "key": "hba", "label": "H-bond acceptors", "rule": "≤ 10" },
+    { "key": "rotatable", "label": "Rotatable bonds", "rule": "≤ 10" },
+    { "key": "charge", "label": "Formal charge", "rule": "−2 to +2" },
+    { "key": "sa", "label": "SA score", "rule": "< 4.5" },
+    { "key": "pains", "label": "PAINS", "rule": "clean" },
+    { "key": "alerts", "label": "Brenk / NIH alerts", "rule": "clean" }
+  ],
+  "states": [
+    {
+      "id": "C000", "label": "Reference", "role": "Starting molecule", "parent": null,
+      "smiles": "CCCn1c(=O)c2[nH]c(-c3ccc(C)cc3)cc2n(CCC)c1=O",
+      "edit": "Reference before any chemical edit.",
+      "summary": "Every constraint is satisfied, but CYP3A4 remains above the target.",
+      "status": "Optimization still required",
+      "values": { "cyp3a4": 0.6862, "herg": 0.7627, "bbb": 0.8375, "solubility": -5.7312, "binding": null, "affinity": -0.719279870390892, "similarity": 1 },
+      "chemistry": { "valid": "valid", "mw": 325.412, "logp": 3.28672, "tpsa": 59.79, "hbd": 1, "hba": 2, "rotatable": 5, "charge": 0, "sa": 2.321577, "pains": "clean", "alerts": "clean" }
+    },
+    {
+      "id": "C002", "label": "Shorten N-alkyl groups", "role": "Near miss", "parent": "C000",
+      "smiles": "CCn1c(=O)c2[nH]c(-c3ccc(C)cc3)cc2n(CC)c1=O",
+      "edit": "Both N-propyl groups shortened to ethyl.",
+      "summary": "CYP3A4 is fixed, but binding affinity moves outside its allowed range.",
+      "status": "Affinity misses by 0.0473",
+      "values": { "cyp3a4": 0.481970614, "herg": 0.594188005, "bbb": 0.848081434, "solubility": -5.048049165, "binding": 0.759571791, "affinity": -0.371941268, "similarity": 0.7619047619047619 },
+      "chemistry": { "valid": "valid", "mw": 297.358, "logp": 2.50652, "tpsa": 59.79, "hbd": 1, "hba": 2, "rotatable": 3, "charge": 0, "sa": 2.293813, "pains": "clean", "alerts": "clean" }
+    },
+    {
+      "id": "C004", "label": "Replace para-CH₃ with F", "role": "Passing candidate", "parent": "C000",
+      "smiles": "CCCn1c(=O)c2[nH]c(-c3ccc(F)cc3)cc2n(CCC)c1=O",
+      "edit": "Para-methyl replaced with fluorine, CH₃ → F.",
+      "summary": "CYP3A4 improves while every other requirement stays in range.",
+      "status": "Task solved", "force": false, "submissionFileVerified": true,
+      "values": { "cyp3a4": 0.445832705, "herg": 0.818361259, "bbb": 0.934989667, "solubility": -5.591054441, "binding": 0.796692371, "affinity": -0.871567905, "similarity": 0.7906976744186046 },
+      "chemistry": { "valid": "valid", "mw": 329.375, "logp": 3.11740, "tpsa": 59.79, "hbd": 1, "hba": 2, "rotatable": 5, "charge": 0, "sa": 2.341493, "pains": "clean", "alerts": "clean" }
+    }
+  ]
+}

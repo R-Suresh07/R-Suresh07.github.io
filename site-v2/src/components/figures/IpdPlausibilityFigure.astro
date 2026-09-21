@@ -1,0 +1,102 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import FigureCaption from '../FigureCaption.astro';
+import quietPocket from '../../assets/figures/ipd-plausibility/pocket-quiet.png';
+import ensemblePocket from '../../assets/figures/ipd-plausibility/pocket-ensemble.png';
+import scene from '../../assets/figures/ipd-plausibility/projection.json';
+
+const [site, ...observations] = scene.projected;
+const probes = observations.slice(0, 2);
+const targets = observations.slice(2);
+const hotspot = targets[4];
+const distance = scene.mismatch.toFixed(2);
+const midpoint = { x: (site.x + hotspot.x) / 2, y: (site.y + hotspot.y) / 2 };
+---
+
+<figure id="ipd-plausibility" class="ipd-plausibility" aria-label="CYP3A4 counterexample: a plausible probe-supported site is not a conserved ensemble hotspot">
+  <FigureHeading label="FIG. 9" title="Probe recurrence is evidence of conservation, not proof" />
+  <p class="context">CYP3A4</p>
+  <div class="panels">
+    {['a', 'b'].map((panel) => <section class="panel">
+      <h3><span class="panel-letter">{panel}</span>{panel === 'a' ? 'One receptor: plausible site' : 'Ligand ensemble: conserved hotspot'}</h3>
+      <svg viewBox="0 0 480 360" role="img" aria-labelledby={`ipd-plausibility-${panel}-title ipd-plausibility-${panel}-description`}>
+        <title id={`ipd-plausibility-${panel}-title`}>{panel === 'a' ? 'A plausible aromatic site supported by two predicted poses' : 'The same site misses the nearest compatible conserved hotspot by 4.53 Å'}</title>
+        <desc id={`ipd-plausibility-${panel}-description`}>{panel === 'a'
+          ? 'An orange ring marks the predicted ligand-side aromatic site in a pale gray cutaway of the CYP3A4 pocket. Two small orange dots show nearby probe observations. Two of eight usable predicted poses support the site, which is 4.09 angstroms from the nearest receptor atom.'
+          : 'The identical receptor view and orange site are overlaid with all nine ensemble targets in teal. The highlighted hydrophobic target has 100 percent ensemble conservation. Its three-dimensional distance from the orange prediction is 4.53 angstroms, outside the 2.5 angstrom matching threshold.'}</desc>
+        <image href={(panel === 'a' ? quietPocket : ensemblePocket).src} width="480" height="360" />
+
+        {panel === 'b' && <g>
+          {targets.map((point, index) => index !== 4 && <circle class="ensemble-target" cx={point.x} cy={point.y} r="5.5"><title>{scene.targets[index].types.join('/')} · 100% conservation</title></circle>)}
+          <line class="measurement-underlay" x1={site.x} y1={site.y} x2={hotspot.x} y2={hotspot.y} />
+          <line class="measurement" x1={site.x} y1={site.y} x2={hotspot.x} y2={hotspot.y} />
+          <circle class="hotspot-halo" cx={hotspot.x} cy={hotspot.y} r="16" />
+          <circle class="hotspot" cx={hotspot.x} cy={hotspot.y} r="9" />
+          <text class="distance" x={midpoint.x - 10} y={midpoint.y - 29} text-anchor="middle">{distance} Å</text>
+        </g>}
+
+        <circle class="site-underlay" cx={site.x} cy={site.y} r="16" />
+        <circle class="site" cx={site.x} cy={site.y} r="16" />
+        {panel === 'a' && probes.map((point, index) => <circle class="probe" cx={point.x} cy={point.y} r="4"><title>{index === 0 ? 'P007' : 'P008'} predicted probe observation</title></circle>)}
+
+        {panel === 'a' ? <g class="annotations">
+          <path class="leader orange-leader" d={`M 88 108 L 88 137 L ${site.x - 23} ${site.y - 8}`} />
+          <text class="callout orange-text" x="36" y="54">plausible aromatic site</text>
+          <text class="detail" x="36" y="78">Supported by 2/8 usable predicted poses</text>
+          <text class="detail" x="36" y="99">Accessible: 4.09 Å from nearest receptor atom</text>
+        </g> : <g class="annotations">
+          <path class="leader teal-leader" d={`M ${hotspot.x} ${hotspot.y - 22} L ${hotspot.x} 88 L 322 88`} />
+          <text class="callout teal-text" x="322" y="47" text-anchor="middle">conserved hydrophobic hotspot</text>
+          <text class="detail teal-text" x="322" y="70" text-anchor="middle">100% ensemble conservation</text>
+          <path class="leader orange-leader" d={`M ${site.x - 7} ${site.y + 23} L 208 279 L 123 279`} />
+          <text class="callout orange-text" x="123" y="306">plausible, but not conserved</text>
+          <text class="detail" x="123" y="328">4.53 Å from the nearest compatible target</text>
+        </g>}
+      </svg>
+    </section>)}
+  </div>
+  <p class="takeaway">Two predicted poses agree locally; the experimental ensemble does not.</p>
+  <FigureCaption
+    captionLead="In CYP3A4,"
+    caption="two of eight usable predicted probe poses supported an accessible aromatic site (orange), yet it lay 4.53 Å from the nearest compatible ensemble target and scored no match. Aligned ligand-bound structures instead identify the 100%-conserved hydrophobic hotspot in teal."
+  />
+</figure>
+
+<style>
+  .ipd-plausibility { display:block; width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter)))); margin:var(--space-6) 0; margin-inline:50%; transform:translateX(-50%); color:var(--color-ink); }
+  .context { margin:-12px 0 24px; color:var(--color-ink-soft); font:12px/1.5 var(--font-sans); }
+  .context span { margin:0 6px; }
+  .panels { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .panel { min-width:0; }
+  .panel + .panel { position:relative; }
+  .panel + .panel::before { position:absolute; top:0; bottom:0; left:-10px; border-left:1px solid var(--color-line); content:''; }
+  h3 { display:flex; align-items:baseline; gap:10px; margin:0; color:var(--color-ink); font:20px/1.35 var(--font-serif); }
+  .panel-letter { color:var(--color-ink-soft); font:600 13px/1.3 var(--font-sans); }
+  svg { display:block; width:100%; height:auto; overflow:visible; }
+  .ensemble-target { fill:#198f8a; fill-opacity:.48; stroke:var(--color-paper); stroke-width:1.5; }
+  .hotspot-halo { fill:#198f8a; fill-opacity:.12; stroke:#198f8a; stroke-opacity:.35; }
+  .hotspot { fill:#198f8a; stroke:var(--color-paper); stroke-width:2; }
+  .site-underlay { fill:var(--color-paper); fill-opacity:.7; stroke:var(--color-paper); stroke-width:6; }
+  .site { fill:none; stroke:#e6862e; stroke-width:3; }
+  .probe { fill:#e6862e; fill-opacity:.45; stroke:#e6862e; stroke-opacity:.6; stroke-width:.8; }
+  .measurement-underlay { stroke:var(--color-paper); stroke-width:4; }
+  .measurement { stroke:#7b817c; stroke-width:1.4; }
+  .distance { fill:var(--color-ink); stroke:var(--color-paper); stroke-width:6; paint-order:stroke; font:600 18px var(--font-sans); }
+  .leader { fill:none; stroke-width:1; }
+  .orange-leader { stroke:#c78547; }
+  .teal-leader { stroke:#198f8a; }
+  .annotations text { stroke:var(--color-paper); stroke-width:4; stroke-linejoin:round; paint-order:stroke; }
+  .callout { font:600 15px var(--font-sans); }
+  .orange-text { fill:#a55b1b; }
+  .teal-text { fill:#137a76; }
+  .detail { fill:#666; font:14px var(--font-sans); }
+  .detail.teal-text { fill:#137a76; }
+  .takeaway { margin:14px 0 0; padding:20px 12px; border-top:1px solid var(--color-line); border-bottom:1px solid var(--color-line); text-align:center; font:19px/1.45 var(--font-serif); }
+  @media(max-width:740px) {
+    .panels { grid-template-columns:1fr; gap:20px; }
+    .panel + .panel { padding:20px 0 0; border-left:0; border-top:1px solid var(--color-line); }
+    .panel + .panel::before { display:none; }
+    h3 { font-size:21px; }
+    .takeaway { font-size:18px; }
+  }
+</style>
