@@ -1,0 +1,359 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import { traces, observations, predictions, support, presentation, loMolecules } from './data/environmentTraces';
+import { activityWindow, postHoc } from './data/environmentActivity';
+import scenes from './data/environmentScenes.json';
+import loReference from '../../assets/figures/environment-explorer/lo-reference.svg';
+import loF from '../../assets/figures/environment-explorer/lo-f.svg';
+import loCl from '../../assets/figures/environment-explorer/lo-cl.svg';
+import loMe from '../../assets/figures/environment-explorer/lo-me.svg';
+import shReference from '../../assets/figures/environment-explorer/sh-reference.svg';
+import shC1 from '../../assets/figures/environment-explorer/sh-c1.svg';
+import shC2 from '../../assets/figures/environment-explorer/sh-c2.svg';
+import probePocket from '../../assets/figures/environment-explorer/probes-pocket.svg';
+import shPocket from '../../assets/figures/environment-explorer/sh-pocket.svg';
+
+const loImages = [loReference, loF, loCl, loMe];
+const colors: Record<string, string> = { Acceptor:'#087c83', Donor:'#bb7549', Hydrophobic:'#809065', Aromatic:'#86779c', Anion:'#769ca6' };
+const projection = (p: {x:number;y:number;z:number}) => {
+  const c=scenes.probes.center, x=p.x-c.x, y=p.y-c.y, z=p.z-c.z;
+  const rx=24*Math.PI/180, ry=-32*Math.PI/180;
+  return {x:360+(x*Math.cos(ry)-(-y*Math.sin(rx)+z*Math.cos(rx))*Math.sin(ry))*14, y:225-(y*Math.cos(rx)+z*Math.sin(rx))*14};
+};
+---
+
+<scientific-environment-explorer>
+  <figure aria-label="A Drug-Design Agent at Work">
+    <FigureHeading
+      label="FIG. 1"
+      title="A Drug-Design Agent at Work"
+      subtitle="three drug-design tasks · follow what the agent sees, measures, and submits"
+    />
+    <div class="task-switch" role="group" aria-label="Scientific task">
+      <button type="button" data-task="lo" aria-pressed="true">Lead Optimization</button>
+      <button type="button" data-task="sh" aria-pressed="false">Scaffold Hopping</button>
+      <button type="button" data-task="ipd" aria-pressed="false">Interaction Points</button>
+    </div>
+    {traces.filter(trace => trace.key !== 'receptor').map(trace => {
+      const ui=presentation[trace.key], index=ui.initial, turn=trace.moments[index].turn, last=trace.moments.at(-1)!.turn;
+      const activity = activityWindow(trace.key, index);
+      const show = (at: number, until = Infinity) => turn >= at && turn < until;
+      const ipd=trace.key==='probes';
+      return <section class="trace-panel" data-trace={trace.key} data-index={index} hidden={trace.key!=='lo'} aria-label={`${trace.task}: ${trace.id}`}>
+        <div class="workspace-heading">
+          <p>{ui.subtitle}</p>
+          {trace.key==='lo' && <div class="objectives"><span>clearance <b>↓ ≥ 5</b></span><span>affinity <b>↓ ≥ 0.3</b></span></div>}
+          {trace.key==='sh' && <div class="objectives"><span>Tanimoto <b>&lt; 0.5</b></span><span>scaffold overlap <b>&lt; 0.65</b></span><span>binding <b>≥ 0.7</b></span></div>}
+          {ipd && <span class="trace-id" title={trace.version}>{trace.id}</span>}
+        </div>
+
+        {trace.key==='lo' && <div class="scientific-workspace lo-workspace">
+          <div class="molecule-family">{loMolecules.map((c,i)=><div class="molecule-column" data-created={show(c.created)} data-created-at={c.created}>
+            <button type="button" class="molecule-target" data-molecule={c.id} aria-label={`Inspect ${c.name}`}>
+              <span class="molecule-name">{c.name}</span>
+              <img class="molecule-art" src={loImages[i].src} width="460" height="340" alt={`${c.name}: ${i===0?'reference thienopyrimidinone molecule':'same scaffold with the changed substituent highlighted in teal'}`} />
+              {i===0 && <span class="family-arrow" aria-hidden="true">→</span>}
+              {i===2 && <span class="selected-molecule" data-at="57" hidden={!show(57)}>✦ selected</span>}
+            </button>
+            <div class="molecule-measurements" data-until={i===2?57:undefined} hidden={i===2&&show(57)}>
+              <span class="metric-name">clearance</span>
+              <span class:list={['clearance',{pass:c.passed,fail:!c.passed&&i>0}]} data-at={c.measured} hidden={!show(c.measured)}>{c.clearance}{i>0&&<small aria-label={c.passed?'passes':'fails'}>{c.passed?'✓':'×'}</small>}</span>
+              <span class="clearance unknown" data-until={c.measured} hidden={show(c.measured)}>—</span>
+              {i===0?<span class="measurement-note">starting point</span>:<>
+                <span class="measurement-note" data-until={c.measured} hidden={show(c.measured)}>awaiting measurement</span>
+                <span class="measurement-note" data-at={c.measured} data-until={c.boltz} hidden={!show(c.measured,c.boltz)}>ADMET</span>
+                <span class="measurement-note pass" data-at={c.boltz} hidden={!show(c.boltz)}>Boltz {c.binding} ✓</span>
+              </>}
+            </div>
+            {i===2&&<dl class="finalist-evidence" data-at="57" hidden={!show(57)} aria-label="Verified Cl analogue measurements">
+              <div><dt>clearance</dt><dd>76.52 ✓</dd></div>
+              <div><dt>binding</dt><dd>0.921 ✓</dd></div>
+              <div><dt>affinity</dt><dd>−0.961 ✓</dd></div>
+              <div><dt>held constant</dt><dd>4 / 4 ✓</dd></div>
+            </dl>}
+          </div>)}</div>
+          <div class="workspace-foot"><span><i class="edit-key"></i> highlighted: the chemical edit</span></div>
+        </div>}
+
+        {trace.key==='sh' && <div class="scientific-workspace sh-workspace">
+          <div class="scaffold-sequence">
+            {[
+              {id:'sh-reference',name:'Reference',image:shReference,similarity:'1.000',overlap:'1.000',binding:'—',created:1,measured:999},
+              {id:'sh-c1',name:'C1',image:shC1,similarity:'0.352',overlap:'0.500',binding:'0.647',created:19,measured:26},
+              {id:'sh-c2',name:'C2',image:shC2,similarity:'0.433',overlap:'0.423',binding:'0.722',created:19,measured:27},
+            ].map((c,i)=><div class="scaffold-candidate" data-created-at={c.created} data-created={show(c.created)}>
+              <button type="button" class="scaffold-structure" data-molecule={c.id} aria-label={`Inspect ${c.name}`}>
+                <span class="molecule-name">{c.name}</span>
+                <img class="molecule-art" src={c.image.src} width="460" height="340" alt={`${c.name} molecular structure${i>0?', with changed structure highlighted in teal':''}`} />
+              </button>
+              <dl class="scaffold-measurements">
+                <div><dt>Tanimoto similarity</dt><dd>
+                  <span class:list={{pass:i>0}} data-at={c.created} hidden={!show(c.created)}>{c.similarity}{i>0&&<small aria-label="passes"> ✓</small>}</span>
+                  <span class="unknown" data-until={c.created} hidden={show(c.created)}>—</span>
+                </dd></div>
+                <div><dt>Scaffold overlap</dt><dd>
+                  <span class:list={{pass:i>0}} data-at={c.created} hidden={!show(c.created)}>{c.overlap}{i>0&&<small aria-label="passes"> ✓</small>}</span>
+                  <span class="unknown" data-until={c.created} hidden={show(c.created)}>—</span>
+                </dd></div>
+                <div><dt>Binding probability</dt><dd>
+                  <span class:list={{pass:i===2,fail:i===1}} data-at={c.measured} hidden={!show(c.measured)}>{c.binding}<small aria-label={i===2?'passes':'fails'}>{i===2?' ✓':' ×'}</small></span>
+                  <span class="unknown" data-until={c.measured} hidden={show(c.measured)}>—</span>
+                </dd></div>
+              </dl>
+              <p class="scaffold-result">
+                {i===0?<span>Starting structure</span>:<>
+                  <span data-until={c.created} hidden={show(c.created)}>Not yet proposed</span>
+                  <span data-at={c.created} data-until={c.measured} hidden={!show(c.created,c.measured)}>Binding not yet measured</span>
+                  <span class:list={{pass:i===2,fail:i===1}} data-at={c.measured} hidden={!show(c.measured)}>{i===2?'Binding threshold passed':'Below binding threshold'}</span>
+                </>}
+              </p>
+            </div>)}
+            <div class="scaffold-pocket">
+              <span class="preservation-heading">What must be preserved</span>
+              <span class="molecule-name">Reference interactions</span>
+              <div class="pose-inset pocket-stage" title="Actual reference complex. The candidate's predicted pose was not archived with this trace, so no candidate overlay is shown.">
+                <img class="pocket-fallback" src={shPocket.src} alt="Coordinate projection of the reference pocket" />
+                <div class="pocket-viewer" data-scene="sh" role="img" aria-label="Three-dimensional reference ligand inside its protein pocket"></div>
+                <span class="viewer-status" role="status"></span>
+              </div>
+              <span class="pocket-description">Experimental reference complex</span>
+              <span class="pocket-evaluation" data-at="45" hidden={!show(45)}>Post-hoc · interaction similarity<br /><b>0.833 ✓</b></span>
+            </div>
+          </div>
+          <div class="workspace-foot"><span><i class="edit-key"></i> highlighted: changed structure</span></div>
+        </div>}
+
+        {ipd && <div class="scientific-workspace ipd-workspace">
+          <div class="evidence-controls"><span class="eyebrow">What can the agent see?</span>
+            <div class="evidence-switch" role="group" aria-label="Evidence accumulated in the Q92769 trace">
+              <button type="button" data-evidence="receptor" aria-pressed={turn===1}>Receptor only</button>
+              <span class:list={['evidence-track',{enriched:turn>1}]} aria-hidden="true"><i></i></span>
+              <button type="button" data-evidence="probes" aria-pressed={turn>1}>+ ligand probes</button>
+            </div>
+          </div>
+          <div class="pocket-stage ipd-stage">
+            <div class="pocket-fallback" aria-hidden="true">
+              <img src={probePocket.src} alt="" />
+              <svg viewBox="0 0 720 450">
+                {observations.probes.features.map(f=>{const p=projection(f);return <circle cx={p.x} cy={p.y} r="4" fill={colors[f.type]} fill-opacity=".6" data-at={f.turn} data-hidden={!show(f.turn)} />;})}
+                {predictions.map(f=>{const p=projection(f);return <circle cx={p.x} cy={p.y} r="10" fill={colors[f.type]} fill-opacity=".8" data-at="20" data-hidden={!show(20)} />;})}
+              </svg>
+            </div>
+            <div class="pocket-viewer" data-scene="probes" role="img" aria-label="Q92769 receptor pocket; ligand features accumulate as the trace advances"></div>
+            <div class="observation-count"><strong class="feature-count">0</strong><span class="feature-count-label">ligand observations</span><span class="probe-count" hidden>0 probes with usable features</span></div>
+            <div class="hotspot-key" data-at="20" hidden={!show(20)}>
+              <span class="eyebrow">cross-probe support</span>
+              {predictions.map((p,i)=><span><i style={`--feature-color:${colors[p.type]}`}></i>{p.type}<b>{support[i]} probes</b></span>)}
+            </div>
+            <div class="viewer-controls"><span>drag to rotate</span><button type="button" class="reset-camera" aria-label="Reset pocket view">reset view ↺</button></div>
+            <span class="viewer-status" role="status"></span>
+          </div>
+          <div class="probe-strip" role="group" aria-label="Highlight a probe’s returned features">{['P001','P002','P003','P004','P005','P006'].map((probe,i)=><button type="button" data-probe={probe} data-available-at={[9,11,11,13,13,15][i]} disabled={turn<[9,11,11,13,13,15][i]} title={probe==='P005'?'P005: pose predicted; feature extraction failed':`${probe}: highlight the recorded ligand-side features`}><i class:list={{failed:probe==='P005'}}></i>{probe.replace('00','')}{probe==='P005'&&<span> ×</span>}</button>)}</div>
+          <div class="workspace-foot"><span>12 Å search region</span><span data-at="15" hidden={!show(15)}>6 predicted poses · 5 successful feature extractions</span></div>
+        </div>}
+        <div class="working-trace" role="region" aria-label="Working trace: selected actions and results">
+          <div class="activity-heading"><span>Working trace</span><span class="activity-convention" title="Editorial summaries of selected actions and tool results, not verbatim model messages.">selected events</span></div>
+          <ol class="activity-feed">
+            {Array.from({length:3},(_,i)=>{const entry=activity[i];return <li class:list={['activity-item',{'is-current':entry?.current}]} data-entry={entry?.id} data-status={entry?.status} data-actor={entry?.actor} hidden={!entry}>
+              <span class="activity-source"><span class="activity-actor">{entry?.actor==='Agent'?'>_ Agent':entry?.actor}</span><span class="activity-subject">{entry?.subject}</span></span>
+              <span class="activity-text">{entry?.text}</span><span class="activity-turn" aria-label={`Turn ${entry?.turn}`}>{entry?.turn}</span>
+            </li>;})}
+          </ol>
+        </div>
+        <div class="posthoc-evaluation" data-at={last} hidden={!show(last)} role="note" aria-label="Post-hoc evaluator: not available to the agent during the run">
+          <span>Post-hoc evaluator</span><p>{postHoc[trace.key]}</p>
+        </div>
+        <div class="event-ribbon" aria-label="Explore the agent trace">
+          <button type="button" class="play" aria-label="Play trace" aria-pressed="false"><span aria-hidden="true">▷</span></button>
+          <div class="ribbon-scroll" tabindex="0" role="region" aria-label="Trace events; scroll horizontally on small screens">
+            <div class="ribbon-track" style={`--events:${trace.moments.length};--position:${(index+.5)/trace.moments.length*100}%`}>
+              <span class="ribbon-line" aria-hidden="true"></span><span class="agent-cursor" aria-hidden="true">›_</span>
+              {trace.moments.map((m,i)=><button type="button" class:list={['event',{active:i===index,future:i>index}]} data-moment={i} aria-pressed={i===index} tabindex={i===index?'0':'-1'} title={`Turn ${m.turn}: ${m.detail}`} aria-label={`Turn ${m.turn}: ${m.title}`}><span class="tool-icon" aria-hidden="true">{m.lane===1?'{ }':m.lane===2?'▦':m.lane===3?'⌬':'✓'}</span><span class="event-name">{ui.labels[i]}</span></button>)}
+            </div>
+          </div>
+          <button type="button" class="next" aria-label="Next trace moment">→</button>
+        </div>
+      </section>;
+    })}
+    <figcaption>The same agent loop encounters different scientific evidence across three SMDD tasks.</figcaption>
+    <details class="trace-notes">
+      <summary>About this visualization</summary>
+      <p><strong>Drug-Design Agent Explorer.</strong> The visualization follows an agent as it works through three SMDD-Bench tasks: Lead Optimization, Scaffold Hopping, and Interaction Point Discovery. Each task exposes a different scientific workspace, from comparing closely related molecular edits, to balancing structural novelty against binding, to identifying recurring interaction hotspots inside a protein pocket.</p>
+      <p><strong>Scientific Evidence.</strong> The agent builds its answer by combining deterministic chemistry checks with more expensive scientific measurements. Lead Optimization accumulates property and binding evidence across candidate molecules; Scaffold Hopping asks whether a structurally different molecule can preserve the reference binding interactions; Interaction Point Discovery reasons over spatial evidence inside a 3D binding pocket. What the model can infer depends on what information the harness makes visible and how that evidence is represented.</p>
+      <p><strong>How to use it.</strong> Switch between tasks and move through the event ribbon to watch evidence accumulate over an agent run. Molecular structures, measurements, pocket geometry, and the working trace update together as the agent proposes candidates, calls tools, compares results, and submits an answer. Use Play to follow the sequence automatically, or pause to explore individual steps. The three views show how the same basic agent loop encounters different scientific problems depending on the environment around it.</p>
+    </details>
+    <noscript><p class="no-script">Enable JavaScript to switch tasks and follow the trace from its first step.</p></noscript>
+    <div class="molecule-inspector" role="status" hidden><strong class="inspector-name"></strong><dl></dl><p class="inspector-note"></p></div>
+    <span class="sr-only live-status" role="status" aria-live="polite"></span>
+  </figure>
+</scientific-environment-explorer>
+
+<script>
+  import './environmentExplorer';
+</script>
+
+<style>
+  scientific-environment-explorer { --teal:#087c83;--warm:#ae673f;display:block;position:relative;width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);color:var(--color-ink);font:13px/1.5 var(--font-sans); }
+  figure { margin:0; }
+  figure > :global(.editorial-figure-heading) { row-gap:6px; }
+  figure > :global(.editorial-figure-heading .subtitle) { flex-basis:100%; }
+  [hidden],[data-hidden="true"] { display:none!important; }
+  button { color:var(--color-ink-soft);background:none;border:0;border-radius:0;font:inherit;cursor:pointer; }
+  button:focus-visible,[role="button"]:focus-visible,summary:focus-visible,.ribbon-scroll:focus-visible { outline:2px solid var(--teal);outline-offset:3px; }
+  .task-switch { display:flex;align-items:center;gap:28px;border-bottom:1px solid var(--color-line); }
+  .task-switch button { padding:0 0 13px;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:14px;white-space:nowrap; }
+  .task-switch button[aria-pressed="true"] { color:var(--teal);border-color:var(--teal); }
+
+  .workspace-heading { display:flex;align-items:baseline;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;margin:20px 0 0; }
+  .workspace-heading p { margin:0;font:16px/1.5 var(--font-serif); }
+  .objectives { display:flex;gap:18px;color:var(--color-ink-soft);font:10px/1.5 var(--font-mono); }
+  .objectives b { color:var(--color-ink);font-weight:400; }
+  .trace-id { font:10px var(--font-mono);color:var(--color-ink-soft); }
+  .scientific-workspace { position:relative;min-height:395px; }
+  .molecule-family { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding-top:35px; }
+  .molecule-column { min-width:0;text-align:center; }
+  .molecule-target { display:block;position:relative;width:100%;padding:0;color:var(--color-ink); }
+  .molecule-name { display:block;font:17px/1.4 var(--font-serif); }
+  .molecule-art { display:block;width:100%;height:auto;aspect-ratio:460/340;margin:20px 0 6px; }
+  .molecule-target:hover .molecule-name,.molecule-target:focus-visible .molecule-name { color:var(--teal); }
+  [data-created="false"] .molecule-art { opacity:.08; }
+  [data-created="false"] .molecule-name { color:#a3a8a0; }
+  .family-arrow { position:absolute;right:-20px;top:50%;color:#939e91;font:22px var(--font-serif); }
+  .selected-molecule { position:absolute;bottom:-14px;left:0;right:0;color:var(--teal);font:10px var(--font-mono); }
+  .molecule-measurements { display:flex;flex-direction:column;align-items:center;margin-top:25px;gap:4px; }
+  .finalist-evidence { display:grid;gap:5px;margin:25px auto 0;width:fit-content; }
+  .finalist-evidence>div { display:flex;align-items:baseline;gap:10px; }
+  .finalist-evidence dd { order:-1;width:92px;text-align:right;margin:0;color:var(--teal);font:16px/1.5 var(--font-mono); }
+  .finalist-evidence dt { color:var(--color-ink-soft);font:10px var(--font-sans); }
+  .metric-name { color:var(--color-ink-soft);font:10px var(--font-mono); }
+  .clearance { font:27px/1.4 var(--font-mono);letter-spacing:-.07em; }
+  .clearance small { margin-left:7px;font:15px var(--font-sans); }
+  .measurement-note { font:10px/1.8 var(--font-mono);color:var(--color-ink-soft);min-height:18px; }
+  .pass { color:var(--teal); } .fail { color:var(--warm); } .unknown { color:#abb2a8; }
+  .workspace-foot { display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;padding:18px 0 14px;color:var(--color-ink-soft);font:10px/1.5 var(--font-mono); }
+  .lo-workspace .workspace-foot { margin-top:28px; }
+  .workspace-foot>span { display:flex;align-items:center;gap:7px; }
+  .edit-key { display:inline-block;width:9px;height:9px;border-radius:50%;background:#add9cc; }
+  .sh-workspace { padding-top:20px; }
+  .scaffold-sequence { display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 260px;gap:22px;padding-top:18px;align-items:start; }
+  .scaffold-candidate { min-width:0; }
+  .scaffold-structure { display:block;width:100%;padding:0;text-align:center; }
+  .scaffold-structure .molecule-art { height:185px;object-fit:contain;margin:18px 0; }
+  .scaffold-structure:hover .molecule-name,.scaffold-structure:focus-visible .molecule-name { color:var(--teal); }
+  .scaffold-measurements { margin:0;display:grid;gap:12px; }
+  .scaffold-measurements>div { display:flex;align-items:baseline;justify-content:space-between;gap:8px; }
+  .scaffold-measurements dt { color:var(--color-ink-soft);font:11px/1.5 var(--font-sans); }
+  .scaffold-measurements dd { margin:0;white-space:nowrap;font:14px/1.5 var(--font-mono); }
+  .scaffold-measurements small { font:12px var(--font-sans); }
+  .scaffold-result { margin:15px 0 0;min-height:34px;color:var(--color-ink-soft);font:11px/1.5 var(--font-sans); }
+  .scaffold-pocket { border-left:1px solid var(--color-line);padding-left:18px;text-align:center; }
+  .preservation-heading { display:block;margin-bottom:9px;text-transform:uppercase;letter-spacing:.055em;color:var(--color-ink-soft);font:9px var(--font-mono); }
+  .pocket-evaluation { display:block;margin-top:12px;padding:8px 4px;border:1px dashed #97aaa0;color:var(--color-ink-soft);font:10px/1.7 var(--font-mono); }
+  .pocket-evaluation b { color:var(--teal);font-weight:400;font-size:15px; }
+  .pose-inset { width:100%;height:255px; }
+  .pocket-description { display:block;margin-top:14px;color:var(--color-ink-soft);font:11px/1.5 var(--font-sans); }
+  .pocket-stage { position:relative; }
+  .pose-inset.pocket-stage { position:relative; }
+
+  .pocket-viewer { position:absolute;inset:0; }
+  .pocket-fallback { position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none; }
+  .pocket-fallback>img,.pocket-fallback>svg { position:absolute;inset:0;width:100%;height:100%;object-fit:contain; }
+  .pocket-stage[data-ready="true"] .pocket-fallback { visibility:hidden; }
+  .viewer-status { position:absolute;bottom:25px;left:14px;color:var(--color-ink-soft);font:10px/1.4 var(--font-mono);pointer-events:none;max-width:70%; }
+  .pose-inset .viewer-status { font-size:8px;bottom:18px; }
+  .evidence-controls { display:flex;align-items:center;gap:25px;margin-top:20px; }
+  .eyebrow { text-transform:uppercase;letter-spacing:.065em;color:var(--color-ink-soft);font:10px/1.5 var(--font-mono); }
+  .evidence-switch { display:flex;align-items:center;gap:12px; }
+  .evidence-switch button { padding:4px 0;font-size:12px; }
+  .evidence-switch button[aria-pressed="true"] { color:var(--teal); }
+  .evidence-track { position:relative;width:43px;height:1px;background:#bbc6bc; }
+  .evidence-track::before,.evidence-track::after { content:'';position:absolute;top:-4px;width:9px;height:9px;border:1px solid #8da49a;background:var(--color-paper);border-radius:50%; }
+  .evidence-track::before { left:0; } .evidence-track::after { right:0; }
+  .evidence-track i { position:absolute;top:-3px;left:1px;width:7px;height:7px;background:var(--teal);border-radius:50%;z-index:1; }
+  .evidence-track.enriched i { left:35px; }
+  .ipd-stage { height:345px; }
+  .observation-count { position:absolute;left:18px;top:35px;display:flex;flex-direction:column;pointer-events:none; }
+  .observation-count strong { color:var(--teal);font:38px/1.1 var(--font-serif); }
+  .observation-count span { margin-top:7px;color:var(--color-ink-soft);font:10px var(--font-mono); }
+  .hotspot-key { position:absolute;right:12px;top:43px;display:flex;flex-direction:column;gap:10px;min-width:155px;pointer-events:none; }
+  .hotspot-key>span:not(.eyebrow) { display:flex;align-items:center;gap:7px;color:var(--color-ink-soft);font:11px var(--font-sans); }
+  .hotspot-key i { width:8px;height:8px;border-radius:50%;background:var(--feature-color); }
+  .hotspot-key b { margin-left:auto;color:var(--teal);font:10px var(--font-mono); }
+  .viewer-controls { position:absolute;bottom:0;left:18px;display:flex;align-items:center;gap:16px;color:var(--color-ink-soft);font:10px var(--font-mono); }
+  .viewer-controls button { padding:5px;color:var(--teal);font:inherit; }
+  .probe-strip { display:flex;justify-content:center;align-items:center;gap:16px;min-height:27px; }
+  .probe-strip button { display:flex;align-items:center;gap:5px;padding:4px;font:10px var(--font-mono); }
+  .probe-strip button:disabled { opacity:.3;cursor:default; }
+  .probe-strip i { width:5px;height:5px;border-radius:50%;background:#9ab7a6; }
+  .probe-strip i.failed { background:var(--warm); }
+  .probe-strip>span { color:var(--color-ink-soft);font:9px var(--font-mono); }
+  .event-ribbon { display:flex;align-items:center;gap:12px;border-block:1px solid var(--color-line);padding:10px 0 6px; }
+  .play,.next { flex:none;width:30px;height:40px;padding:0;color:var(--teal);font-size:23px; }
+  .next:disabled { opacity:.25;cursor:default; }
+  .ribbon-scroll { flex:1;min-width:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--color-line) transparent; }
+  .ribbon-track { display:grid;grid-template-columns:repeat(var(--events),minmax(0,1fr));position:relative;min-width:650px;height:61px; }
+  .ribbon-line { position:absolute;left:calc(50% / var(--events));right:calc(50% / var(--events));top:19px;height:1px;background:var(--color-line);pointer-events:none; }
+  .event { padding:2px 0 7px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:10px;font:10px var(--font-mono); }
+  .tool-icon { width:25px;height:27px;display:grid;place-items:center;color:#86968d;background:var(--color-paper);font:14px var(--font-mono); }
+  .event-name { white-space:nowrap; }
+  .event.active { color:var(--teal); } .event.active .tool-icon { opacity:0; }
+  .event.future { color:#9fa69e; } .event.future .tool-icon { color:#b7beb5; }
+  .agent-cursor { position:absolute;z-index:1;pointer-events:none;left:var(--position);top:5px;transform:translateX(-50%);display:grid;place-items:center;width:27px;height:27px;border:1px solid var(--teal);background:var(--color-paper);border-radius:50%;color:var(--teal);font:13px var(--font-mono);transition:left .22s ease; }
+  .working-trace { border-top:1px solid var(--color-line);padding:13px 0 10px; }
+  .activity-heading { display:flex;align-items:center;gap:12px;min-height:21px;color:var(--color-ink-soft);font:10px var(--font-mono); }
+  .activity-heading>span:first-child { color:var(--color-ink); }
+  .activity-convention { margin-left:auto; }
+  .activity-feed { list-style:none;margin:7px 0 0;padding:0;min-height:102px;display:flex;flex-direction:column;justify-content:center;gap:2px; }
+  .activity-item { display:grid;grid-template-columns:160px minmax(0,1fr) 26px;align-items:baseline;gap:14px;margin:0;padding:6px 10px;border-left:2px solid transparent; }
+  .activity-item { opacity:.6; }
+  .activity-item.is-current { opacity:1;border-left-color:var(--teal);background:rgba(8,124,131,.045); }
+  .activity-source { display:flex;align-items:baseline;gap:8px;min-width:0;font:10px/1.6 var(--font-mono); }
+  .activity-actor { color:var(--color-ink);white-space:nowrap; }
+  .activity-subject { color:var(--color-ink-soft); }
+  [data-actor="Agent"] .activity-actor { color:var(--teal); }
+  .activity-text { color:var(--color-ink-soft);font:12px/1.6 var(--font-sans); }
+  .activity-item.is-current .activity-text { color:var(--color-ink); }
+  .activity-item[data-status="pass"] .activity-text { color:var(--teal); }
+  .activity-item[data-status="fail"] .activity-text { color:var(--warm); }
+  .activity-turn { color:var(--color-ink-soft);font:10px var(--font-mono);text-align:right; }
+  .posthoc-evaluation { display:flex;align-items:baseline;gap:20px;border:1px dashed #97aaa0;padding:11px 13px;margin:0 0 13px; }
+  .posthoc-evaluation>span { flex:none;text-transform:uppercase;letter-spacing:.05em;color:var(--color-ink-soft);font:10px var(--font-mono); }
+  .posthoc-evaluation p { margin:0;color:var(--teal);font:12px/1.6 var(--font-sans); }
+  figcaption { margin:15px 0 0;color:var(--color-ink-soft);font:13px/1.7 var(--font-sans); }
+  .trace-notes { margin-top:7px;color:var(--color-ink-soft);font:12px/1.7 var(--font-sans); }
+  .trace-notes summary { cursor:pointer;width:fit-content;font:10px var(--font-mono); }
+  .trace-notes p { margin:10px 0;max-width:none; }
+  .trace-notes strong { color:var(--color-ink);font-weight:600; }
+  .no-script { font:12px/1.7 var(--font-sans); }
+  .molecule-inspector { position:absolute;width:210px;z-index:10;padding:14px 16px;background:var(--color-paper);border:1px solid var(--color-line);box-shadow:0 4px 16px #172b2010;pointer-events:none; }
+  .inspector-name { display:block;font:18px var(--font-serif);font-weight:400; }
+  .molecule-inspector dl { margin:12px 0 0; }
+  .molecule-inspector :global(dl>div) { display:flex;justify-content:space-between;gap:12px;padding:3px 0;font:11px var(--font-mono); }
+  .molecule-inspector :global(dt) { color:var(--color-ink-soft); } .molecule-inspector :global(dd) { margin:0;color:var(--teal); }
+  .inspector-note { margin:9px 0 0;color:var(--color-ink-soft);font:10px/1.6 var(--font-sans); }
+  .sr-only { position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+  @media(max-width:900px) {
+
+    .scaffold-sequence { grid-template-columns:repeat(3,minmax(0,1fr));gap:20px; }.scaffold-pocket { grid-column:1 / -1;justify-self:center;width:280px;border-left:0;padding-left:0;margin-top:12px; }
+    .molecule-family { gap:8px; }.scientific-workspace { min-height:350px; }.molecule-name { font-size:16px; }.clearance { font-size:23px; }
+  }
+  @media(max-width:600px) {
+    .task-switch { gap:14px;justify-content:space-between; }.task-switch button { font-size:11px;white-space:normal;text-align:left;padding-bottom:10px; }
+    .workspace-heading { margin-top:16px; }.workspace-heading p { font-size:15px; }.objectives { gap:14px;font-size:9px; }
+    .molecule-family { grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px;padding-top:25px; }.molecule-art { margin-top:6px; }
+    .molecule-measurements { margin-top:14px;gap:2px; }.family-arrow { right:-12px; }.selected-molecule { bottom:-9px;font-size:9px; }
+    .finalist-evidence { margin-top:14px;gap:4px; }.finalist-evidence>div { gap:6px; }.finalist-evidence dd { width:76px;font-size:13px; }.finalist-evidence dt { font-size:9px; }
+    .posthoc-evaluation { flex-direction:column;gap:5px; }
+    .lo-workspace .workspace-foot { margin-top:8px; }.workspace-foot { font-size:9px;padding-top:12px; }
+    .sh-workspace { min-height:0; }.scaffold-sequence { grid-template-columns:1fr;gap:26px; }.scaffold-candidate { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 15px;align-items:center;border-bottom:1px solid var(--color-line);padding-bottom:16px; }.scaffold-structure { grid-row:1 / 3; }.scaffold-structure .molecule-art { height:135px;margin:8px 0 0; }.scaffold-result { grid-column:2;margin-top:9px;min-height:0; }.scaffold-measurements { gap:9px; }.scaffold-measurements>div { gap:5px; }.scaffold-measurements dt { font-size:11px; }.scaffold-measurements dd { font-size:13px; }
+    .scaffold-pocket { margin-top:0; }.sh-workspace .workspace-foot { justify-content:center; }
+    .evidence-controls { flex-direction:column;align-items:flex-start;gap:7px;margin-top:14px; }.evidence-switch { gap:10px; }.evidence-switch button { font-size:11px; }
+    .ipd-stage { height:350px;margin-top:10px; }.observation-count { top:10px;left:0; }.observation-count strong { font-size:30px; }.observation-count span { font-size:9px; }
+    .hotspot-key { right:0;top:14px;min-width:136px;gap:7px; }.hotspot-key .eyebrow { font-size:8px; }.hotspot-key>span:not(.eyebrow) { font-size:10px; }.hotspot-key b { font-size:9px; }
+    .viewer-controls { left:0;bottom:0;font-size:9px; }.probe-strip { flex-wrap:wrap;gap:8px;margin-top:10px; }.probe-strip>span { display:none; }.ipd-workspace .workspace-foot { gap:4px; }
+    .event-ribbon { gap:5px; }.play,.next { width:25px; }.ribbon-track { min-width:660px; }
+    .activity-feed { min-height:168px;gap:5px; }.activity-item { grid-template-columns:minmax(0,1fr) 24px;gap:1px 8px;padding:4px 8px; }.activity-source { grid-column:1; }.activity-text { grid-column:1;grid-row:2;font-size:12px; }.activity-turn { grid-column:2;grid-row:1; }.activity-convention { font-size:9px; }
+    figcaption { font-size:12px;margin-top:12px; }
+  }
+  @media(prefers-reduced-motion:reduce) { .agent-cursor { transition:none; } }
+</style>

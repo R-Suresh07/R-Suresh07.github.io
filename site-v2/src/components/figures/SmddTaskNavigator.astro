@@ -1,0 +1,109 @@
+---
+import FigureHeading from '../FigureHeading.astro';
+import pocket from '../../assets/figures/environment-explorer/probes-pocket.svg';
+import loReference from '../../assets/figures/environment-explorer/lo-reference.svg';
+import loF from '../../assets/figures/environment-explorer/lo-f.svg';
+import loCl from '../../assets/figures/environment-explorer/lo-cl.svg';
+import loMe from '../../assets/figures/environment-explorer/lo-me.svg';
+import shReference from '../../assets/figures/environment-explorer/sh-reference.svg';
+import shCandidate from '../../assets/figures/environment-explorer/sh-c2.svg';
+
+const tasks = [
+  {
+    key: 'ipd', title: 'Interaction Point Discovery', section: 'interaction-point-discovery',
+    description: 'Find where chemistry should happen.',
+  },
+  {
+    key: 'lo', title: 'Lead Optimization', section: 'lead-optimization',
+    description: 'Improve a molecule while staying close.',
+  },
+  {
+    key: 'sh', title: 'Scaffold Hopping', section: 'scaffold-hopping',
+    description: 'Change the core while preserving function.',
+  },
+];
+---
+
+<figure class="task-navigator" id="fig-2" aria-label="The three SMDD tasks we study">
+  <div class="roadmap-heading">
+    <FigureHeading label="FIG. 2" title="The three SMDD tasks we study" />
+    <span class="navigation-hint">click a task to jump to its section</span>
+  </div>
+  <nav class="task-panels" aria-label="Jump to a scientific task case study">
+    {tasks.map(task => <a class="task-link" href={`#${task.section}`} aria-labelledby={`fig-2-${task.key}`}>
+      <div class="task-heading">
+        <h3 class="task-title" id={`fig-2-${task.key}`}>{task.title}</h3>
+        <span class="task-description">{task.description}</span>
+      </div>
+      {/* Static motifs illustrate the task contracts; markers are not evaluator targets. */}
+      <svg class="task-motif" viewBox="0 0 300 190" aria-hidden="true" focusable="false">
+        {task.key === 'ipd' && <>
+          <image class="pocket-lines" href={pocket.src} x="-12" y="-5" width="324" height="200" />
+          <g class="hotspots">
+            {[{x:122,y:75,color:'#087c83'},{x:179,y:111,color:'#bb7549'},{x:119,y:135,color:'#809065'}].map(p=><g>
+              <circle cx={p.x} cy={p.y} r="13" fill={p.color} fill-opacity=".09" stroke={p.color} stroke-opacity=".3" />
+              <circle cx={p.x} cy={p.y} r="5.5" fill={p.color} />
+            </g>)}
+          </g>
+        </>}
+        {task.key === 'lo' && <>
+          <image href={loReference.src} x="-12" y="38" width="174" height="128" />
+          <path class="motif-connector" d="M146 99H169 M169 38V160 M169 38H183 M169 99H183 M169 160H183" />
+          {[loF,loCl,loMe].map((m,i)=><image class="molecule-edit" href={m.src} x="180" y={-8+i*61} width="122" height="90" />)}
+        </>}
+        {task.key === 'sh' && <>
+          <image href={shReference.src} x="-9" y="29" width="148" height="133" />
+          <path class="motif-connector" d="M136 92H163 M159 88L163 92 159 96 M140 102H167 M144 98L140 102 144 106" />
+          <image class="molecule-edit" href={shCandidate.src} x="167" y="29" width="148" height="133" />
+        </>}
+      </svg>
+      {task.key !== 'sh' && <svg class="spectrum-arrow" viewBox="0 0 48 16" aria-hidden="true" focusable="false"><path d="M1 8H45 M38 1L45 8 38 15" /></svg>}
+    </a>)}
+  </nav>
+</figure>
+
+<style>
+  .task-navigator {
+    width:min(var(--wide-width),var(--breakout-max-width,calc(100vw - 2 * var(--page-gutter))));
+    margin:var(--space-6) 0;margin-inline:50%;transform:translateX(-50%);
+    color:var(--color-ink);font:14px/1.5 var(--font-sans);
+  }
+  .roadmap-heading { position:relative; }
+  .task-navigator :global(.editorial-figure-heading) { gap:10px 14px;margin-bottom:20px;padding-right:220px; }
+  .navigation-hint { position:absolute;right:0;top:23px;color:var(--color-ink-soft);font:10px/1.6 var(--font-mono); }
+  .task-panels { --stage-gap:56px;position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--stage-gap); }
+  .task-panels::before { content:'';position:absolute;bottom:12px;left:4px;right:4px;height:1px;background:#cbd8d2; }
+  .task-link {
+    position:relative;display:grid;grid-template-rows:minmax(76px,auto) 210px;min-width:0;padding:8px 4px 28px;
+    background:transparent;color:var(--color-ink);text-decoration:none;
+  }
+  .task-link:hover,.task-link:focus-visible { color:var(--color-ink); }
+  .task-link:focus-visible { outline:2px solid #087c83;outline-offset:4px;border-radius:0; }
+  .task-link::before { content:'';position:absolute;bottom:8px;left:50%;transform:translateX(-50%);box-sizing:border-box;width:9px;height:9px;border:1px solid #8daba6;border-radius:50%;background:var(--color-paper); }
+  .task-panels:not(:has(.task-link:hover,.task-link:focus-visible)) .task-link:first-child::before,
+  .task-panels:not(:has(.task-link:hover)) .task-link:focus-visible::before,
+  .task-link:hover::before { background:#087c83;border-color:#087c83; }
+  .spectrum-arrow { position:absolute;left:calc(100% + var(--stage-gap) / 2);bottom:125px;transform:translateX(-50%);width:36px;height:16px;overflow:visible;fill:none;stroke:#729a93;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+  .task-link .task-title { margin:0;font:21px/1.2 var(--font-serif);font-weight:400;letter-spacing:-.02em;text-wrap:balance; }
+  .task-motif { align-self:center;width:100%;height:210px;overflow:visible;transition:transform 180ms ease; }
+  .motif-connector { fill:none;stroke:#9aa89f;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round; }
+  .pocket-lines { opacity:.85; }
+  .hotspots,.molecule-edit { opacity:.8;transition:opacity 160ms ease; }
+  .task-link:hover .task-motif,.task-link:focus-visible .task-motif { transform:scale(1.025); }
+  .task-link:hover .hotspots,.task-link:hover .molecule-edit,.task-link:focus-visible .hotspots,.task-link:focus-visible .molecule-edit { opacity:1; }
+  .task-description { display:block;margin-top:8px;color:var(--color-ink-soft);font:italic 13px/1.6 var(--font-sans); }
+  @media(max-width:780px) {
+    .task-navigator :global(.editorial-figure-heading) { padding-right:0;margin-bottom:8px; }
+    .navigation-hint { position:static;display:block;text-align:right;margin-bottom:24px; }
+    .task-panels { grid-template-columns:1fr;gap:32px;padding-left:20px; }
+    .task-panels::before { top:20px;bottom:30px;left:3px;right:auto;width:1px;height:auto; }
+    .task-link { grid-template-rows:auto 190px;padding:8px 4px 12px; }
+    .task-link::before { top:19px;bottom:auto;left:-16.5px; }
+    .task-motif { height:190px;max-width:360px;justify-self:center; }
+    .spectrum-arrow { top:auto;bottom:-27px;left:50%;transform:translateX(-50%) rotate(90deg);width:30px; }
+  }
+  @media(prefers-reduced-motion:reduce) {
+    .task-link,.task-motif,.hotspots,.molecule-edit { transition:none; }
+    .task-link:hover .task-motif,.task-link:focus-visible .task-motif { transform:none; }
+  }
+</style>

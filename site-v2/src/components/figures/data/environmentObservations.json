@@ -1,0 +1,1191 @@
+{
+  "lo": {
+    "source": "results/blog/lead_optimization/v1/smdd_004_DHFR_11/transcript.md",
+    "sha256": "e49bbfb728236674873650c3c0703cc7f4167002e792bb592563a3b9a6052f06",
+    "calls": [
+      {
+        "turn": 1,
+        "tool": "python"
+      },
+      {
+        "turn": 2,
+        "tool": "python"
+      },
+      {
+        "turn": 3,
+        "tool": "python"
+      },
+      {
+        "turn": 4,
+        "tool": "python"
+      },
+      {
+        "turn": 5,
+        "tool": "python"
+      },
+      {
+        "turn": 6,
+        "tool": "python"
+      },
+      {
+        "turn": 7,
+        "tool": "python"
+      },
+      {
+        "turn": 8,
+        "tool": "python"
+      },
+      {
+        "turn": 9,
+        "tool": "python"
+      },
+      {
+        "turn": 10,
+        "tool": "python"
+      },
+      {
+        "turn": 11,
+        "tool": "python"
+      },
+      {
+        "turn": 12,
+        "tool": "python"
+      },
+      {
+        "turn": 13,
+        "tool": "python"
+      },
+      {
+        "turn": 14,
+        "tool": "predict_admet"
+      },
+      {
+        "turn": 15,
+        "tool": "python"
+      },
+      {
+        "turn": 16,
+        "tool": "predict_admet"
+      },
+      {
+        "turn": 17,
+        "tool": "python"
+      },
+      {
+        "turn": 18,
+        "tool": "python"
+      },
+      {
+        "turn": 19,
+        "tool": "python"
+      },
+      {
+        "turn": 20,
+        "tool": "python"
+      },
+      {
+        "turn": 21,
+        "tool": "python"
+      },
+      {
+        "turn": 22,
+        "tool": "python"
+      },
+      {
+        "turn": 23,
+        "tool": "python"
+      },
+      {
+        "turn": 24,
+        "tool": "python"
+      },
+      {
+        "turn": 25,
+        "tool": "python"
+      },
+      {
+        "turn": 26,
+        "tool": "python"
+      },
+      {
+        "turn": 27,
+        "tool": "python"
+      },
+      {
+        "turn": 28,
+        "tool": "python"
+      },
+      {
+        "turn": 29,
+        "tool": "python"
+      },
+      {
+        "turn": 30,
+        "tool": "python"
+      },
+      {
+        "turn": 31,
+        "tool": "python"
+      },
+      {
+        "turn": 32,
+        "tool": "python"
+      },
+      {
+        "turn": 33,
+        "tool": "python"
+      },
+      {
+        "turn": 34,
+        "tool": "python"
+      },
+      {
+        "turn": 35,
+        "tool": "python"
+      },
+      {
+        "turn": 36,
+        "tool": "python"
+      },
+      {
+        "turn": 37,
+        "tool": "python"
+      },
+      {
+        "turn": 38,
+        "tool": "python"
+      },
+      {
+        "turn": 39,
+        "tool": "python"
+      },
+      {
+        "turn": 40,
+        "tool": "python"
+      },
+      {
+        "turn": 41,
+        "tool": "predict_admet"
+      },
+      {
+        "turn": 42,
+        "tool": "predict_admet"
+      },
+      {
+        "turn": 43,
+        "tool": "predict_admet"
+      },
+      {
+        "turn": 44,
+        "tool": "python"
+      },
+      {
+        "turn": 45,
+        "tool": "python"
+      },
+      {
+        "turn": 46,
+        "tool": "python"
+      },
+      {
+        "turn": 47,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 48,
+        "tool": "python"
+      },
+      {
+        "turn": 49,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 50,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 51,
+        "tool": "python"
+      },
+      {
+        "turn": 52,
+        "tool": "python"
+      },
+      {
+        "turn": 53,
+        "tool": "python"
+      },
+      {
+        "turn": 54,
+        "tool": "python"
+      },
+      {
+        "turn": 55,
+        "tool": "python"
+      },
+      {
+        "turn": 56,
+        "tool": "python"
+      },
+      {
+        "turn": 57,
+        "tool": "python"
+      },
+      {
+        "turn": 58,
+        "tool": "python"
+      },
+      {
+        "turn": 59,
+        "tool": "submit"
+      }
+    ],
+    "features": [],
+    "measurements": [
+      {
+        "turn": 16,
+        "tool": "predict_admet",
+        "values": {
+          "ames": 0.4429427146911621,
+          "bbb": 0.9296592473983765,
+          "caco2": -5.036385618986899,
+          "clearance": 82.66996139734697,
+          "cyp3a4": 0.5848169207572937,
+          "herg": 0.41601658463478086,
+          "ppb": 105.41813902322588,
+          "solubility": -4.954269154226042
+        }
+      },
+      {
+        "turn": 41,
+        "tool": "predict_admet",
+        "values": {
+          "ames": 0.5050270974636077,
+          "bbb": 0.94702650308609,
+          "caco2": -5.024374177977658,
+          "clearance": 79.52608241635534,
+          "cyp3a4": 0.6746913671493531,
+          "herg": 0.49016223549842836,
+          "ppb": 102.44283312115886,
+          "solubility": -4.806174922572419
+        }
+      },
+      {
+        "turn": 42,
+        "tool": "predict_admet",
+        "values": {
+          "ames": 0.43147348463535307,
+          "bbb": 0.945278263092041,
+          "caco2": -4.877320256574062,
+          "clearance": 76.52050518948754,
+          "cyp3a4": 0.6792264342308044,
+          "herg": 0.40876232981681826,
+          "ppb": 105.52554884059138,
+          "solubility": -5.521136331807542
+        }
+      },
+      {
+        "turn": 43,
+        "tool": "predict_admet",
+        "values": {
+          "ames": 0.4865578830242157,
+          "bbb": 0.9316383838653565,
+          "caco2": -5.074020242453456,
+          "clearance": 79.09611920204864,
+          "cyp3a4": 0.7804122567176819,
+          "herg": 0.5026064276695251,
+          "ppb": 107.82472823742083,
+          "solubility": -5.073097360869953
+        }
+      },
+      {
+        "turn": 49,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": -1.1435400247573853,
+          "affinity_pred_value1": -1.0189297199249268,
+          "affinity_pred_value2": -1.2681503295898438,
+          "affinity_probability_binary": 0.9540916681289673,
+          "affinity_probability_binary1": 0.9829467535018921,
+          "affinity_probability_binary2": 0.9252366423606873
+        }
+      },
+      {
+        "turn": 50,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": -0.9608437418937683,
+          "affinity_pred_value1": -0.9086235761642456,
+          "affinity_pred_value2": -1.013063907623291,
+          "affinity_probability_binary": 0.9208902716636658,
+          "affinity_probability_binary1": 0.9473264813423157,
+          "affinity_probability_binary2": 0.8944540619850159
+        }
+      }
+    ]
+  },
+  "sh": {
+    "source": "results/blog/scaffold_hopping/v1/smdd_003_4S0V_0__CdLrCm6/agent/transcript.md",
+    "sha256": "d85d3334b3bae6924009848fd77f721fbd1aca7e5fa17d62f91b737e33bd44bc",
+    "calls": [
+      {
+        "turn": 1,
+        "tool": "python"
+      },
+      {
+        "turn": 2,
+        "tool": "python"
+      },
+      {
+        "turn": 3,
+        "tool": "python"
+      },
+      {
+        "turn": 4,
+        "tool": "python"
+      },
+      {
+        "turn": 5,
+        "tool": "python"
+      },
+      {
+        "turn": 6,
+        "tool": "python"
+      },
+      {
+        "turn": 7,
+        "tool": "python"
+      },
+      {
+        "turn": 8,
+        "tool": "python"
+      },
+      {
+        "turn": 9,
+        "tool": "python"
+      },
+      {
+        "turn": 10,
+        "tool": "python"
+      },
+      {
+        "turn": 11,
+        "tool": "python"
+      },
+      {
+        "turn": 12,
+        "tool": "python"
+      },
+      {
+        "turn": 13,
+        "tool": "python"
+      },
+      {
+        "turn": 14,
+        "tool": "python"
+      },
+      {
+        "turn": 15,
+        "tool": "python"
+      },
+      {
+        "turn": 16,
+        "tool": "python"
+      },
+      {
+        "turn": 17,
+        "tool": "python"
+      },
+      {
+        "turn": 18,
+        "tool": "python"
+      },
+      {
+        "turn": 19,
+        "tool": "python"
+      },
+      {
+        "turn": 20,
+        "tool": "python"
+      },
+      {
+        "turn": 21,
+        "tool": "python"
+      },
+      {
+        "turn": 22,
+        "tool": "python"
+      },
+      {
+        "turn": 23,
+        "tool": "python"
+      },
+      {
+        "turn": 24,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 25,
+        "tool": "python"
+      },
+      {
+        "turn": 26,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 27,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 28,
+        "tool": "python"
+      },
+      {
+        "turn": 29,
+        "tool": "python"
+      },
+      {
+        "turn": 30,
+        "tool": "python"
+      },
+      {
+        "turn": 31,
+        "tool": "python"
+      },
+      {
+        "turn": 32,
+        "tool": "python"
+      },
+      {
+        "turn": 33,
+        "tool": "python"
+      },
+      {
+        "turn": 34,
+        "tool": "python"
+      },
+      {
+        "turn": 35,
+        "tool": "python"
+      },
+      {
+        "turn": 36,
+        "tool": "python"
+      },
+      {
+        "turn": 37,
+        "tool": "python"
+      },
+      {
+        "turn": 38,
+        "tool": "python"
+      },
+      {
+        "turn": 39,
+        "tool": "python"
+      },
+      {
+        "turn": 40,
+        "tool": "python"
+      },
+      {
+        "turn": 41,
+        "tool": "python"
+      },
+      {
+        "turn": 42,
+        "tool": "python"
+      },
+      {
+        "turn": 43,
+        "tool": "python"
+      },
+      {
+        "turn": 44,
+        "tool": "python"
+      },
+      {
+        "turn": 45,
+        "tool": "submit"
+      }
+    ],
+    "features": [],
+    "measurements": [
+      {
+        "turn": 26,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 0.27427172660827637,
+          "affinity_pred_value1": 0.7633149027824402,
+          "affinity_pred_value2": -0.21477141976356506,
+          "affinity_probability_binary": 0.6466072797775269,
+          "affinity_probability_binary1": 0.7209647297859192,
+          "affinity_probability_binary2": 0.5722497701644897
+        }
+      },
+      {
+        "turn": 27,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": -0.10093973577022552,
+          "affinity_pred_value1": -0.15966016054153442,
+          "affinity_pred_value2": -0.042219314724206924,
+          "affinity_probability_binary": 0.7219154834747314,
+          "affinity_probability_binary1": 0.8877499103546143,
+          "affinity_probability_binary2": 0.5560809969902039
+        }
+      }
+    ]
+  },
+  "receptor": {
+    "source": "results/blog/ipd/v1/smdd_002_P14061_0/transcript.md",
+    "sha256": "4593a3722a92cb20fcf5bf4b5c450bed659af9a3d00759a671af39b2110653e8",
+    "calls": [
+      {
+        "turn": 1,
+        "tool": "python"
+      },
+      {
+        "turn": 2,
+        "tool": "python"
+      },
+      {
+        "turn": 3,
+        "tool": "python"
+      },
+      {
+        "turn": 4,
+        "tool": "python"
+      },
+      {
+        "turn": 5,
+        "tool": "python"
+      },
+      {
+        "turn": 6,
+        "tool": "python"
+      },
+      {
+        "turn": 7,
+        "tool": "python"
+      },
+      {
+        "turn": 8,
+        "tool": "python"
+      },
+      {
+        "turn": 9,
+        "tool": "python"
+      },
+      {
+        "turn": 10,
+        "tool": "python"
+      },
+      {
+        "turn": 11,
+        "tool": "python"
+      },
+      {
+        "turn": 12,
+        "tool": "python"
+      },
+      {
+        "turn": 13,
+        "tool": "python"
+      },
+      {
+        "turn": 14,
+        "tool": "python"
+      },
+      {
+        "turn": 15,
+        "tool": "python"
+      },
+      {
+        "turn": 16,
+        "tool": "python"
+      },
+      {
+        "turn": 17,
+        "tool": "python"
+      },
+      {
+        "turn": 18,
+        "tool": "python"
+      },
+      {
+        "turn": 19,
+        "tool": "python"
+      },
+      {
+        "turn": 20,
+        "tool": "python"
+      },
+      {
+        "turn": 21,
+        "tool": "python"
+      },
+      {
+        "turn": 22,
+        "tool": "python"
+      },
+      {
+        "turn": 23,
+        "tool": "python"
+      },
+      {
+        "turn": 24,
+        "tool": "python"
+      },
+      {
+        "turn": 25,
+        "tool": "python"
+      },
+      {
+        "turn": 26,
+        "tool": "python"
+      },
+      {
+        "turn": 27,
+        "tool": "python"
+      },
+      {
+        "turn": 28,
+        "tool": "python"
+      },
+      {
+        "turn": 29,
+        "tool": "python"
+      },
+      {
+        "turn": 30,
+        "tool": "python"
+      },
+      {
+        "turn": 31,
+        "tool": "python"
+      },
+      {
+        "turn": 32,
+        "tool": "python"
+      },
+      {
+        "turn": 33,
+        "tool": "python"
+      },
+      {
+        "turn": 34,
+        "tool": "python"
+      },
+      {
+        "turn": 35,
+        "tool": "python"
+      },
+      {
+        "turn": 36,
+        "tool": "python"
+      },
+      {
+        "turn": 37,
+        "tool": "python"
+      },
+      {
+        "turn": 38,
+        "tool": "python"
+      },
+      {
+        "turn": 39,
+        "tool": "python"
+      },
+      {
+        "turn": 40,
+        "tool": "submit"
+      }
+    ],
+    "features": [],
+    "measurements": []
+  },
+  "probes": {
+    "source": "results/blog/ipd/v2/smdd_002_Q92769_0/transcript.md",
+    "sha256": "e25077194a88c935e2bb55d5cb70ab44cb47b1c2e62cae3f656cc6a75542a2e0",
+    "calls": [
+      {
+        "turn": 1,
+        "tool": "get_task_requirements"
+      },
+      {
+        "turn": 1,
+        "tool": "python"
+      },
+      {
+        "turn": 2,
+        "tool": "python"
+      },
+      {
+        "turn": 3,
+        "tool": "python"
+      },
+      {
+        "turn": 4,
+        "tool": "python"
+      },
+      {
+        "turn": 5,
+        "tool": "python"
+      },
+      {
+        "turn": 6,
+        "tool": "python"
+      },
+      {
+        "turn": 7,
+        "tool": "get_task_requirements"
+      },
+      {
+        "turn": 8,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 9,
+        "tool": "get_probe_pharmacophore_features"
+      },
+      {
+        "turn": 10,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 10,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 11,
+        "tool": "get_probe_pharmacophore_features"
+      },
+      {
+        "turn": 11,
+        "tool": "get_probe_pharmacophore_features"
+      },
+      {
+        "turn": 12,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 12,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 13,
+        "tool": "get_probe_pharmacophore_features"
+      },
+      {
+        "turn": 13,
+        "tool": "get_probe_pharmacophore_features"
+      },
+      {
+        "turn": 14,
+        "tool": "predict_boltz"
+      },
+      {
+        "turn": 15,
+        "tool": "get_probe_pharmacophore_features"
+      },
+      {
+        "turn": 16,
+        "tool": "python"
+      },
+      {
+        "turn": 17,
+        "tool": "python"
+      },
+      {
+        "turn": 18,
+        "tool": "python"
+      },
+      {
+        "turn": 19,
+        "tool": "python"
+      },
+      {
+        "turn": 20,
+        "tool": "python"
+      },
+      {
+        "turn": 21,
+        "tool": "submit_pharmacophore"
+      }
+    ],
+    "features": [
+      {
+        "feature_id": "F001",
+        "type": "Acceptor",
+        "x": 63.916871,
+        "y": 27.920523,
+        "z": 1.045426,
+        "probe": "P001",
+        "turn": 9
+      },
+      {
+        "feature_id": "F002",
+        "type": "Acceptor",
+        "x": 65.488968,
+        "y": 29.353421,
+        "z": 0.821679,
+        "probe": "P001",
+        "turn": 9
+      },
+      {
+        "feature_id": "F003",
+        "type": "Anion",
+        "x": 64.737467,
+        "y": 28.63411,
+        "z": 1.125205,
+        "probe": "P001",
+        "turn": 9
+      },
+      {
+        "feature_id": "F004",
+        "type": "Donor",
+        "x": 63.916871,
+        "y": 27.920523,
+        "z": 1.045426,
+        "probe": "P001",
+        "turn": 9
+      },
+      {
+        "feature_id": "F001",
+        "type": "Acceptor",
+        "x": 66.673477,
+        "y": 31.30466,
+        "z": -0.838585,
+        "probe": "P002",
+        "turn": 11
+      },
+      {
+        "feature_id": "F002",
+        "type": "Aromatic",
+        "x": 70.333274,
+        "y": 31.353405,
+        "z": -0.64357,
+        "probe": "P002",
+        "turn": 11
+      },
+      {
+        "feature_id": "F003",
+        "type": "Donor",
+        "x": 67.222762,
+        "y": 29.614838,
+        "z": 0.48319,
+        "probe": "P002",
+        "turn": 11
+      },
+      {
+        "feature_id": "F004",
+        "type": "Hydrophobic",
+        "x": 69.003009,
+        "y": 31.00822,
+        "z": -0.473229,
+        "probe": "P002",
+        "turn": 11
+      },
+      {
+        "feature_id": "F005",
+        "type": "Hydrophobic",
+        "x": 71.675617,
+        "y": 31.699431,
+        "z": -0.802731,
+        "probe": "P002",
+        "turn": 11
+      },
+      {
+        "feature_id": "F006",
+        "type": "Hydrophobic",
+        "x": 73.144567,
+        "y": 32.058299,
+        "z": -0.985432,
+        "probe": "P002",
+        "turn": 11
+      },
+      {
+        "feature_id": "F001",
+        "type": "Aromatic",
+        "x": 63.271926,
+        "y": 28.618406,
+        "z": 5.305489,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F002",
+        "type": "Aromatic",
+        "x": 66.226005,
+        "y": 29.298301,
+        "z": -0.647529,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F003",
+        "type": "Hydrophobic",
+        "x": 62.901354,
+        "y": 28.126692,
+        "z": 4.129532,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F004",
+        "type": "Hydrophobic",
+        "x": 64.097143,
+        "y": 28.758927,
+        "z": 4.191125,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F005",
+        "type": "Hydrophobic",
+        "x": 64.910173,
+        "y": 28.51822,
+        "z": 1.719438,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F006",
+        "type": "Hydrophobic",
+        "x": 64.995429,
+        "y": 29.010546,
+        "z": 3.084249,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F007",
+        "type": "Hydrophobic",
+        "x": 65.641009,
+        "y": 28.940055,
+        "z": 0.539242,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F008",
+        "type": "Hydrophobic",
+        "x": 66.734804,
+        "y": 29.746741,
+        "z": 0.485414,
+        "probe": "P003",
+        "turn": 11
+      },
+      {
+        "feature_id": "F001",
+        "type": "Acceptor",
+        "x": 65.68854,
+        "y": 29.112309,
+        "z": -1.925784,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F002",
+        "type": "Acceptor",
+        "x": 66.49755,
+        "y": 30.886081,
+        "z": -0.947691,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F003",
+        "type": "Anion",
+        "x": 66.120002,
+        "y": 29.90141,
+        "z": -1.277682,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F004",
+        "type": "Donor",
+        "x": 66.49755,
+        "y": 30.886081,
+        "z": -0.947691,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F005",
+        "type": "Hydrophobic",
+        "x": 64.595635,
+        "y": 28.057507,
+        "z": 1.650241,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F006",
+        "type": "Hydrophobic",
+        "x": 65.410165,
+        "y": 29.243712,
+        "z": 1.32442,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F007",
+        "type": "Hydrophobic",
+        "x": 66.371873,
+        "y": 28.891196,
+        "z": 0.249364,
+        "probe": "P004",
+        "turn": 13
+      },
+      {
+        "feature_id": "F001",
+        "type": "Acceptor",
+        "x": 65.395251,
+        "y": 29.437636,
+        "z": -1.905513,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F002",
+        "type": "Acceptor",
+        "x": 66.511281,
+        "y": 31.104124,
+        "z": -1.099974,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F003",
+        "type": "Anion",
+        "x": 66.024165,
+        "y": 30.159638,
+        "z": -1.369119,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F004",
+        "type": "Cation",
+        "x": 68.146696,
+        "y": 29.502677,
+        "z": 0.2318,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F005",
+        "type": "Donor",
+        "x": 66.511281,
+        "y": 31.104124,
+        "z": -1.099974,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F006",
+        "type": "Donor",
+        "x": 68.146696,
+        "y": 29.502677,
+        "z": 0.2318,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F007",
+        "type": "Hydrophobic",
+        "x": 64.673538,
+        "y": 28.249065,
+        "z": 1.089837,
+        "probe": "P006",
+        "turn": 15
+      },
+      {
+        "feature_id": "F008",
+        "type": "Hydrophobic",
+        "x": 65.918213,
+        "y": 29.103475,
+        "z": 1.207874,
+        "probe": "P006",
+        "turn": 15
+      }
+    ],
+    "measurements": [
+      {
+        "turn": 8,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 2.6292426586151123,
+          "affinity_pred_value1": 2.661372184753418,
+          "affinity_pred_value2": 2.5971131324768066,
+          "affinity_probability_binary": 0.33194437623023987,
+          "affinity_probability_binary1": 0.0288722962141037,
+          "affinity_probability_binary2": 0.6350164413452148
+        }
+      },
+      {
+        "turn": 10,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 0.38779717683792114,
+          "affinity_pred_value1": 0.7367432117462158,
+          "affinity_pred_value2": 0.038851141929626465,
+          "affinity_probability_binary": 0.9435161352157593,
+          "affinity_probability_binary1": 0.9687814712524414,
+          "affinity_probability_binary2": 0.9182508587837219
+        }
+      },
+      {
+        "turn": 10,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 1.4992848634719849,
+          "affinity_pred_value1": 1.3327735662460327,
+          "affinity_pred_value2": 1.665796160697937,
+          "affinity_probability_binary": 0.4346744418144226,
+          "affinity_probability_binary1": 0.3355596363544464,
+          "affinity_probability_binary2": 0.5337892770767212
+        }
+      },
+      {
+        "turn": 12,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 1.9371159076690674,
+          "affinity_pred_value1": 2.3295974731445312,
+          "affinity_pred_value2": 1.544634222984314,
+          "affinity_probability_binary": 0.27739080786705017,
+          "affinity_probability_binary1": 0.04155866801738739,
+          "affinity_probability_binary2": 0.5132229328155518
+        }
+      },
+      {
+        "turn": 12,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 2.55517840385437,
+          "affinity_pred_value1": 2.355971336364746,
+          "affinity_pred_value2": 2.754385471343994,
+          "affinity_probability_binary": 0.4007708728313446,
+          "affinity_probability_binary1": 0.29710477590560913,
+          "affinity_probability_binary2": 0.5044369697570801
+        }
+      },
+      {
+        "turn": 14,
+        "tool": "predict_boltz",
+        "values": {
+          "affinity_pred_value": 1.685555100440979,
+          "affinity_pred_value1": 2.158749580383301,
+          "affinity_pred_value2": 1.2123606204986572,
+          "affinity_probability_binary": 0.4528037905693054,
+          "affinity_probability_binary1": 0.3889063894748688,
+          "affinity_probability_binary2": 0.5167011618614197
+        }
+      }
+    ]
+  }
+}

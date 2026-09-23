@@ -43,8 +43,8 @@ import LoAheVsManualSearchFigure from '../../components/figures/LoAheVsManualSea
 import IpdAheVsHumanFigure from '../../components/figures/IpdAheVsHumanFigure.astro';
 import ScaffoldAheVsHumanFigure from '../../components/figures/ScaffoldAheVsHumanFigure.astro';
 import AheScaffoldSuccessFigure from '../../components/figures/AheScaffoldSuccessFigure.astro';
-import fig1 from './data/fig1.png';
-import smddBenchOverview from './data/smdd-bench-overview.png';
+import ScientificEnvironmentExplorer from '../../components/figures/ScientificEnvironmentExplorer.astro';
+import SmddTaskNavigator from '../../components/figures/SmddTaskNavigator.astro';
 import wideComparison from '../../assets/fixtures/wide-comparison.svg';
 import fullSystem from '../../assets/fixtures/full-system.svg';
 import videoPoster from '../../assets/fixtures/video-poster.svg';
@@ -55,15 +55,7 @@ import figurePlaceholder from '../../assets/fixtures/figure-placeholder.svg';
 An agent harness is everything that surrounds the model: the tools it can call, the state it can see, and how observations are presented back to it. An agent therefore does not act on the environment directly. Its actions pass through an interface that decides what capabilities are available, while observations and results are transformed before they return to the model.
 
 This means an agent system contains two decision procedures rather than one. The model decides what to do with the information it receives. The harness decides **what information reaches the model, what gets remembered, and which actions are possible in the first place.**
-<Figure
-  src={fig1}
-  alt="Diagram showing an AI agent acting through an agent-environment interface that exposes language-model-friendly actions and returns structured observations, state, and results from a computer environment."
-  width="wide"
-  captionLabel="FIG. 1"
-  title="An agent only sees the environment through its harness"
-  captionLead="The agent never interacts with the environment directly. The harness decides how raw environmental state is represented to the model, what information persists across turns, and which actions the model is allowed to execute."
-  emphasizedCaption
-/>
+<ScientificEnvironmentExplorer />
 
 The asymmetry is that these two procedures are optimized very differently. The model’s **policy, its learned strategy for deciding what to do next,** is shaped through training, while the harness around it is still commonly designed by hand. A developer decides which tools to expose, what state deserves a durable representation, how outputs should be structured, when context should be compacted, and what conditions should block an action or submission.
 
@@ -81,19 +73,9 @@ We focus on three SMDD-Bench tasks that expose different kinds of harness depend
 
 SMDD-Bench contains 502 instances across five small-molecule design tasks. Each combines chemical and biological reasoning with specialized tools, and several also require reasoning over the 3D geometry of a protein binding pocket.
 
-We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. They sit at very different points on the current capability curve. Lead Optimization is comparatively tractable, with the best reported model solving 57.6% of tasks, while the best reported pass rates for Scaffold Hopping and Interaction Point Discovery are only 3.8% and 4.0%, respectively.<Sidenote number="2" align="paragraph">These are the best reported pass rates in the original SMDD-Bench evaluation: GPT-5.4 for Lead Optimization, GPT-5.4 / Claude Sonnet 4.6 / DeepSeek V3.2 tied for Scaffold Hopping, and Gemini 3.1 Pro for Interaction Point Discovery. Our Lead Optimization experiments below use the 68-task Lite subset.</Sidenote> This gives us one task where agents already succeed reasonably often and two where performance remains close to the floor.
+We focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping. They sit at very different points on the current capability curve. Lead Optimization is comparatively tractable, with the best reported model solving 57.6% of tasks, while the best reported pass rates for Scaffold Hopping and Interaction Point Discovery are only 3.8% and 4.0%, respectively.<Sidenote number="2" align="paragraph">These are the best reported pass rates in the original SMDD-Bench evaluation: GPT-5.4 for Lead Optimization, GPT-5.4 / Claude Sonnet 4.6 / DeepSeek V3.2 tied for Scaffold Hopping, and Gemini 3.1 Pro for Interaction Point Discovery. Our Lead Optimization experiments below use the 68-task Lite subset.</Sidenote> This gives us one task where agents already succeed reasonably often and two where performance remains close to the floor. **The three tasks also ask the agent to do very different kinds of scientific work.**
 
-<Figure
-  src={smddBenchOverview}
-  compactTop
-  alt="Overview of the five SMDD-Bench task types."
-  width="wide"
-  captionLabel="FIG. 2"
-  title="SMDD-Bench spans five distinct small-molecule design tasks"
-  captionLead="Each task gives the agent a different scientific objective, input representation, and evaluation procedure."
-  caption="Our experiments focus on Interaction Point Discovery, Lead Optimization, and Scaffold Hopping."
-  emphasizedCaption
-/>
+<SmddTaskNavigator />
 
 ## Interaction Point Discovery
 

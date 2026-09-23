@@ -1,0 +1,35 @@
+{
+  "receptor": {
+    "center": {
+      "x": 16.836435,
+      "y": -4.977917,
+      "z": 1.407834
+    },
+    "radius": 12,
+    "source": "smdd-harbor/tasks/smdd_002_P14061_0/environment/receptor.pdb",
+    "atoms": 431,
+    "file": "receptor.pdb"
+  },
+  "probes": {
+    "center": {
+      "x": 66.429176,
+      "y": 29.645226,
+      "z": 1.3185
+    },
+    "radius": 12,
+    "source": "smdd-harbor/tasks/smdd_002_Q92769_0/environment/receptor.pdb",
+    "atoms": 540,
+    "file": "probes.pdb"
+  },
+  "sh": {
+    "center": {
+      "x": -13.370846153846152,
+      "y": -17.08107692307692,
+      "z": 10.907692307692306
+    },
+    "radius": 7,
+    "source": "smdd-harbor/tasks/smdd_003_4S0V_0/environment/complex.pdb",
+    "atoms": 77,
+    "file": "sh-pocket.pdb"
+  }
+}
