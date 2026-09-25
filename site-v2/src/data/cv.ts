@@ -51,8 +51,8 @@ export const cvExperience: CvExperience[] = [
 export const cvPublicationDetails: CvPublicationDetail[] = [
   {
     eprint: '2605.24756',
-    reviewStatus: 'Under Review',
-    venue: 'Accepted (poster) at CTB & FAGEN Workshops @ ICML 2026',
+    reviewStatus: 'NeurIPS 2026',
+    venue: 'NeurIPS 2026 | CTB & FAGEN Workshops @ ICML 2026',
     summary: 'Developed strictly proper scoring rules for uncertainty over LM-agent trajectories, including a censored-trace formulation for incomplete executions; showed that standard trajectory-level adaptations of ECE and Brier score need not remain strictly proper in agentic settings.',
   },
   {

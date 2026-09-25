@@ -10,8 +10,8 @@ export const site = {
     'AI Research Engineer building production-scale AI systems and researching uncertainty quantification in vision-language models.',
   contactNote: 'Feel free to reach out via email or X.',
   biography: [
-    "I'm an independent researcher working on reliable reasoning and scientific agents. I'm interested in when and why language and vision-language models fail, and how better evaluation, tools, and environments can make them more reliable. My work spans uncertainty quantification, multimodal reasoning, and agentic systems, with papers accepted at <strong>ICML 2026 and COLM 2026 workshops</strong>.",
-    "More recently, I've been working on scientific agents for small-molecule drug design, especially how harness design, test-time computation, and learning from long trajectories affect agent performance.",
+    "I'm an independent researcher studying reliable reasoning and scientific agents, with a focus on when and why language and vision-language models fail, and how better evaluation, tools, and environments can make them more reliable. My work spans uncertainty quantification, multimodal reasoning, and agentic systems, with a first-author paper accepted at <strong>NeurIPS 2026</strong> and additional work accepted at <strong>ICML 2026 and COLM 2026 workshops</strong>.",
+    "More recently, I've been working on scientific agents for small-molecule drug design, studying how harness design, test-time computation, and learning from long trajectories affect agent performance.",
     "By day, I lead AI Engineering at VFS Global, building production AI systems deployed across 110+ countries.",
     'Always happy to talk research or engineering. Feel free to reach out!',
   ],

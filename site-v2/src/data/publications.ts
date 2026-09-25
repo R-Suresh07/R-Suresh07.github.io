@@ -28,7 +28,7 @@ export const publications: Publication[] = [
     eprint: '2605.24756',
     archivePrefix: 'arXiv',
     primaryClass: 'cs.AI',
-    note: 'Accepted as a poster at the CTB and FAGEN Workshops at ICML 2026',
+    note: 'Accepted at NeurIPS 2026. Also accepted at the CTB and FAGEN Workshops at ICML 2026.',
     url: 'https://arxiv.org/abs/2605.24756',
     preview: trajectoryScorePreview,
     selected: true,

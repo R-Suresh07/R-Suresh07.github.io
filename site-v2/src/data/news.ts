@@ -5,6 +5,10 @@ export interface NewsItem {
 
 export const news: NewsItem[] = [
   {
+    date: '2026-09-25',
+    html: 'Happy to share that <a href="https://arxiv.org/abs/2605.24756">Proper Scoring Rules for Agentic Uncertainty Quantification</a> has been <strong>accepted to NeurIPS 2026 main conference</strong>! See y\'all in Sydney(?)!',
+  },
+  {
     date: '2024-05-02',
     html: 'Joined AI @ VFS as lead AI engineer',
   },
