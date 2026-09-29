@@ -50,24 +50,25 @@ import fullSystem from '../../assets/fixtures/full-system.svg';
 import videoPoster from '../../assets/fixtures/video-poster.svg';
 import figurePlaceholder from '../../assets/fixtures/figure-placeholder.svg';
 
+## TL;DR
+
+- Harness engineering can substantially improve agents without retraining the underlying model, and parts of that design process are increasingly being automated.
+- Coding agents increasingly reuse familiar harness components, but scientific agents often require interfaces built around a particular domain and its tools. This makes it less obvious which parts of harness design can be reused or automated.
+- On SMDD-Bench, the answer depends on the task. Automated search successfully refined workflows and discovered useful scientific heuristics, while our strongest manual improvements came from changing what evidence the model could observe and what state the environment preserved.
+
 ## Introduction
 
-An agent harness is everything that surrounds the model: the tools it can call, the state it can see, and how observations are presented back to it. An agent therefore does not act on the environment directly. Its actions pass through an interface that decides what capabilities are available, while observations and results are transformed before they return to the model.
+An agent harness is the interface around a model: it determines which tools are available, what state the model sees and remembers, and how actions and results are represented. Unlike the model’s learned policy, this surrounding system is still largely designed through **human taste**: run the agent, inspect where it failed, change the harness, and try again.
 
-This means an agent system contains two decision procedures rather than one. The model decides what to do with the information it receives. The harness decides **what information reaches the model, what gets remembered, and which actions are possible in the first place.**
 <ScientificEnvironmentExplorer />
 
-The asymmetry is that these two procedures are optimized very differently. The model’s **policy, its learned strategy for deciding what to do next,** is shaped through training, while the harness around it is still commonly designed by hand. A developer decides which tools to expose, what state deserves a durable representation, how outputs should be structured, when context should be compacted, and what conditions should block an action or submission.
+Designing that interface by hand can matter a lot. **SWE-agent** showed that redesigning the interface through which a model interacts with a computer can substantially improve software-engineering performance ([Yang et al., 2024](#yang-et-al-2024)). More recently, LangChain improved a fixed GPT-5.2-codex agent from **52.8% to 66.5% on Terminal Bench 2.0** through harness changes alone ([Trivedy, 2026](#trivedy-2026)). Anthropic has similarly shown that long-running coding agents become substantially more capable when the surrounding harness manages task decomposition, context handoffs, and evaluation across extended runs ([Young, 2025](#young-2025); [Rajasekaran, 2026](#rajasekaran-2026)). François Chollet has described these increasingly elaborate outer systems as **neurosymbolic architectures**, where symbolic software orchestrates the neural model, its tools, and its execution ([Chollet, 2026](#chollet-2026)).
 
-Those choices rely heavily on **human taste**. Usually, we run an agent, inspect where it failed, form a hypothesis about whether the problem came from the model or its environment, modify the harness, and run everything again. The final fix can be a few lines of code. Figuring out which few lines to change can take days.
+**But how far can this go?** Coding agents increasingly reuse a familiar set of harness components, including file viewers, search, test runners, and context handoffs. Scientific-agent harnesses exist too, but they are often designed around a particular domain and its tools. Agent Rosetta builds a specialized harness for protein design ([Teneggi et al., 2026](#teneggi-et-al-2026)), and RetroAgent builds one around a structured search tree for retrosynthesis planning ([Zhu et al., 2026](#zhu-et-al-2026)). Moving to a new scientific setting can therefore reopen basic design questions about which tools the agent should have, what state should persist, and what it should observe. It also raises the question of how much of that design still has to come from a human.
 
-This raises the question behind this post. **If harness engineering is itself an iterative search process, how much of that search actually requires a human?** And as we improve the harness, **how far can we go before the remaining bottleneck is the model’s scientific policy itself?**
+We study this in the Small Molecule Drug Design benchmark, SMDD-Bench ([Han et al., 2026](#han-et-al-2026)), a collection of challenging, multi-turn agentic tasks in small-molecule design. Generative chemistry is a useful test of these questions because evaluating a candidate can require specialized scientific models, and several tasks depend on reasoning over 3D molecular structure.<Sidenote number="1">Boltz-2, which we shorten to Boltz below, lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It is much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote> The agent may receive atom-level coordinates, the location of a binding pocket, or the spatial position of part of a molecule. How that information is presented to the model is itself part of the harness. **What the model knows about the scientific problem therefore depends heavily on what the harness computes, remembers, and chooses to show it.**
 
-Our testing ground is the Small Molecule Drug Design benchmark, SMDD-Bench ([Han et al., 2026](#han-et-al-2026)), a collection of challenging, multi-turn agentic tasks in small-molecule design. Coding and math give agents relatively cheap and direct feedback when something goes wrong. Generative chemistry is far messier, because evaluating a candidate can require specialized scientific models, the feedback is imperfect, and several tasks depend on reasoning over 3D molecular structure.<Sidenote number="1">Boltz-2, which we shorten to Boltz below, lets us estimate whether a molecule is likely to bind to a protein without running a physical experiment. It is much cheaper than traditional simulation methods, but its predictions are still imperfect and can vary across protein targets.</Sidenote>
-
-A task is also more than a text prompt. The agent may receive a 3D protein structure, the location of its binding pocket, or the 3D position of part of a molecule. None of this is naturally easy for a language model to interpret. **What the model knows about the scientific problem therefore depends heavily on what the harness computes, remembers, and chooses to show it.**
-
-We focus on three SMDD-Bench tasks that expose different kinds of harness dependence. We first engineer their harnesses by hand, then ask whether an automated optimizer can discover similar improvements.
+We focus on three SMDD-Bench tasks that expose different kinds of harness dependence. We first engineer their harnesses by hand, then ask whether an automated optimizer can discover the same kinds of improvements.
 
 ## Our Testbed: SMDD-Bench
 
@@ -228,7 +229,7 @@ The task requirements were compiled once into an immutable specification with ex
 
 <LoStateHarnessFigure />
 
-Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="10" align="paragraph">Agent Rosetta keeps long protein-design trajectories manageable by maintaining a compact summary of earlier actions and their effects on key design metrics, while keeping only the two most recent interaction steps in the model’s active context. We borrow the same general idea of separating long-term trajectory information from the recent local context, but keep our structured candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
+Long trajectories created a second problem. Even with the scientific state stored explicitly, the conversational history could become large enough that earlier reasoning and failed approaches were difficult to recover. Inspired by Agent Rosetta’s ([Teneggi et al., 2026](#teneggi-et-al-2026)) approach to summarizing long scientific trajectories,<Sidenote number="10" align="paragraph">Agent Rosetta keeps a compact summary of earlier actions and their effects on design metrics, with only the two most recent steps kept verbatim. We borrow this split between long-term summary and recent context, but keep the candidate ledger outside the compressed conversation entirely.</Sidenote> once the context grew beyond roughly 60K tokens, we asked the same model to compress the older trajectory into a summary of what had been tried, what had been learned, and what remained worth exploring. The most recent actions stayed verbatim, while the candidate ledger remained untouched.
 
 **We could thus compress the model’s memory of the search without compressing the scientific record itself.** Older reasoning could be summarized, but candidate identities, measurements, failed constraints, and missing evidence remained exact.
 
@@ -534,17 +535,15 @@ So, is human taste overrated in harness engineering?
 
 Not entirely. But these experiments suggest that its value depends heavily on **what part of the system is being optimized.**
 
-Automated search was quite capable of improving workflows inside an existing interface. It could add procedures, restructure tools, introduce memory, tighten submission logic, and even shape how the model searched the chemistry. But our largest manual gains came when the intervention changed the abstraction itself: **what evidence the model could observe, what state the environment maintained for it, and what work the model should have to reconstruct at all.**
+The gains from harness engineering do carry over to scientific agents, but not uniformly. Automated search was quite capable of improving workflows inside an existing interface. It could add procedures, restructure tools, introduce memory, tighten submission logic, and even shape how the model searched the chemistry. But our largest manual gains came when the intervention changed the abstraction itself: **what evidence the model could observe, what state the environment maintained for it, and what work the model should have to reconstruct at all.**
 
 The three tasks expose different versions of that boundary. **Interaction Point Discovery improved when the harness stopped asking the model to infer conserved ligand behavior from a single receptor and instead exposed ligand-side features that could be compared for recurrence. Lead Optimization improved when candidate identity and experimental evidence became authoritative enough to support a much broader multi-candidate search. Scaffold Hopping marked the other side of the boundary: once novelty and execution were reliable, the remaining bottleneck was increasingly which chemistry to propose and which parts of the reference architecture to preserve.**
 
-That suggests a useful division of labor. Human judgment still matters when deciding **what should be represented explicitly, what should be enforced by the environment, and what should remain the model’s responsibility.** Once those choices are sensible, automated optimization can search systematically over workflows, instructions, heuristics, and control policies without requiring the same cycle of manual inspection and redesign.
+This is consistent with scientific harnesses still being built around a particular task and its tools. Some parts of the interface can be standardized, but deciding what scientific information to represent explicitly, what the environment should enforce, and what should remain the model’s responsibility is itself part of the problem. **That is where human judgment mattered most in our experiments.** Once those choices are sensible, automated optimization may be able to search systematically over workflows, instructions, heuristics, and control policies without the same cycle of manual inspection and redesign.
 
-It also gives us a practical stopping rule for manual harness engineering. Maintaining deterministic state, exposing task-relevant evidence, and making execution reliable are natural jobs for the harness. As interventions begin to prescribe chemical transformations, prioritize particular interactions, or resolve scientific trade-offs, they increasingly become part of the model’s policy rather than infrastructure. At that point, improving the policy through training may be a cleaner lever than progressively hardcoding the strategy into the environment.
+It also gives us a practical stopping rule for manual harness engineering. Maintaining a deterministic state, exposing task-relevant evidence, and making execution reliable are natural jobs for the harness. As interventions begin to prescribe chemical transformations, prioritize particular interactions, or resolve scientific trade-offs, they increasingly become part of the model’s policy rather than infrastructure. At that point, improving the policy through training may be a cleaner lever than progressively hardcoding the strategy into the environment.
 
-So human taste is not disappearing from harness engineering. **It is moving up a level.** The interesting question is becoming less “What prompt or tool should we add?” and more:
-
-**“Where should the boundary between the environment and the scientist actually be?”**
+Human taste still matters in harness engineering. **It is moving up a level**, from fixing individual failures to deciding where the environment should end and the scientist should begin.
 
 Once that boundary is chosen well, much of the optimization inside it may be automated.
 
@@ -577,13 +576,25 @@ We thank the broader SMDD-Bench team for building the benchmark and for discussi
 
 ## References
 
-1. <span id="han-et-al-2026">Han, K., Zhang, R., Wei, K., Mahdavi, H., Mireshghallah, N., & Barati Farimani, A. (2026). “SMDD-Bench: Can LLMs Solve Real-World Small Molecule Drug Design Tasks?” *arXiv preprint arXiv:2605.21740*. [https://arxiv.org/abs/2605.21740](https://arxiv.org/abs/2605.21740).</span>
+1. <span id="yang-et-al-2024">Yang, J., Jimenez, C. E., Wettig, A., Lieret, K., Yao, S., Narasimhan, K., & Press, O. (2024). “[SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering](https://arxiv.org/abs/2405.15793).” *Advances in Neural Information Processing Systems (NeurIPS 2024).*</span>
 
-2. <span id="teneggi-et-al-2026">Teneggi, J., Turzo, S. M. B. A., Marwah, T., Bietti, A., Renfrew, P. D., Mulligan, V. K., & Golkar, S. (2026). “Protein Design with Agent Rosetta: A Case Study for Specialized Scientific Agents.” *arXiv preprint arXiv:2603.15952*. [https://arxiv.org/abs/2603.15952](https://arxiv.org/abs/2603.15952).</span>
+2. <span id="trivedy-2026">Trivedy, V. (2026). “[Improving Deep Agents with Harness Engineering](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering).” *LangChain*, February 17, 2026.</span>
 
-3. <span id="agrawal-et-al-2026">Agrawal, L. A., Tan, S., Soylu, D., Ziems, N., Khare, R., Opsahl-Ong, K., Singhvi, A., Shandilya, H., Ryan, M. J., Jiang, M., Potts, C., Sen, K., Dimakis, A. G., Stoica, I., Klein, D., Zaharia, M., & Khattab, O. (2026). “GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning.” *arXiv preprint arXiv:2507.19457*. [https://arxiv.org/abs/2507.19457](https://arxiv.org/abs/2507.19457).</span>
+3. <span id="young-2025">Young, J. (2025). “[Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents).” *Anthropic Engineering*, November 26, 2025.</span>
 
-4. <span id="lee-et-al-2026">Lee, Y., Nair, R., Zhang, Q., Lee, K., Khattab, O., & Finn, C. (2026). “Meta-Harness: End-to-End Optimization of Model Harnesses.” *arXiv preprint arXiv:2603.28052*. [https://arxiv.org/abs/2603.28052](https://arxiv.org/abs/2603.28052).</span>
+4. <span id="rajasekaran-2026">Rajasekaran, P. (2026). “[Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps).” *Anthropic Engineering*, March 24, 2026.</span>
+
+5. <span id="chollet-2026">Chollet, F. (2026, August 6). [Thread on agent harnesses as neurosymbolic architectures](https://x.com/fchollet/status/2085323411903889876). *X*.</span>
+
+6. <span id="teneggi-et-al-2026">Teneggi, J., Turzo, S. M. B. A., Marwah, T., Bietti, A., Renfrew, P. D., Mulligan, V. K., & Golkar, S. (2026). “[Protein Design with Agent Rosetta: A Case Study for Specialized Scientific Agents](https://arxiv.org/abs/2603.15952).” *arXiv preprint arXiv:2603.15952*.</span>
+
+7. <span id="zhu-et-al-2026">Zhu, Y., Gan, J., Sun, X., Sun, F., Shi, Y., Islam, M. M., Shang, C., Gao, W., Coley, C. W., Sun, Y., & Wang, W. (2026). “[RetroAgent: Harnessing LLMs to Search Over Structured Memory for Agentic Retrosynthesis Planning](https://arxiv.org/abs/2607.14512).” *arXiv preprint arXiv:2607.14512*.</span>
+
+8. <span id="han-et-al-2026">Han, K., Zhang, R., Wei, K., Mahdavi, H., Mireshghallah, N., & Barati Farimani, A. (2026). “[SMDD-Bench: Can LLMs Solve Real-World Small Molecule Drug Design Tasks?](https://arxiv.org/abs/2605.21740)” *arXiv preprint arXiv:2605.21740*.</span>
+
+9. <span id="agrawal-et-al-2026">Agrawal, L. A., Tan, S., Soylu, D., Ziems, N., Khare, R., Opsahl-Ong, K., Singhvi, A., Shandilya, H., Ryan, M. J., Jiang, M., Potts, C., Sen, K., Dimakis, A. G., Stoica, I., Klein, D., Zaharia, M., & Khattab, O. (2026). “[GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](https://arxiv.org/abs/2507.19457).” *arXiv preprint arXiv:2507.19457*.</span>
+
+10. <span id="lee-et-al-2026">Lee, Y., Nair, R., Zhang, Q., Lee, K., Khattab, O., & Finn, C. (2026). “[Meta-Harness: End-to-End Optimization of Model Harnesses](https://arxiv.org/abs/2603.28052).” *arXiv preprint arXiv:2603.28052*.</span>
 
 ## Citation
 

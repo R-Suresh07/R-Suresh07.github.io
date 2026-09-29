@@ -14,6 +14,7 @@ interface Props {
 
 const { title, description, published, updated, authors = [], affiliation, topics = [], headings = [] } = Astro.props;
 const tableOfContents = headings.filter((heading) => heading.depth === 2);
+const hasTldr = tableOfContents.some((heading) => heading.slug === 'tldr');
 const formatDate = (date: Date) => new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -27,7 +28,7 @@ const formatAuthors = (names: string[]) => {
 ---
 
 <BaseLayout title={title} description={description}>
-  <article class="essay">
+  <article class:list={['essay', { 'essay--has-tldr': hasTldr }]}>
     <div class="essay-grid site-shell">
       {tableOfContents.length > 0 && (
         <aside class="table-of-contents" aria-label="Table of contents">
@@ -139,6 +140,14 @@ const formatAuthors = (names: string[]) => {
     text-align: center;
   }
 
+  .essay--has-tldr .essay-header {
+    margin-bottom: calc(var(--space-6) - 1rem);
+  }
+
+  .essay--has-tldr :global(.prose #introduction) {
+    margin-top: 1.45em;
+  }
+
   .table-of-contents {
     position: sticky;
     top: var(--space-5);
@@ -233,6 +242,14 @@ const formatAuthors = (names: string[]) => {
 
   :global(.prose h2) {
     scroll-margin-top: var(--space-5);
+  }
+
+  .essay-main :global(.prose :is(#future-considerations, #try-it-yourself, #acknowledgments)) {
+    margin-top: 2rem;
+  }
+
+  .essay-main :global(.prose :is(#references, #citation)) {
+    margin-top: 2.25rem;
   }
 
   @media (max-width: 80rem) {
