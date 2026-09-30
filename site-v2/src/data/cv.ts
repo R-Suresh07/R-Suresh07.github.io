@@ -66,6 +66,11 @@ export const cvPublicationDetails: CvPublicationDetail[] = [
     venue: 'Accepted (poster) at Sci-FM & Actionable Interpretability Workshops @ COLM 2026',
     summary: 'Identified “evidence collapse”, a universal (9/9 model×dataset cells) decay of visual grounding during VLM reasoning that text-only entropy cannot detect, and designed a task-conditional vision veto that cuts selective risk by up to 1.9 pp at 90% coverage on MathVista, HallusionBench, and MMMU Pro.',
   },
+  {
+    eprint: '2608.23663',
+    venue: 'Accepted at the On-Device Intelligence (ODI) Workshop @ NeurIPS 2026',
+    summary: 'Audited a deployed on-device language model, finding confident failures that user-visible signals cannot reliably detect, and showed that a black-box consistency wrapper substantially improves reliability.',
+  },
 ];
 
 export const cvEducation: CvEducation[] = [

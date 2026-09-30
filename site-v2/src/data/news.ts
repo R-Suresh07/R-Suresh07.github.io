@@ -5,6 +5,10 @@ export interface NewsItem {
 
 export const news: NewsItem[] = [
   {
+    date: '2026-09-30',
+    html: 'Happy to share that <a href="https://arxiv.org/abs/2608.23663">Confidently Wrong, Silently So: Auditing Undetectable Failures of a Deployed On-Device Language Model</a> has been <strong>accepted to the NeurIPS 2026 Workshop on On-Device Intelligence (ODI 2026)</strong>!',
+  },
+  {
     date: '2026-09-25',
     html: 'Happy to share that <a href="https://arxiv.org/abs/2605.24756">Proper Scoring Rules for Agentic Uncertainty Quantification</a> has been <strong>accepted to NeurIPS 2026 main conference</strong>! See y\'all in Sydney(?)!',
   },

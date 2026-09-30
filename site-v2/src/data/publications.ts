@@ -70,9 +70,9 @@ export const publications: Publication[] = [
     eprint: '2608.23663',
     archivePrefix: 'arXiv',
     primaryClass: 'cs.SE',
-    note: 'Preprint. Under review.',
+    note: 'Accepted at the NeurIPS 2026 Workshop on On-Device Intelligence (ODI 2026).',
     url: 'https://arxiv.org/abs/2608.23663',
     preview: confidentlyWrongPreview,
-    selected: false,
+    selected: true,
   },
 ];
