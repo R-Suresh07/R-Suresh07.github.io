@@ -5,6 +5,10 @@ export interface NewsItem {
 
 export const news: NewsItem[] = [
   {
+    date: '2026-10-03',
+    html: 'New blog post: <a href="/writing/is-human-taste-overrated-in-harness-engineering/">Is Human Taste Overrated in Harness Engineering?</a> We explore what automated harness search can improve in scientific agents, and where task-specific representation and state still matter.',
+  },
+  {
     date: '2026-09-30',
     html: 'Happy to share that <a href="https://arxiv.org/abs/2608.23663">Confidently Wrong, Silently So: Auditing Undetectable Failures of a Deployed On-Device Language Model</a> has been <strong>accepted to the NeurIPS 2026 Workshop on On-Device Intelligence (ODI 2026)</strong>!',
   },
