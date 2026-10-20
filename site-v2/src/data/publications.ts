@@ -14,6 +14,7 @@ export interface Publication {
   primaryClass: string;
   note?: string;
   url: string;
+  poster?: string;
   preview: ImageMetadata;
   selected: boolean;
   equalContribution?: string[];
@@ -30,6 +31,7 @@ export const publications: Publication[] = [
     primaryClass: 'cs.AI',
     note: 'Accepted at NeurIPS 2026. Also accepted at the CTB and FAGEN Workshops at ICML 2026.',
     url: 'https://arxiv.org/abs/2605.24756',
+    poster: '/cv/Evaluator Failure Modes in Agentic UQ - Poster.pdf',
     preview: trajectoryScorePreview,
     selected: true,
     equalContribution: ['Suresh Raghu', 'Satwik Pandey'],
@@ -44,6 +46,7 @@ export const publications: Publication[] = [
     primaryClass: 'cs.AI',
     note: 'Accepted as a poster at the FAGEN Workshop at ICML 2026',
     url: 'https://arxiv.org/abs/2604.06389',
+    poster: '/cv/SelfDoubt - FAGEN poster.pdf',
     preview: selfDoubtPreview,
     selected: true,
     equalContribution: ['Suresh Raghu', 'Satwik Pandey'],
@@ -58,6 +61,7 @@ export const publications: Publication[] = [
     primaryClass: 'cs.AI',
     note: 'Accepted at the Actionable Interpretability and Scientific Understanding of Foundation Models Workshops at COLM 2026',
     url: 'https://arxiv.org/abs/2604.04207',
+    poster: "/cv/Don't Blink — Actionable Interpretability poster.pdf",
     preview: evidenceCollapsePreview,
     selected: true,
     equalContribution: ['Suresh Raghu', 'Satwik Pandey'],

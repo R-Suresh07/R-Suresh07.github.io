@@ -44,7 +44,15 @@ const { items, compact = false } = Astro.props;
           ))}
         </p>
         {publication.note && <p class="note">{publication.note}</p>}
-        <p class="links"><a href={publication.url}>arXiv</a></p>
+        <p class="links">
+          <a href={publication.url}>arXiv</a>
+          {publication.poster && (
+            <>
+              <span aria-hidden="true"> · </span>
+              <a href={encodeURI(publication.poster)}>Poster</a>
+            </>
+          )}
+        </p>
       </div>
       <dialog class="lightbox" data-lightbox={publication.key} aria-label={`${publication.title} preview`}>
         <form method="dialog">

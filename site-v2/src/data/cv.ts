@@ -70,7 +70,7 @@ export const cvPublicationDetails: CvPublicationDetail[] = [
   },
   {
     eprint: '2608.23663',
-    reviewStatus: 'NeurIPS 2026 Workshop',
+    reviewStatus: 'NeurIPS 2026 Workshops',
     venue: 'Accepted at the On-Device Intelligence (ODI) Workshop @ NeurIPS 2026',
     summary: 'Audited a deployed on-device language model, finding confident failures that user-visible signals cannot reliably detect, and showed that a black-box consistency wrapper substantially improves reliability.',
   },
