@@ -1,5 +1,8 @@
 # build output
 dist/
+# Plaintext trace data and local passwords must never be published.
+private/
+public/data/smdd/*-ipd*/
 # generated types
 .astro/
 

@@ -7,7 +7,9 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/check-trace-privacy.mjs && astro build && node scripts/check-trace-privacy.mjs --dist",
+    "traces:encrypt": "node scripts/encrypt-traces.mjs",
+    "traces:test": "node --test scripts/trace-vault.test.mjs",
     "check": "astro check",
     "preview": "astro preview",
     "astro": "astro"
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@types/node": "^22.20.5",
     "typescript": "^6.0.3"
   }
 }
