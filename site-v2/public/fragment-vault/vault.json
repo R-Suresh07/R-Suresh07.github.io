@@ -1,0 +1,1 @@
+{"version":1,"cipher":"AES-GCM","compression":"gzip","kdf":"PBKDF2","hash":"SHA-256","iterations":600000,"salt":"dHepcgVv6dRqd6dUluzBRw==","manifest":"b4fb279fa2741950dd76b7fda12aa0b9.enc"}
