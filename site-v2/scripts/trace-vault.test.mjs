@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import ts from 'typescript';
 import { packVault } from './encrypt-traces.mjs';
+import { packFragments } from './encrypt-fragments.mjs';
+import { RUNS } from './local-fragment-traces.mjs';
 import { checkTracePrivacy } from './check-trace-privacy.mjs';
 
 const compiled = ts.transpileModule(readFileSync(new URL('../src/lib/trace-vault.ts', import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
@@ -87,3 +89,50 @@ test('encrypted archive interoperates with Web Crypto and rejects invalid access
 });
 // Retain the native blob fetch implementation before mocking network requests.
 const fetchBlob = globalThis.fetch.bind(globalThis);
+
+test('fragment vault preserves both runs, images, full observations and evaluations while excluding prediction files', async () => {
+  const temporary = mkdtempSync(join(tmpdir(), 'trace-vault-test-'));
+  const source = join(temporary, 'tasks'), output = join(temporary, 'public/fragment-vault');
+  const password = 'a random fragment test password 123456789';
+  const write = (path, value) => { mkdirSync(resolve(path, '..'), { recursive: true }); writeFileSync(path, value); };
+  try {
+    for (const config of RUNS) {
+      const tasks = Object.fromEntries(Array.from({ length: 60 }, (_, index) => [`smdd_005_TEST_${index}`, {}]));
+      write(join(source, config.run, 'agent_summary.json'), JSON.stringify({ tasks }));
+      for (const id of Object.keys(tasks)) {
+        const folder = join(source, config.run, id);
+        write(join(folder, 'agent_result.json'), JSON.stringify({ status: 'submitted', submitted_file: 'solution.smi' }));
+        write(join(folder, 'trajectory.jsonl'), [{ event: 'tool_call', call_id: 'T001', output_truncated: 'short' }, { event: 'submit' }].map(e => JSON.stringify(e)).join('\n'));
+        write(join(folder, '.harness/tool_history.jsonl'), JSON.stringify({ call_id: 'T001', raw_result: 'complete observation with affinity score', artifacts: [{ export_path: 'render.png' }, { export_path: 'prediction.cif' }, { export_path: 'affinity.json' }, { export_path: '../outside.png' }] }));
+        write(join(folder, 'solution.smi'), 'CCO');
+        write(join(folder, 'render.png'), Buffer.from([137, 80, 78, 71]));
+        write(join(folder, 'prediction.cif'), 'unused structure');
+        write(join(folder, 'affinity.json'), '{"unused":true}');
+        write(join(source, `eval-${config.run}`, id, 'result.json'), JSON.stringify({ status: 'passed', steps: [] }));
+      }
+    }
+    const result = packFragments(source, output, password);
+    assert.equal(result.traces, 120);
+    const key = await deriveVaultKey(password, result.descriptor);
+    const decrypt = async name => JSON.parse(new TextDecoder().decode(await decryptVaultBytes(buffer(readFileSync(join(output, name))), key, name)));
+    const manifest = await decrypt(result.descriptor.manifest);
+    assert.equal(new Set(manifest.traces.map(t => t.handle)).size, 120);
+    assert.deepEqual(new Set(manifest.traces.map(t => t.variant)), new Set(['images', 'noimages']));
+    assert(Object.keys(manifest.files).every(path => !/\.(cif|npz)$|affinity\.json$/.test(path)));
+    for (const trace of manifest.traces) {
+      const events = await decrypt(trace.entry);
+      assert.equal(events[0].output, 'complete observation with affinity score');
+      assert.deepEqual(events[0].artifacts.map(a => a.available), [true, false, false, false]);
+      assert.equal(events[1].content, 'CCO');
+      assert.equal(events[2].event, 'evaluation');
+      assert(manifest.files[`${trace.path}/render.png`]);
+      assert(manifest.files[trace.submittedPath]);
+    }
+    checkTracePrivacy(join(temporary, 'public'));
+    write(join(output, 'leaked.txt'), 'plaintext');
+    assert.throws(() => checkTracePrivacy(join(temporary, 'public')), /Unexpected file/);
+  } finally {
+    if (!resolve(temporary).startsWith(resolve(tmpdir()) + sep) || !temporary.split(sep).pop().startsWith('trace-vault-test-')) throw new Error('Unsafe temporary cleanup');
+    rmSync(temporary, { recursive: true, force: true });
+  }
+});

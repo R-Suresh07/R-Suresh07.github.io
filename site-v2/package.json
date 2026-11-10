@@ -9,6 +9,8 @@
     "dev": "astro dev",
     "build": "node scripts/check-trace-privacy.mjs && astro build && node scripts/check-trace-privacy.mjs --dist",
     "traces:encrypt": "node scripts/encrypt-traces.mjs",
+    "fragments:encrypt": "node scripts/encrypt-fragments.mjs",
+    "fragments:prune": "node scripts/prune-fragments.mjs",
     "traces:test": "node --test scripts/trace-vault.test.mjs",
     "check": "astro check",
     "preview": "astro preview",

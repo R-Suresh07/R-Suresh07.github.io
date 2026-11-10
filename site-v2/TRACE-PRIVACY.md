@@ -79,3 +79,54 @@ File sizes, file count, and archive updates are public metadata.
 
 The script compresses before encrypting and refuses vaults over 800 MiB to leave
 room for the rest of the GitHub Pages site. It uses only Node.js built-ins.
+
+
+## Fragment-assembly comparison
+
+The viewer at `/traces/fragments/` compares two 60-task runs. Both development and production require a password and read the separate
+encrypted package at `public/fragment-vault/`. The Git-ignored repository
+`tasks/` directory is used only by the pruning and encryption scripts; no
+plaintext trace endpoints are exposed by the development server.
+
+The minimal source keeps each run's `agent_summary.json`, each task's
+`agent_result.json`, `trajectory.jsonl`, `.harness/tool_history.jsonl`, submitted
+SMILES, referenced PNG/JPEG images, and evaluation summaries/results. Full tool
+observations (including reported affinity scores) remain in the JSONL. Structure
+files, prediction arrays, separate affinity artifacts, duplicate transcripts,
+scratchpads, and analysis/cache files are excluded. Removed artifacts retain
+metadata in the viewer and are labeled unavailable.
+
+From `site-v2`, inspect or apply the same cleanup to a restored source:
+
+```powershell
+npm run fragments:prune
+npm run fragments:prune -- --apply
+```
+
+The apply command permanently deletes everything outside this allowlist in
+`tasks/`, including analysis data. It validates all 120 traces before deleting.
+
+Encrypt the minimal fragment data using the same format and cryptography as IPD:
+
+```powershell
+npm run fragments:encrypt
+```
+
+Enter and confirm a password of at least 20 characters at the hidden prompts.
+The fragment output and password are independent of the existing IPD vault.
+For a generated initial password, use:
+
+```powershell
+npm run fragments:encrypt -- --generate-password
+```
+
+This saves the password to the ignored `private/fragments-password.txt`. Refresh
+with that password using `npm run fragments:encrypt -- --use-local-password`.
+Commit only application changes and `public/fragment-vault/`. Never add `tasks/`
+or password files. Encryption selects viewer files explicitly even if the source
+has not been pruned; raw tool history is combined into encrypted viewer events.
+No fragment vault is generated until you run the encryption command.
+
+Run `npm run traces:test`, `npm run check`, and `npm run build` after packaging.
+The production page unlocks the fragment archive in browser memory and supports
+locking, run/outcome filters, images, downloads, and per-task comparison links.

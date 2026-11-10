@@ -4,6 +4,7 @@ import '../../../styles/traces.css';
 ---
 <BaseLayout title="Private trace archive" description="Password-protected research trace archive.">
   <div class="site-shell trace-page" id="private-traces">
+    {import.meta.env.DEV && <p><a href="/traces/fragments/">Browse local fragment-assembly comparisons →</a></p>}
     <section class="vault-lock" id="vault-lock" aria-labelledby="vault-title">
       <span class="vault-symbol" aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span>
       <h1 id="vault-title">Enter the password.</h1>

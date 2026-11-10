@@ -1,3 +1,9 @@
+export interface TraceArchive {
+  manifest: VaultManifest;
+  trace(entry: string): Promise<Record<string, any>[]>;
+  fileUrl(path: string): Promise<string>;
+  dispose(): void;
+}
 export interface VaultDescriptor {
   version: number; cipher: string; compression: string; kdf: string; hash: string;
   iterations: number; salt: string; manifest: string;

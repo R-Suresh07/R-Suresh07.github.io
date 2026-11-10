@@ -1,8 +1,8 @@
-import type { TraceVault } from '../lib/trace-vault';
+import type { TraceArchive } from '../lib/trace-vault';
 import { vaultLink } from './trace-dom';
 type Event = Record<string, any>;
 type Turn = { number: number; model: Event; calls: Event[]; submission?: Event };
-export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: TraceVault) {
+export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: TraceArchive) {
   const lifecycle = new AbortController();
   const signal = lifecycle.signal;
   const pendingImages = new Map<Element, () => void>();
@@ -29,6 +29,14 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
     if (tool.startsWith('predict_')) return { kind: 'prediction', label: tool === 'predict_boltz' ? 'Boltz prediction' : 'ADMET prediction', icon: '↗' };
     if (tool.startsWith('submit')) return { kind: 'submission', label: 'Submission', icon: '✓' };
     return { kind: 'context', label: tool.replaceAll('_', ' '), icon: '≡' };
+  };
+  const usesChimeraX = (call: Event) => {
+    if (call.tool === 'chimerax' || Number(call.chimerax_call_count) > 0) return true;
+    if (call.tool !== 'python') return false;
+    const code = call.input?.code ?? '';
+    if (/\bchimerax\s*\(/i.test(code)) return true;
+    const alias = code.match(/\bfrom\s+smdd_chimerax\s+import\s+chimerax\s+as\s+([A-Za-z_]\w*)/);
+    return Boolean(alias && new RegExp(`\\b${alias[1]}\\s*\\(`).test(code));
   };
   // Build highlighted text with DOM nodes, keeping exported source inert.
   function highlight(text: string, language: string) {
@@ -101,7 +109,7 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
       if (!turn) { content.append(node('p', 'No turns match. Try a different search or filter.')); return; }
       content.append(node('p', `TURN ${String(turn.number).padStart(2, '0')}`, 'eyebrow'));
       const intent = turn.calls.map(callReason).find(Boolean);
-      content.append(node('h2', turn.submission ? 'Submitting the interaction points' : intent ? intent.split(/(?<=[.!?])\s/)[0] : 'Model commentary & actions'));
+      content.append(node('h2', turn.submission ? (viewer.dataset.taskType === 'fragment' ? 'Submitting the molecule' : 'Submitting the interaction points') : intent ? intent.split(/(?<=[.!?])\s/)[0] : 'Model commentary & actions'));
       const date = new Date(turn.model.timestamp);
       content.append(node('p', `${date.toISOString().replace('T', ' ').slice(0, 19)} UTC · ${Number(turn.model.input_tokens).toLocaleString()} input / ${Number(turn.model.output_tokens).toLocaleString()} output tokens`, 'trace-muted'));
       if (turn.model.assistant_text) {
@@ -114,6 +122,7 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
         article.dataset.kind = info.kind;
         const header = node('header', '', 'tool-heading');
         header.append(node('span', info.icon, 'tool-icon'), node('h3', info.label));
+        if (call.tool === 'python' && usesChimeraX(call)) { const tag = node('span', 'ChimeraX', 'tool-chip'); tag.dataset.kind = 'visual'; header.append(tag); }
         header.append(node('span', call.call_id || '', 'call-id'));
         article.append(header);
         const failed = call.status && call.status !== 'success';
@@ -147,7 +156,7 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
             const load = () => { vault.fileUrl(path).then(url => {
               if (signal.aborted || !image.isConnected) return;
               image.src = url; link.href = url; status.textContent = `${artifact.artifact_id} · ${name} · Click to download image`;
-            }).catch(() => { if (!signal.aborted) status.textContent = 'Image could not be decrypted. Select this turn again to retry.'; }); };
+            }).catch(() => { if (!signal.aborted) status.textContent = 'Image could not be loaded. Select this turn again to retry.'; }); };
             link.append(image); figure.append(link, status); article.append(figure);
             if (observer) { pendingImages.set(figure, load); observer.observe(figure); } else load();
           } else { const link = vaultLink(vault, path, `${artifact.artifact_id} · ${name} ↗`); link.className = 'artifact-link'; attachments.append(link); }
@@ -156,10 +165,10 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
       }
       if (turn.submission) {
         const section = node('section', '', 'submission-record');
-        section.append(node('h3', 'Recorded submission'), node('p', 'Three ligand-side points, as written to solution.csv.'), node('pre', turn.submission.content));
+        section.append(node('h3', 'Recorded submission'), node('p', viewer.dataset.taskType === 'fragment' ? `Submitted artifact: ${turn.submission.file || 'solution.smi'}` : 'Three ligand-side points, as written to solution.csv.'), node('pre', turn.submission.content));
         if (evaluation) {
           const result = node('div', '', 'submission-evaluation'); result.dataset.outcome = evaluation.tone;
-          result.append(node('span', `Task ${evaluation.status}`, 'evaluation-badge'), node('strong', `${evaluation.matched}/3 interaction points matched`));
+          result.append(node('span', `Task ${evaluation.status}`, 'evaluation-badge'), node('strong', evaluation.matched == null ? `${evaluation.steps.filter((step: Event) => step.status === 'passed').length}/${evaluation.steps.length} checks passed` : `${evaluation.matched}/3 interaction points matched`));
           const link = document.createElement('a'); link.href = '#evaluation'; link.textContent = 'Inspect evaluation ↑'; result.append(link); section.append(result);
         }
         content.append(section);
@@ -175,7 +184,7 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
       const query = search.value.trim().toLowerCase();
       visible = turns.filter(turn => {
         const category = filter.value;
-        const matchesCategory = category === 'all' || turn.calls.some(call => category === 'error' ? call.status && call.status !== 'success' : category === 'chimerax' ? call.tool === 'chimerax' || /chimerax/i.test(printable(call.input)) : call.tool === category);
+        const matchesCategory = category === 'all' || turn.calls.some(call => category === 'error' ? call.status && call.status !== 'success' : category === 'chimerax' ? usesChimeraX(call) : call.tool === category);
         return matchesCategory && (!query || [turn.model.assistant_text, ...turn.calls.map(call => `${call.tool} ${printable(call.input)} ${printable(call.output)}`), turn.submission?.content].join('\n').toLowerCase().includes(query));
       });
       get('step-count').textContent = `${visible.length} of ${turns.length} turns`;
@@ -184,10 +193,12 @@ export function initTraceViewer(viewer: HTMLElement, events: Event[], vault: Tra
         const button = document.createElement('button'); button.dataset.turn = String(turn.number);
         button.append(node('span', `Turn ${String(turn.number).padStart(2, '0')}`, 'turn-number'));
         if (turn.submission && evaluation) {
-          const result = node('span', `Eval: ${evaluation.matched}/3 · ${evaluation.status}`, 'evaluation-badge'); result.dataset.outcome = evaluation.tone; button.append(result);
+          const result = node('span', evaluation.matched == null ? `Eval: ${evaluation.status}` : `Eval: ${evaluation.matched}/3 · ${evaluation.status}`, 'evaluation-badge'); result.dataset.outcome = evaluation.tone; button.append(result);
         }
         const chips = node('span', '', 'turn-tools');
-        for (const tool of [...new Set(turn.calls.map(c => c.tool))]) {
+        const tools = new Set(turn.calls.map(c => c.tool));
+        if (turn.calls.some(usesChimeraX)) tools.add('chimerax');
+        for (const tool of tools) {
           const info = toolInfo(tool); const chip = node('span', info.label, 'tool-chip'); chip.dataset.kind = info.kind; chips.append(chip);
         }
         if (!turn.calls.length) chips.append(node('span', 'Model response', 'tool-chip'));

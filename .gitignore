@@ -13,3 +13,5 @@ vendor
 .idea
 .venv
 SOP
+# Local trace runs, evaluations, and analysis; never publish plaintext.
+/tasks/

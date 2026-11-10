@@ -12,6 +12,17 @@ const json = path => JSON.parse(readFileSync(path, 'utf8'));
 const jsonl = path => readFileSync(path, 'utf8').split(/\r?\n/).filter(x => x.trim()).map(x => JSON.parse(x));
 const mime = path => ({ '.png': 'image/png', '.jpg': 'image/jpeg', '.json': 'application/json', '.jsonl': 'application/x-ndjson', '.csv': 'text/csv', '.md': 'text/plain', '.py': 'text/plain' }[path.slice(path.lastIndexOf('.'))] ?? 'application/octet-stream');
 
+// Windows file scanners can briefly hold newly written ciphertext files open.
+function renameVault(from, to) {
+  for (let attempt = 0; ; attempt++) {
+    try { renameSync(from, to); return; }
+    catch (error) {
+      if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code) || attempt === 5) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200 * (attempt + 1));
+    }
+  }
+}
+
 export function encryptBytes(bytes, key, filename) {
   const nonce = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', key, nonce);
@@ -19,10 +30,10 @@ export function encryptBytes(bytes, key, filename) {
   return Buffer.concat([nonce, cipher.update(gzipSync(bytes)), cipher.final(), cipher.getAuthTag()]);
 }
 
-export function packVault(source, destination, password, { progress = () => {} } = {}) {
+export function packVault(source, destination, password, { progress = () => {}, collection } = {}) {
   source = resolve(source); destination = resolve(destination);
-  const run = json(join(source, 'agent_summary.json')).run_name;
-  if (typeof run !== 'string' || !/^[A-Za-z0-9_-]+$/.test(run)) throw new Error('Source run_name must be a safe directory name.');
+  const run = collection ? undefined : json(join(source, 'agent_summary.json')).run_name;
+  if (!collection && (typeof run !== 'string' || !/^[A-Za-z0-9_-]+$/.test(run))) throw new Error('Source run_name must be a safe directory name.');
   if (password.length < 20) throw new Error('Use a password of at least 20 characters.');
   if (destination === source || destination.startsWith(source + sep) || source.startsWith(destination + sep)) throw new Error('Source and output must be separate directories.');
   const stage = join(dirname(destination), `.vault-stage-${randomBytes(12).toString('hex')}`);
@@ -65,9 +76,20 @@ export function packVault(source, destination, password, { progress = () => {} }
     }
   }
   try {
-    walk(source);
+    if (collection) {
+      for (const [logical, metadata] of Object.entries(collection.manifest.files)) {
+        const path = resolve(source, logical);
+        if (!path.startsWith(source + sep) || lstatSync(path).isSymbolicLink()) throw new Error('Invalid collection file.');
+        const bytes = readFileSync(path);
+        files[logical] = { file: store(bytes), mime: metadata.mime };
+        plaintextBytes += bytes.length; count++;
+      }
+    } else walk(source);
     const traces = [];
-    for (const id of readdirSync(source).filter(id => existsSync(join(source, id, 'trajectory.jsonl')))) {
+    if (collection) for (const trace of collection.manifest.traces) {
+      traces.push({ ...trace, handle: randomBytes(16).toString('hex'), entry: store(Buffer.from(JSON.stringify(collection.events.get(trace.entry)))) });
+    }
+    for (const id of collection ? [] : readdirSync(source).filter(id => existsSync(join(source, id, 'trajectory.jsonl')))) {
       const path = join(source, id);
       const evaluationPath = join(source, `${run}-eval`, id, 'result.json');
       let evaluation = null;
@@ -83,6 +105,7 @@ export function packVault(source, destination, password, { progress = () => {} }
         const full = history.get(event.call_id);
         return { ...event, status: full?.status, output: full?.raw_result ?? full?.result ?? event.output_truncated,
           output_bounded: full ? full.raw_result_bounded : true,
+          chimerax_call_count: full?.metadata?.chimerax_call_count,
           artifacts: (full?.artifacts ?? []).filter(a => a.export_path && !a.export_path.split('/').includes('..')).map(a => ({ ...a, available: Boolean(files[`${id}/${a.export_path}`]), unavailable_reason: omitted[`${id}/${a.export_path}`] })),
         };
       });
@@ -94,14 +117,14 @@ export function packVault(source, destination, password, { progress = () => {} }
     const descriptor = { version: 1, cipher: 'AES-GCM', compression: 'gzip', kdf: 'PBKDF2', hash: 'SHA-256', iterations: ITERATIONS, salt: salt.toString('base64'), manifest };
     writeFileSync(join(stage, 'vault.json'), JSON.stringify(descriptor));
     if (encryptedBytes > 800 * 1024 * 1024) throw new Error('Encrypted vault exceeds the 800 MiB budget reserved for traces on GitHub Pages.');
-    if (existsSync(destination)) renameSync(destination, backup);
-    try { renameSync(stage, destination); } catch (error) { if (existsSync(backup)) renameSync(backup, destination); throw error; }
+    if (existsSync(destination)) renameVault(destination, backup);
+    try { renameVault(stage, destination); } catch (error) { if (existsSync(backup)) renameVault(backup, destination); throw error; }
     discard(backup);
     return { descriptor, files: count, localOnlyFiles: Object.keys(omitted).length, traces: traces.length, plaintextBytes, encryptedBytes, uniqueFiles: dedup.size };
   } finally { key.fill(0); discard(stage); }
 }
 
-async function promptPassword(label) {
+export async function promptPassword(label) {
   if (!process.stdin.isTTY) throw new Error('Run in an interactive terminal, or use --generate-password for the initial package.');
   const silent = new Writable({ write(_chunk, _encoding, callback) { callback(); } });
   const prompt = createInterface({ input: process.stdin, output: silent, terminal: true });

@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import '../../../styles/traces.css';
+---
+<BaseLayout title="Fragment trace archive" description="Fragment-assembly investigations.">
+  <div class="site-shell trace-page" id="private-traces">
+    <section class="vault-lock" id="vault-lock" aria-labelledby="vault-title">
+      <h1 id="vault-title">Enter the password.</h1>
+      <form id="unlock-form">
+        <label class="search-label" for="vault-password">Password</label>
+        <div class="password-row"><input id="vault-password" type="password" autocomplete="current-password" required aria-describedby="unlock-status" /><button id="toggle-password" type="button" aria-label="Show password" aria-pressed="false">Show</button></div>
+        <button class="vault-unlock-button" id="unlock-button" type="submit">Unlock</button><p id="unlock-status" class="trace-muted" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <div id="unlocked-archive" hidden>
+      <div class="vault-session-bar"><span>Archive unlocked in this tab</span><button id="lock-archive" type="button">Lock archive</button></div>
+      <h1 class="page-title">Fragment assembly traces</h1>
+      <p class="trace-muted">Compare GPT-6.1 investigations with images enabled or withheld.</p>
+      <section id="trace-collection" hidden>
+        <div class="trace-legend" aria-label="Run tags"><span class="tool-chip">GPT 6.1 sol</span><span class="tool-chip">Fragment assembly</span><span class="tool-chip">harness v3</span></div>
+        <div id="collection-summary" class="evaluation-overview" aria-label="Evaluation summary"></div>
+        <div class="trace-guide"><strong>How to read a trace</strong><p>Choose a task, inspect its evaluation, then move through the model’s turns. Inspect each recorded chemistry and binding/pose gate, then compare the same task in the other run.</p></div>
+        <div class="viewer-toolbar"><label class="search-label">Find a receptor<input id="trace-search" type="search" placeholder="Search accession or task ID…" /></label><label class="search-label">Run<select id="run-filter"><option value="all">Both runs</option><option value="noimages">Images withheld</option><option value="images">Images enabled</option></select></label><label class="search-label">Evaluation<select id="outcome-filter"><option value="all">All outcomes</option><option value="passed">Passed</option><option value="failed">Failed</option></select></label></div>
+        <p id="trace-count" class="trace-muted" aria-live="polite"></p><div id="trace-grid" class="trace-grid"></div><p id="trace-empty" hidden>No matching investigations.</p>
+      </section>
+      <section id="trace-viewer" hidden>
+        <a class="trace-back" id="all-traces" href="/traces/fragments/">← All investigations</a>
+        <div class="viewer-heading"><div><p class="eyebrow" id="trace-model"></p><h1 class="page-title" id="trace-accession"></h1><p class="trace-muted" id="trace-id"></p></div><span class="status-pill" id="trace-status"></span></div>
+        <div class="collection-meta" id="trace-metadata"></div><div id="trace-evaluation"></div>
+        <details class="trace-context"><summary>Task & environment <span>What the model was asked to do</span></summary><div id="trace-context"></div></details>
+        <div class="viewer-toolbar"><label class="search-label">Search this trace<input id="step-search" type="search" placeholder="Commentary, code, or output…" /></label><label class="search-label">Show<select id="step-filter"><option value="all">All turns</option><option value="predict_boltz">Boltz predictions</option><option value="chimerax">ChimeraX activity</option><option value="error">Tool errors</option><option value="submit">Submission</option></select></label></div>
+        <div class="trace-legend" aria-label="Trace color key"><span class="legend-label">Reading key</span><span class="tool-chip" data-kind="commentary">Model commentary</span><span class="tool-chip" data-kind="python">Python</span><span class="tool-chip" data-kind="visual">ChimeraX</span><span class="tool-chip" data-kind="prediction">Prediction</span><span class="tool-chip" data-kind="submission">Submission</span></div>
+        <div class="trace-workspace"><aside class="turn-sidebar" aria-label="Turn navigator"><p class="eyebrow" id="step-count" aria-live="polite"></p><nav id="turn-list" aria-label="Model turns"></nav></aside><section class="turn-detail" aria-label="Selected turn" aria-busy="true"><div class="turn-controls"><button id="previous-turn" disabled>← Previous</button><span id="turn-position" aria-live="polite"></span><button id="next-turn" disabled>Next →</button></div><div id="turn-content"></div></section></div>
+      </section><p id="archive-status" role="status" aria-live="polite"></p>
+    </div><noscript><p>JavaScript is required to view these traces.</p></noscript>
+  </div>
+</BaseLayout>
+<script>
+  import '../../../scripts/local-fragment-traces';
+</script>
