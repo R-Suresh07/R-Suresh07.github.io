@@ -31,7 +31,7 @@ export const publications: Publication[] = [
     primaryClass: 'cs.AI',
     note: 'Accepted at NeurIPS 2026. Also accepted at the CTB and FAGEN Workshops at ICML 2026.',
     url: 'https://arxiv.org/abs/2605.24756',
-    poster: '/cv/Evaluator Failure Modes in Agentic UQ - Poster.pdf',
+    poster: '/cv/Proper Scoring Rules for Agentic Uncertainty Quantification - Poster.pdf',
     preview: trajectoryScorePreview,
     selected: true,
     equalContribution: ['Suresh Raghu', 'Satwik Pandey'],
